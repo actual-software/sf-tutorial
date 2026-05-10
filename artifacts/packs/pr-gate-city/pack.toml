@@ -7,7 +7,7 @@
 # (and the polecat/refinery formulas) live in pr-gate-rig.
 #
 # What this pack contributes:
-#   1. A `[[patches.agent]]` that overrides the gastown mayor's
+#   1. A `[[patches.agent]]` that overrides the mayor's
 #      prompt_template, teaching the mayor about the PR-gate flow,
 #      the new dispatch recipe (`--on mol-polecat-pr`), and the
 #      blocked-bead triage path.
@@ -25,19 +25,13 @@ schema = 1
 
 # ── IMPORTS ───────────────────────────────────────────────────────────
 # Patches resolve against this pack's own agents plus its declared
-# imports. `mayor` lives in gastown, so we have to import gastown here
+# imports. `mayor` lives in setup, so we have to import setup here
 # for the patch below to find it. Without this block, composition fails
 # with `agent "mayor" not found in pack`.
 
-[imports.gastown]
-source = "../gastown"
+[imports.setup]
+source = "../setup"
 
-# ── PATCHES ───────────────────────────────────────────────────────────
-# Override gastown's mayor agent in place rather than redeclaring it
-# (which would trigger a "duplicate name" error). Patches with dir = ""
-# match by name alone; gascity resolves the prompt_template path
-# relative to this pack's directory.
-
-[[patches.agent]]
-name = "mayor"
-prompt_template = "prompts/mayor.template.md"
+[[named_session]]
+template = "mayor"
+mode = "always"

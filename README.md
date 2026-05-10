@@ -1,6 +1,12 @@
-# Software Factory Tutorial 
+<h1><img src="images/software_factory_intensive_title.svg" alt="Software Factory Intensive"></h1>
 
-This is a multi-step Gas City tutorial aiming to:
+<p>
+  Event by <a href="https://aitinkerers.org/"><img src="images/ai_tinkerers.png" alt="AI Tinkerers" height="28" valign="middle"></a>
+  &nbsp;|&nbsp;
+  Hosted by <a href="https://www.actual.ai/"><img src="images/actual_ai.png" alt="Actual AI" height="28" valign="middle"></a>
+</p>
+
+This is a multi-step software factory intensive, built on [Gas City](https://github.com/gastownhall/gascity) to:
 
 1. Provide a fast path to the simplest possible factory.
 1. Demonstrate key components of a software factory.
@@ -61,7 +67,7 @@ There are two paths through this repo.
 
 Each step unlocks the next. Every page is self-contained: prereqs, walkthrough with copy-pasteable commands, verification block, troubleshooting, and a "what's next" link.
 
-1. [Setup: Create a Gas City named factory1](./progression/00.1-setup-foundation.md) — `gc init`, import a gastown pack, configure `city.toml`
+1. [Setup: Create a Gas City named factory1](./progression/00.1-setup-foundation.md) — `gc init`, import a setup pack (based on the `gastown` reference pack), configure `city.toml`
 2. [Setup: Add ASCII Art rig](./progression/00.2-setup-foundation.md) — `gc rig add`, push to GitHub, create 138 beads
 3. [Setup: env vars](./progression/00.3-setup-foundation.md) — handy variables for easier copy-and-paste-ing
 4. [Basic flow (OOTB)](./progression/01-basic-flow.md) — one agent claims a bead and implements (`mol-polecat-work`) + another reviews (`mol-refinery-patrol`) with no extras

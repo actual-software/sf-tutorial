@@ -93,7 +93,7 @@ extends what `pr-gate-rig` already gave us:
   `mol-refinery-review-loop-patrol` instead of `mol-refinery-pr-patrol`
   on next start.
 
-The new pack declares two imports: `gastown` (so the refinery prompt
+The new pack declares two imports: `setup` (so the refinery prompt
 patch resolves — patches resolve against the pack's own agents plus its
 declared imports) and `pr-gate-rig` (so the new formula can `extends =
 ["mol-refinery-pr-patrol"]`). Once `review-loop-rig` is installed at the

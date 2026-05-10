@@ -65,7 +65,7 @@ This ships as a single rig-scoped pack, **`bead-builders-rig`**, that adds three
 
 Each Lead is independent. Run them in any order. They do not depend on each other; they each take the same inputs (the bead and the relevant doc tree) and produce one focused spec.
 
-The new pack declares one import: `bead-gate-rig` (which transitively brings `architect-rig`, `pr-gate-rig`, and `gastown`). The project-manager's prompt is patched in this pack so the existing conformity checklist also requires `metadata.design_doc`, `metadata.test_plan`, and `metadata.docs_outline` to be set and to point at files that exist on disk.
+The new pack declares one import: `bead-gate-rig` (which transitively brings `architect-rig`, `pr-gate-rig`, and `setup`). The project-manager's prompt is patched in this pack so the existing conformity checklist also requires `metadata.design_doc`, `metadata.test_plan`, and `metadata.docs_outline` to be set and to point at files that exist on disk.
 
 Inspect the pack before installing.
 

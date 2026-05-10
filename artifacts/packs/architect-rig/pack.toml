@@ -33,7 +33,7 @@
 #
 # architect-rig imports pr-gate-rig directly (for the polecat formula
 # `mol-polecat-pr` and the patrol formula `mol-refinery-pr-patrol`
-# that this pack extends), bringing gastown along transitively for the
+# that this pack extends), bringing the setup along transitively for the
 # refinery agent patch. It does NOT import review-loop-rig — the
 # review loop concept moves into the architect rather than the
 # refinery, so the review-loop pack is superseded by this one.
@@ -49,7 +49,7 @@ schema = 1
 # ── IMPORTS ───────────────────────────────────────────────────────────
 # Patches resolve against this pack's own agents plus its declared
 # imports. The refinery prompt patch needs `refinery` to be reachable;
-# that lives in gastown, brought in transitively via pr-gate-rig. The
+# that lives in the setup, brought in transitively via pr-gate-rig. The
 # new patrol formula extends `mol-refinery-pr-patrol`, which lives in
 # pr-gate-rig directly.
 

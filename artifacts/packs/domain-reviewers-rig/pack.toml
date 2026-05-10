@@ -36,7 +36,7 @@
 #
 # domain-reviewers-rig imports bead-builders-rig directly (which
 # transitively imports bead-gate-rig → architect-rig → pr-gate-rig
-# → gastown), so the project-manager, the three Leads, and the
+# → setup), so the project-manager, the three Leads, and the
 # polecat / refinery flow remain resolvable.
 
 [pack]

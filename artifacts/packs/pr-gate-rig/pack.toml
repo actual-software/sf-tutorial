@@ -14,7 +14,7 @@
 #      an `approval-review` step between checks and merge-push. Beads
 #      that don't pass approval are bounced back to the polecat pool;
 #      only approved beads make it to the PR stage.
-#   3. A `[[patches.agent]]` that overrides the gastown refinery's
+#   3. A `[[patches.agent]]` that overrides the setup refinery's
 #      prompt_template, pointing the rig refinery at
 #      `mol-refinery-pr-patrol` instead of `mol-refinery-patrol`.
 #
@@ -22,7 +22,7 @@
 #   gc import add --rig <rig-name> .gc/system/packs/pr-gate-rig
 #   (lands as [rigs.imports.pr-gate-rig] for that rig in city.toml)
 #
-# Without pr-gate-city, the mayor still runs the OOTB gastown prompt
+# Without pr-gate-city, the mayor still runs the OOTB setup prompt
 # and won't know to dispatch with `--on mol-polecat-pr`. Install both.
 
 [pack]
@@ -31,15 +31,15 @@ schema = 1
 
 # ── IMPORTS ───────────────────────────────────────────────────────────
 # Patches resolve against this pack's own agents plus its declared
-# imports. `refinery` lives in gastown, so we have to import gastown
+# imports. `refinery` lives in setup, so we have to import setup
 # here for the patch below to find it. Without this block, composition
 # fails with `agent "refinery" not found in pack`.
 
-[imports.gastown]
-source = "../gastown"
+[imports.setup]
+source = "../setup"
 
 # ── PATCHES ───────────────────────────────────────────────────────────
-# Override gastown's refinery agent in place rather than redeclaring
+# Override setup's refinery agent in place rather than redeclaring
 # it. Patches with dir = "" match by name alone; gascity resolves the
 # prompt_template path relative to this pack's directory.
 
