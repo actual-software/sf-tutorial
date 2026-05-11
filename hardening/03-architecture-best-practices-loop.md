@@ -334,7 +334,6 @@ the aggregator. On a clean diff, aggregate clears 0.9 in iteration
 ```bash
 gc session list
 gc session attach <adr-reviewer-session>
-# Detach with Ctrl+b then d.
 ```
 
 When the session ends, inspect the YAML and the per-principle

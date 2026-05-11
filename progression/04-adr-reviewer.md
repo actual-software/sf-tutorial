@@ -259,7 +259,7 @@ gc import list --rig ascii-art
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+architect-rig	.gc/system/packs/architect-rig		(path)
 ```
 
 The city's imports are unchanged — `pr-gate-city` should still be there.
@@ -273,15 +273,7 @@ gc import list
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
-```
-
-Lastly, we need to update order routing in the `city.toml` file:
-
-**Copy and paste**
-
-```bash
-sed -i '' 's/review-loop-rig.dog/architect-rig.dog/g' city.toml
+pr-gate-city	.gc/system/packs/pr-gate-city		(path)
 ```
 
 Restart the city so the new agent, formulas, and refinery prompt take
@@ -306,7 +298,9 @@ gc formula list | grep -E "mol-architect-review|mol-refinery-architect-patrol|mo
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+mol-architect-review
+mol-polecat-pr
+mol-refinery-architect-patrol
 ```
 
 ### 2. Locate one bead from the first epic
@@ -365,7 +359,7 @@ In another terminal, list the live agent sessions:
 **Copy and paste**
 
 ```bash
-gc session list        # confirm polecat is running
+gc session list
 ```
 
 Watch the polecat write the file and reassign to the refinery — same
@@ -375,9 +369,6 @@ play-by-play as page 02 up to the point where the polecat hands off.
 
 ```bash
 gc session attach <polecat-session>
-
-# WARNING: a `tmux` session will open, but if you give it a prompt this will interrupt
-# its session. When you are done, detach from the session by pressing `Ctrl+b` and then `d`.
 ```
 
 Once the polecat finishes, the bead transitions to the refinery:
@@ -412,7 +403,6 @@ refinery just routes.
 ```bash
 gc session list
 gc session attach <refinery-session>
-# Detach with Ctrl+b then d.
 ```
 
 Once the refinery hands off, the bead's metadata flips:
@@ -440,7 +430,6 @@ branch diff, and writes a verdict.
 ```bash
 gc session list
 gc session attach <architect-session>
-# Detach with Ctrl+b then d.
 ```
 
 When the architect finishes, the bead carries a verdict and is back
@@ -483,7 +472,6 @@ sees `architect_approved=true` and falls through to the inherited
 
 ```bash
 gc session attach <refinery-session>
-# Detach with Ctrl+b then d.
 ```
 
 Poll the bead until `pr_number` is populated:
@@ -618,13 +606,14 @@ Confirm the new formulas are loaded:
 **Copy and paste**
 
 ```bash
-gc formula list | grep -E "mol-architect-review|mol-refinery-architect-patrol"
+gc formula list | grep -E "mol-architect-review|mol-refinery-architect-patrol|mol-polecat-pr"
 ```
 
 **Expected output**
 
 ```text
 mol-architect-review
+mol-polecat-pr
 mol-refinery-architect-patrol
 ```
 

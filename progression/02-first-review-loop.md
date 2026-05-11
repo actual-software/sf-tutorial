@@ -514,7 +514,7 @@ both paths print without error.
   fine; if `gc import remove` refuses, leave `pr-gate-rig` in the rig's
   imports — `review-loop-rig`'s prompt patch will still win on next
   restart because it's loaded later, but verify with the `gc agent
-  show` check above. # TBD: validate during smoke test.
+  show` check above.
 - **Refinery patrols but `review_loops` never gets written.** The
   `feedback-loop` step never fired. Check the refinery's session logs;
   most likely the patch didn't take effect and the refinery is still

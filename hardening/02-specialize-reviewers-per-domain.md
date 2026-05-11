@@ -321,7 +321,6 @@ Attach to any of the reviewer sessions to follow it.
 
 ```bash
 gc session attach <design-reviewer-session>
-# Detach with Ctrl+b then d.
 ```
 
 Watch the bead's metadata flip as each lane stamps a verdict.

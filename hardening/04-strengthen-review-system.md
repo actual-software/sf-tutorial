@@ -231,7 +231,6 @@ Optionally attach to one:
 
 ```bash
 gc session attach <reviewer-codex-session>
-# Detach with Ctrl+b then d.
 ```
 
 Watch the bead's metadata flip as each vendor stamps its verdict:

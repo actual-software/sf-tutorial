@@ -197,7 +197,7 @@ Watch the sessions live.
 ```bash
 gc session list
 gc session attach <design-lead-session>
-# Detach with Ctrl+b then d. Repeat for test-lead and doc-lead.
+#  Repeat for test-lead and doc-lead.
 ```
 
 ### 4. Inspect the three spec files and the bead's metadata
