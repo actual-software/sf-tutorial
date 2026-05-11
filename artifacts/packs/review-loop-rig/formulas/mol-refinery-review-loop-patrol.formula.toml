@@ -77,16 +77,8 @@ CHANGED_FILES=$(git diff --name-only "origin/$TARGET...origin/$BRANCH")
 ```
 
 Read the diff. Identify **at least one required modification** the
-polecat must make. Concrete examples for the ascii-art rig:
-
-- Letter ASCII is too small or inconsistent in stroke width — ask for a
-  taller rendering (e.g., 5+ rows).
-- Heading is a level higher or lower than other letter files — ask for
-  alignment with the established convention.
-- Trailing whitespace, missing trailing newline, or stray decorative
-  characters — ask for cleanup.
-- Content matches the bead's intent but lacks a small enrichment that
-  the rest of the corpus has — ask for that addition.
+polecat must make, for example a missing comment, trailing whitespace,
+or a missing enrichment.
 
 If you genuinely find nothing wrong, **invent** a low-cost stylistic
 modification. The point of this loop is to exercise the round-trip; it

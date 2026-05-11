@@ -68,11 +68,7 @@ review happens later, in the architect.
    what file it is writing. A task bead without a target_file will
    send the polecat looking for one in the description, which the
    polecat will guess wrong about.
-5. **The target_file path is consistent with the title.** If the
-   title says "Implement g.md" and `target_file` is
-   `ascii/g.md`, that matches. If the title says "Implement g.md"
-   and `target_file` is `ascii/h.md`, reject — the bead points the
-   polecat at the wrong file.
+5. **The target_file path is consistent with the title if applicable.**
 6. **Parent epic exists** (if one is set). A `bd show $PARENT` must
    succeed and the parent's status must not be `closed`. A task
    pointing at a closed or missing epic is orphaned.
@@ -80,7 +76,7 @@ review happens later, in the architect.
 **Type=epic — coordinator beads:**
 
 7. **Description names a deliverable scope** (e.g., "Implement
-   letters a–m as ASCII files under `ascii/`"). Generic epics
+   a major feature for the codebase to improve __"). Generic epics
    ("Refactor the codebase") are guesses, not scopes.
 8. **Has at least one child task** (or the description explicitly
    declares "tasks will be created downstream"). An epic with no

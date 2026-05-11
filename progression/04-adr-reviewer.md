@@ -168,7 +168,7 @@ supersedes `review-loop-rig`:
   `mol-refinery-review-loop-patrol` on next start.
 
 The new pack declares one import: `pr-gate-rig` (so the new patrol
-formula can `extends = ["mol-refinery-pr-patrol"]`, and so `gastown`
+formula can `extends = ["mol-refinery-pr-patrol"]`, and so `setup`
 is reachable transitively for the refinery agent patch). It does
 **not** import `review-loop-rig` — the review-loop concept has moved
 into the architect, not the refinery, so that pack is superseded.
@@ -242,7 +242,7 @@ gc import add --rig ascii-art .gc/system/packs/architect-rig
 # Remove review-loop-rig from the rig's direct imports.
 # architect-rig replaces it — the review loop now lives in the
 # architect, not the refinery — and architect-rig brings pr-gate-rig
-# (and gastown) along transitively.
+# (and setup) along transitively.
 gc import remove --rig ascii-art review-loop-rig
 ```
 

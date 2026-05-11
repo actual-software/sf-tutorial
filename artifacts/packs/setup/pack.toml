@@ -1,0 +1,12 @@
+# SFI Setup Pack
+#
+# Includes a subset of the gastown roles (rig-scoped agents only): polecat and refinery.
+
+[pack]
+name = "setup"
+schema = 2
+
+[[named_session]]
+template = "refinery"
+scope = "rig"
+mode = "on_demand"

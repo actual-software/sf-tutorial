@@ -27,7 +27,7 @@ By the end of this exercise you will have three letters from the `letters-a-m` e
 ## Prereqs
 
 - Pages [00.1](./00.1-setup-foundation.md), [00.2](./00.2-setup-foundation.md),
-  and [00.3](./00.3-setup-foundation.md) complete: city stood up with gastown
+  and [00.3](./00.3-setup-foundation.md) complete: city stood up with setup
   pack imported, rig registered with locked docs in place, 138 beads seeded,
   `main` pushed to GitHub, and `$ASCII_ART_PATH`/`$ARTIFACTS_PATH` exported in your
   shell.
@@ -71,7 +71,7 @@ Agent workflow:
 
 ### 1. Install the pr-gate packs into factory1
 
-The OOTB gastown pack ships polecat + refinery in **direct-merge** mode:
+The OOTB setup pack ships polecat + refinery in **direct-merge** mode:
 the polecat does the work, the refinery rebases and fast-forwards it
 straight onto `main`. There is no PR stage and no human or AI gate
 between the polecat's commit and the protected branch.
@@ -88,7 +88,7 @@ rig-scoped, so each scope needs its own pack.
 
 **`pr-gate-city`** delivers:
 
-- A `[[patches.agent]]` block that overrides the gastown mayor's
+- A `[[patches.agent]]` block that overrides the mayor's
   prompt template in place — teaching the mayor the new dispatch
   recipe (`--on mol-polecat-pr`) and how to triage beads blocked at
   the gate.
@@ -102,22 +102,16 @@ rig-scoped, so each scope needs its own pack.
   `approval-review` step between checks and merge-push. Beads that pass
   the gate become PRs; beads that fail go back to the polecat pool with
   `metadata.refinery_approved=false` and a `blocked_reason`.
-- A `[[patches.agent]]` block that overrides the gastown refinery's
+- A `[[patches.agent]]` block that overrides the refinery's
   prompt template — pointing the rig refinery at
   `mol-refinery-pr-patrol` instead of `mol-refinery-patrol` on next
   start.
 
-Both packs use `[[patches.agent]]` rather than redeclaring the mayor
-and refinery agents — gascity refuses to load two agents with the
-same name across packs, and patches let us replace specific fields on
-gastown's existing agents (here, just `prompt_template`) without
-triggering that collision.
-
-Each pack also declares `[imports.gastown]`.
+Each pack also declares `[imports.setup]`.
 A patch resolves against the pack's own agents *plus* its declared
 imports — so for the `mayor`/`refinery` patches to find their target,
-the pack defining the patch has to import gastown directly. At the
-same time, to ensure unambiguous resolution, the gastown pack
+the pack defining the patch has to import setup directly. At the
+same time, to ensure unambiguous resolution, the setup pack
 is also removed from the city's direct imports.
 
 Inspect the packs before installing:
@@ -165,8 +159,8 @@ gc import add .gc/system/packs/pr-gate-city
 # loads the polecat/refinery formulas. Bound to the ascii-art rig.
 gc import add --rig ascii-art .gc/system/packs/pr-gate-rig
 
-# Remove gastown pack since pr-gate-city transitively imports it now.
-gc import remove gastown
+# Remove setup pack since pr-gate-city transitively imports it now.
+gc import remove --rig ascii-art setup
 ```
 
 Verify both imports landed:
@@ -185,46 +179,16 @@ city-scoped: pr-gate-city
 rig-scoped:  pr-gate-rig
 ```
 
-Last change is that we need to update the `city.toml` file to alter the routing for orders.
+Remove the factory's existing mayor agent so the `pr-gate-city` mayor agent does not lead to a collision.
 
-Replace the following block:
+**copy and paste**
 
-**File contents**
+```bash
+# Remove the agent definition
+rm -rf $FACTORY_PATH/agents/mayor/
 
-```toml
-[[orders.overrides]]
-name = "digest-generate"
-pool = "dog"
-```
-
-with this new block:
-
-**File contents**
-
-```toml
-[[orders.overrides]]
-name = "digest-generate"
-pool = "pr-gate-city.dog"
-
-[[orders.overrides]]
-name = "mol-dog-doctor"
-pool = "pr-gate-city.dog"
-
-[[orders.overrides]]
-name = "mol-dog-backup"
-pool = "pr-gate-city.dog"
-
-[[orders.overrides]]
-name = "mol-dog-phantom-db"
-pool = "pr-gate-city.dog"
-
-[[orders.overrides]]
-name = "mol-dog-stale-db"
-pool = "pr-gate-city.dog"
-
-[[orders.overrides]]
-name = "mol-dog-compactor"
-pool = "pr-gate-city.dog"
+# Remove the named_session from the top `pack.toml` so it can be defined via the new pack
+sed -i '' '/^\[\[named_session\]\]$/,/^$/d' $FACTORY_PATH/pack.toml
 ```
 
 Now restart the city so the new patches and formulas take effect:
@@ -330,7 +294,7 @@ gc session attach <polecat-session>
 WARNING: a `tmux` session will open, but if you give it a prompt this will interrupt
 its session. When you are done, detach from the session by pressing `Ctrl+b` and then `d`.
 
-If you haven't noticed progress in a while, you can also nudge the agent to prompt
+If you haven't noticed progress after a minute or two, you can also nudge the agent to prompt
 it without attaching to the session. This is the same as attaching to the session,
 giving a prompt, then detaching:
 

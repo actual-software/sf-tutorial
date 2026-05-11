@@ -11,7 +11,7 @@ with a rejection_reason. Beads that fail approval never reach the
 merge-push step — no PR is opened.
 
 This formula is poured by the rig refinery on startup. The pr-gate pack
-ships an override of the gastown `refinery` agent prompt that selects
+ships an override of the setup `refinery` agent prompt that selects
 this formula (instead of `mol-refinery-patrol`) when bootstrapping the
 patrol wisp.
 
@@ -68,10 +68,7 @@ to be approved. Any failure is a block.
 - The new file is non-empty and has substantive content (more than just
   a heading or whitespace — at minimum a few non-blank lines after the
   heading).
-- The content is consistent with the bead's intent (e.g. for an
-  `Implement <letter>.md` task, the file should contain a recognizable
-  ASCII rendering of that letter — not unrelated text, not a stub
-  saying "TODO", not the wrong letter).
+- The content is consistent with the bead's intent.
 - Nothing in the diff looks malicious or obviously wrong (no
   unrelated config edits, no removed safety files, no secrets).
 

@@ -149,7 +149,7 @@ that supersedes `architect-rig`'s single architect:
 
 The new pack declares one import: `bead-builders-rig` (which
 transitively brings bead-gate-rig → architect-rig → pr-gate-rig →
-gastown). The single architect agent from architect-rig is no
+setup). The single architect agent from architect-rig is no
 longer wired into the refinery's flow — the refinery routes to the
 four new reviewers instead. The architect agent itself is harmless
 to leave loaded (it sits idle), but you can remove it from the rig
