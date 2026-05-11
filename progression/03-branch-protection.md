@@ -25,17 +25,10 @@ By the end of this exercise you will have branch protection on `main` and a rule
 
 ## Prereqs
 
-- Page 02 complete: the `factory1` pack is installed, `mol-polecat-pr-work`
-  and `mol-merge-watcher` are in use, and PRs are publishing for slung beads.
+- Page 02 complete: the `factory1` pack is installed, `mol-polecat-pr`
+  and `mol-refinery-pr-patrol` are in use, and PRs are publishing for slung beads.
 - `gh auth status` succeeds and your account has **admin** permission on the
   rig's GitHub repo. Without admin, the protection API returns 403.
-- You are sitting in the rig directory. If you opened a fresh shell:
-
-  **Copy and paste**
-
-  ```bash
-  cd "$ASCII_ART_PATH"
-  ```
 - `jq` is installed (used by the verification commands below).
 
 ## Context
@@ -159,7 +152,7 @@ Confirm in the GitHub UI:
   on `main` with "Require a pull request before merging" and "Require
   approvals (1)" both checked, plus "Require review from Code Owners".
 - `https://github.com/$OWNER/$REPO/rules` lists a ruleset named
-  **Epic branches require human review** targeting `refs/heads/epic/*`.
+  **Epic branches require human review** targeting `epic/*`.
 
 Or check via API:
 
