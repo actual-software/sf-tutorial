@@ -21,6 +21,12 @@ You'll start with out-of-the-box examples that ships with Gas City and two refer
 - A multi-model `code-review-loop`
 - Etc.
 
+## Community & Support
+
+Stuck on a step, want to share what you've built, or looking to collaborate with other participants? Join the **Actual AI User Community** Slack:
+
+- Join the [Actual AI User Community Slack](https://join.slack.com/t/actualaiusercommunity/shared_invite/zt-3vibgzapf-ywx0Db29mZ4lhtQJGzZfGQ), then join [#sfi-nyc-2026](https://join.slack.com/share/enQtMTExMDQwMjA3MjM2MTctZjk4ZDE2MGVjN2ZmZGY0MmEzMjcxYWQxNTQ3NzM5YjEyMTIwNDhjYmNkYzcyMTZmZmM0MjEzZmNhOWVhODhlNw). Here you can share what you've built, ask questions, and get help from other participants.
+
 ## What you'll build
 
 By the end of the Progression, you'll have:
