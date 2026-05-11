@@ -23,9 +23,6 @@
 name = "pr-gate-city"
 schema = 1
 
-# ── IMPORTS ───────────────────────────────────────────────────────────
-# Patches resolve against this pack's own agents plus its declared
-# imports.
-
-[[patches.agent]]
-prompt_template = "prompts/mayor.template.md"
+[[named_session]]
+template = "mayor"
+mode = "always"

@@ -179,16 +179,20 @@ city-scoped: pr-gate-city
 rig-scoped:  pr-gate-rig
 ```
 
-Remove the factory's existing mayor agent so the `pr-gate-city` mayor agent does not lead to a collision.
+Now remove the existing `mayor` agent from the city so the new pack can take over the mayor's role.
 
 **Copy and paste**
 
 ```bash
-# Remove the agent definition
-rm -rf $FACTORY_PATH/agents/mayor/
+rm -rf "$FACTORY_PATH/agents/mayor"
+```
 
-# Remove the named_session from the top `pack.toml` so it can be defined via the new pack
-sed -i '' '/^\[\[named_session\]\]$/,/^$/d' $FACTORY_PATH/pack.toml
+Also remove the named session block from the city pack.toml.
+
+**Copy and paste**
+
+```bash
+sed -i '' '/\[named_session\]/,/\[named_session\]/d' "$FACTORY_PATH/pack.toml"
 ```
 
 Now restart the city so the new patches and formulas take effect:
@@ -225,7 +229,10 @@ cd "$ASCII_ART_PATH"
 bd list --type=task --status=open --limit 0 | grep "Implement [a-c]\.md"
 ```
 
-Pick one — say `Implement a.md` — and capture its ID. IDs look like
+If you see `Error: failed to open database`, remember you can run `bd config set dolt.auto-start true`
+in the rig scope as well.
+
+Pick one task — say `Implement a.md` — and capture its ID. IDs look like
 `asciiart-14` (the prefix matches what you initialized with in page 00). Look
 at the bead's metadata so you know what the agents will see:
 
@@ -313,13 +320,67 @@ it again and you'll see new metadata stamped on:
 gc bd show $BEAD_ID
 ```
 
-`metadata.merge_strategy=pr` is the visible signature of the pr-gate
-formula — that's the field the refinery reads at patrol time.
+**Expected output**
+
+```text
+◐ aa-985.2 · Implement a.md   [● P2 · IN_PROGRESS]
+Owner: Austin Born · Assignee: pr-gate-rig__polecat-fa-r3am · Type: task
+Created: 2026-05-11 · Started: 2026-05-11 · Updated: 2026-05-11
+
+DESCRIPTION
+  (none)
+
+METADATA
+  branch: polecat/aa-985.2
+  gc.routed_to: ascii-art/pr-gate-rig.polecat
+  molecule_id: aa-vlh
+  target_file: ascii/a.md
+  work_dir: $FACTORY_PATH/.gc/worktrees/ascii-art/polecats/pr-gate-rig.furiosa/worktrees/aa-985.2
+
+PARENT
+  ↑ ○ aa-52p: sling-aa-985.2 ● P2
+```
 
 ### 5. Watch the refinery approve and publish a PR
 
-When the polecat finishes, it reassigns the bead to the refinery. The
-refinery rebases the feature branch onto the latest `main`, runs the
+When the polecat finishes, it sets `metadata.merge_strategy=pr` and reassigns
+ the bead to the refinery.
+ 
+**Copy and paste**
+
+```bash
+gc bd show $BEAD_ID
+```
+
+**Expected output**
+
+```text
+○ aa-985.2 · Implement a.md   [● P2 · OPEN]
+Owner: Austin Born · Type: task
+Created: 2026-05-11 · Started: 2026-05-11 · Updated: 2026-05-11
+
+DESCRIPTION
+  (none)
+
+NOTES
+Implemented ASCII art for letter B: 7-line stacked-bumps B inside 7x7 canvas, rhyming couplet       
+'round/sound'.                                                                                      
+
+
+METADATA
+  branch: polecat/aa-985.2
+  gc.routed_to: ascii-art/refinery
+  merge_strategy: pr
+  molecule_id: aa-vlh
+  target: main
+  target_file: ascii/a.md
+  work_dir: /Users/austin/software-factory-intensive/factory1/.gc/worktrees/ascii-art/polecats/pr-gate-rig.furiosa/worktrees/aa-985.2
+
+PARENT
+  ↑ ○ aa-52p: sling-aa-985.2 ● P2
+```
+
+The refinery then picks up the bead and rebases the feature branch onto the latest `main`, runs the
 rig's checks (none yet on the ascii-art rig — see Troubleshooting),
 runs the **approval-review** step against the diff, and then — because
 `metadata.merge_strategy=pr` — publishes a GitHub pull request.
@@ -372,10 +433,16 @@ gate clear, manually merge the PR:
 **Copy and paste**
 
 ```bash
+cd $ASCII_ART_PATH
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement b\.md$" | awk '{print $2}')
+
+cd $FACTORY_PATH
 gc sling ascii-art/pr-gate-rig.polecat $BEAD_ID --on mol-polecat-pr
 
+cd $ASCII_ART_PATH
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement c\.md$" | awk '{print $2}')
+
+cd $FACTORY_PATH
 gc sling ascii-art/pr-gate-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 

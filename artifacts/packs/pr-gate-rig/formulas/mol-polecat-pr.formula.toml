@@ -56,14 +56,17 @@ git branch -D "$BRANCH"              # Branch is pushed; refinery owns it now
 gc bd update {{issue}} \
   --set-metadata target={{base_branch}} \
   --notes "Implemented: <brief summary>"
-```
 
-```bash
 STRAT=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.merge_strategy // empty')
 if [ -z "$STRAT" ]; then
   gc bd update {{issue}} --set-metadata merge_strategy=pr
 fi
 ```
+The `merge_strategy=pr` stamp is the contract that makes the refinery's
+approval gate fire and the bead exit through a PR instead of fast-forward.
+Both commands MUST run — they live in the same fence so a polecat can't
+read the second as commentary.
+
 Branch was recorded in workspace-setup and is already in metadata.
 This adds the target for the refinery. If an existing pull request was
 provided by the caller, `metadata.existing_pr` is preserved for refinery
@@ -79,8 +82,11 @@ gc bd update {{issue}} --status=open --assignee="$REFINERY_TARGET" --set-metadat
 `${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery` resolves to
 `$GC_RIG/{{binding_prefix}}refinery` when running inside a rig session,
 or `{{binding_prefix}}refinery` when running in an HQ-only city where
-the workspace is the rig. Writing a rendered empty rig prefix produces
-`/{{binding_prefix}}refinery` and strands beads outside the refinery pool.
+the workspace is the rig. `{{binding_prefix}}` carries this pack's
+agent prefix (e.g. `pr-gate-rig.`) so the target points at the patched
+refinery in this pack's namespace, not the OOTB `refinery`. Writing a
+rendered empty rig prefix produces `/{{binding_prefix}}refinery` and
+strands beads outside the refinery pool.
 
 Update both `assignee` AND `gc.routed_to` so the reconciler stops
 counting this bead for the polecat pool and starts counting it for
