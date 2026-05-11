@@ -159,7 +159,7 @@ The review-cycle cap is **2 rejections**, same as page 04.
 
 Inspect the pack before installing.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 ls "$ARTIFACTS_PATH/packs/domain-reviewers-rig/"
@@ -187,7 +187,7 @@ What to notice:
 
 Copy the pack into the city's pack directory.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cp -r "$ARTIFACTS_PATH/packs/domain-reviewers-rig" \
@@ -197,7 +197,7 @@ cp -r "$ARTIFACTS_PATH/packs/domain-reviewers-rig" \
 Register the new import at rig scope and remove the now-redundant
 direct `bead-builders-rig` import.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$FACTORY_PATH"
@@ -208,7 +208,7 @@ gc import remove --rig ascii-art bead-builders-rig
 
 Verify.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc import list --rig ascii-art
@@ -220,7 +220,7 @@ gc import list
 
 Restart.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc restart
@@ -228,7 +228,7 @@ gc restart
 
 Confirm the formulas and the new refinery patrol.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc formula list \
@@ -240,7 +240,7 @@ gc formula list \
 
 Same recipe as Hardening 1.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$ASCII_ART_PATH"
@@ -276,7 +276,7 @@ sees all four `*_approved` flags unset and slings all four
 reviewers in succession. After draining, the refinery's session
 ends; the four reviewer sessions run in parallel.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session list
@@ -286,7 +286,7 @@ gc session list
 
 Attach to any of the reviewer sessions to follow it.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session attach <design-reviewer-session>
@@ -295,7 +295,7 @@ gc session attach <design-reviewer-session>
 
 Watch the bead's metadata flip as each lane stamps a verdict.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 watch -n 5 'gc bd show $BEAD_ID | grep -E "_approved|_feedback"'
@@ -312,7 +312,7 @@ up again. `verify-reviewers` reads the four verdicts; if all four
 are `true`, the patrol falls through to `approval-review` and
 `merge-push`.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session list
@@ -321,7 +321,7 @@ gc session attach <refinery-session>
 
 Poll until `pr_number` is populated.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 watch -n 5 'gc bd show $BEAD_ID'
@@ -329,7 +329,7 @@ watch -n 5 'gc bd show $BEAD_ID'
 
 Once the PR is up, merge as before.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -345,7 +345,7 @@ clause to one doc family that the polecat is likely to violate. For
 example, edit the design spec the design-lead wrote for the next
 bead (`l.md`).
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -408,7 +408,7 @@ What's still missing:
 
 Confirm the cleared `$BEAD_ID` carries four lane verdicts.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc bd show $BEAD_ID | grep -E "_approved|_feedback"
@@ -427,7 +427,7 @@ docs_approved=true
 
 Confirm the letter landed on `origin/main`.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 git fetch origin && git pull

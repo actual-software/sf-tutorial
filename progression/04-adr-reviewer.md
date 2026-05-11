@@ -187,7 +187,7 @@ verdicts; the refinery counts and decides when to stop asking.
 
 Inspect the pack before installing:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 ls "$ARTIFACTS_PATH/packs/architect-rig/"
@@ -221,7 +221,7 @@ What to notice in the pack:
 
 Copy the pack into the city's pack directory:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cp -r "$ARTIFACTS_PATH/packs/architect-rig" \
@@ -231,7 +231,7 @@ cp -r "$ARTIFACTS_PATH/packs/architect-rig" \
 Now register the new import at rig scope and remove the now-superseded
 `review-loop-rig` import. Run from the city directory:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$FACTORY_PATH"
@@ -248,7 +248,7 @@ gc import remove --rig ascii-art review-loop-rig
 
 Verify the rig now imports `architect-rig` and not `review-loop-rig`:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc import list --rig ascii-art
@@ -260,7 +260,7 @@ gc import list
 
 Lastly, we need to update order routing in the `city.toml` file:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 sed -i '' 's/review-loop-rig.dog/architect-rig.dog/g' city.toml
@@ -269,7 +269,7 @@ sed -i '' 's/review-loop-rig.dog/architect-rig.dog/g' city.toml
 Restart the city so the new agent, formulas, and refinery prompt take
 effect:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc restart
@@ -277,7 +277,7 @@ gc restart
 
 Confirm everything loaded:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc formula list | grep -E "mol-architect-review|mol-refinery-architect-patrol|mol-polecat-pr"
@@ -290,7 +290,7 @@ gc formula list | grep -E "mol-architect-review|mol-refinery-architect-patrol|mo
 Letters a–f have merged through pages 01–03. List the remaining open
 `Implement <letter>.md` tasks and grab the next one:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$ASCII_ART_PATH"
@@ -299,7 +299,7 @@ bd list --type=task --status=open --limit 0 | grep "Implement [g-i]\.md"
 
 Pick `g.md` and capture its ID:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement g\.md$" | awk '{print $2}')
@@ -316,7 +316,7 @@ writes `review_loops` only on rejection-bounce.
 Same dispatch recipe as pages 01–03. The architect is reached by
 reassignment from the refinery, not by a new dispatch verb:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
@@ -338,7 +338,7 @@ with the formula:
 
 In another terminal, list the live agent sessions:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session list        # confirm polecat is running
@@ -347,7 +347,7 @@ gc session list        # confirm polecat is running
 Watch the polecat write the file and reassign to the refinery — same
 play-by-play as page 02 up to the point where the polecat hands off.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session attach <polecat-session>
@@ -383,7 +383,7 @@ When the refinery picks the bead up, its first step
 the bead to the architect. No diff read, no rebase yet — the
 refinery just routes.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session list
@@ -411,7 +411,7 @@ The architect picks the bead up next. Its `mol-architect-review`
 formula walks `docs/decision-records/` and `docs/current/`, reads the
 branch diff, and writes a verdict.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session list
@@ -455,7 +455,7 @@ The refinery picks the bead up a second time. `verify-architect`
 sees `architect_approved=true` and falls through to the inherited
 `approval-review` and `merge-push` steps from `mol-refinery-pr-patrol`.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session attach <refinery-session>
@@ -464,7 +464,7 @@ gc session attach <refinery-session>
 
 Poll the bead until `pr_number` is populated:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 # If you have watch installed:
@@ -485,7 +485,7 @@ The architect has done its job. Now do what page 03 already taught
 you — approve as the CODEOWNER (or have a teammate approve), then
 merge:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -495,7 +495,7 @@ gh pr view "$PR" --web
 
 After approval, merge through the GitHub UI or:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gh pr merge "$PR" --merge
@@ -503,7 +503,7 @@ gh pr merge "$PR" --merge
 
 Confirm the merge landed:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 git fetch origin && git pull
@@ -523,7 +523,7 @@ add a rule like:
 
 Commit and push to `main`. Then sling `h.md`:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -591,7 +591,7 @@ What's still missing:
 
 Confirm the new formulas are loaded:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc formula list | grep -E "mol-architect-review|mol-refinery-architect-patrol"
@@ -606,7 +606,7 @@ mol-refinery-architect-patrol
 
 Confirm the cleared `g.md` bead carries an architect verdict:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc bd show $BEAD_ID
@@ -617,7 +617,7 @@ note, and (after merge) `pr_url` + `pr_number` populated.
 
 Confirm the new letter on `origin/main`:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -631,7 +631,7 @@ present.
 
 Confirm worktrees are cleaned up:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 git worktree list

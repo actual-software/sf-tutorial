@@ -116,7 +116,7 @@ is also removed from the city's direct imports.
 
 Inspect the packs before installing:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 ls "$ARTIFACTS_PATH/packs/pr-gate-city/"
@@ -132,7 +132,7 @@ with two `.formula.toml` files.
 
 Copy both packs into the city's pack directory:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cp -r "$ARTIFACTS_PATH/packs/pr-gate-city" \
@@ -147,7 +147,7 @@ way to do this — it validates the source, derives the binding name,
 writes the right TOML block, and updates `packs.lock`. Run from the
 city directory:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$FACTORY_PATH"
@@ -165,7 +165,7 @@ gc import remove --rig ascii-art setup
 
 Verify both imports landed:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc import list
@@ -181,7 +181,7 @@ rig-scoped:  pr-gate-rig
 
 Remove the factory's existing mayor agent so the `pr-gate-city` mayor agent does not lead to a collision.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 # Remove the agent definition
@@ -193,7 +193,7 @@ sed -i '' '/^\[\[named_session\]\]$/,/^$/d' $FACTORY_PATH/pack.toml
 
 Now restart the city so the new patches and formulas take effect:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc restart
@@ -201,7 +201,7 @@ gc restart
 
 Confirm the new formulas loaded:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc formula list | grep -E "mol-polecat-pr|mol-refinery-pr-patrol"
@@ -218,7 +218,7 @@ mol-refinery-pr-patrol
 
 List the open `Implement <letter>.md` tasks and grab the first three:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$ASCII_ART_PATH"
@@ -229,7 +229,7 @@ Pick one — say `Implement a.md` — and capture its ID. IDs look like
 `asciiart-14` (the prefix matches what you initialized with in page 00). Look
 at the bead's metadata so you know what the agents will see:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement a\.md$" | awk '{print $2}')
@@ -244,7 +244,7 @@ reads that metadata to know what file it's writing.
 Hand the bead to the `ascii-art/pr-gate-rig.polecat` agent using the new
 pr-gate formula:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
@@ -277,7 +277,7 @@ The pr-gate contract depends on `mol-polecat-pr`.
 
 In another terminal, list the live agent sessions to confirm `polecat` is running:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session list
@@ -285,7 +285,7 @@ gc session list
 
 To view the agent's session in real time, you can attach to it:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session attach <polecat-session>
@@ -298,7 +298,7 @@ If you haven't noticed progress after a minute or two, you can also nudge the ag
 it without attaching to the session. This is the same as attaching to the session,
 giving a prompt, then detaching:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session nudge <polecat-session> "Check for any assigned work"
@@ -307,7 +307,7 @@ gc session nudge <polecat-session> "Check for any assigned work"
 The bead transitions `open → in_progress` once the polecat claims it. Inspect
 it again and you'll see new metadata stamped on:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc bd show $BEAD_ID
@@ -327,7 +327,7 @@ runs the **approval-review** step against the diff, and then — because
 You can watch the bead's metadata flip in a tight loop. The
 interesting fields are `refinery_approved`, `pr_url`, and `pr_number`.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 # If you have watch installed:
@@ -353,7 +353,7 @@ the gate clears.)
 
 Open the PR and look at the diff:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -369,7 +369,7 @@ Click **Merge pull request** in GitHub (or `gh pr merge "$PR" --merge`).
 Same pattern, two more times — sling with `mol-polecat-pr`, watch the
 gate clear, manually merge the PR:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement b\.md$" | awk '{print $2}')
@@ -419,7 +419,7 @@ What's still missing:
 
 Three new commits on `origin/main` from the polecat/refinery → PR cycle:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -436,7 +436,7 @@ git log --oneline origin/main -3
 
 Three pull requests exist on the rig's GitHub repo:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -451,7 +451,7 @@ at least 3 merged PRs corresponding to a.md, b.md, c.md.
 
 Worktrees cleaned up — only the main worktree remains:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 git worktree list
@@ -465,7 +465,7 @@ a single line for the rig's main checkout.
 
 The three files exist on disk:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 ls ascii/a.md ascii/b.md ascii/c.md
@@ -519,7 +519,7 @@ all three paths print without error.
 - **Bead closes but the file is empty or missing.** Look at the
   polecat's session log. The log will show what the agent actually wrote and where.
 
-  **copy and paste**
+  **Copy and paste**
 
   ```bash
   gc session logs <session-id>   # NOTE: command name varies; try `gc sessions logs`
