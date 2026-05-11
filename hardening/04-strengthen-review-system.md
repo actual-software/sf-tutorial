@@ -140,7 +140,7 @@ gc import add --rig ascii-art .gc/system/packs/multi-vendor-rig
 gc import remove --rig ascii-art principles-loop-rig
 ```
 
-Verify the import.
+The rig should now import `multi-vendor-rig` and no longer import `principles-loop-rig`.
 
 **Copy and paste**
 
@@ -151,10 +151,10 @@ gc import list --rig ascii-art
 **Expected output**
 
 ```text
-multi-vendor-rig (no principles-loop-rig row).
+TBD: capture actual terminal output during smoke test
 ```
 
-Restart and confirm the new formulas loaded.
+Restart and confirm the new formulas loaded — four rows.
 
 **Copy and paste**
 
@@ -168,7 +168,7 @@ gc formula list \
 **Expected output**
 
 ```text
-four rows.
+TBD: capture actual terminal output during smoke test
 ```
 
 ### 2. Sling a clean bead through the standard pipeline up to the polecat
@@ -211,6 +211,8 @@ gc sling ascii-art/multi-vendor-rig.reviewer-gemini $BEAD_ID --on mol-vendor-gem
 
 Watch:
 
+You should see three reviewer sessions running concurrently.
+
 **Copy and paste**
 
 ```bash
@@ -220,7 +222,7 @@ gc session list
 **Expected output**
 
 ```text
-three reviewer sessions running concurrently.
+TBD: capture actual terminal output during smoke test
 ```
 
 Optionally attach to one:

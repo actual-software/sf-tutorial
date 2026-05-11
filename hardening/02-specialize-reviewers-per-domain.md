@@ -208,6 +208,8 @@ gc import remove --rig ascii-art bead-builders-rig
 
 Verify.
 
+The rig should now import `domain-reviewers-rig` and no longer import `bead-builders-rig`.
+
 **Copy and paste**
 
 ```bash
@@ -217,8 +219,10 @@ gc import list --rig ascii-art
 **Expected output**
 
 ```text
-domain-reviewers-rig (no bead-builders-rig row).
+TBD: capture actual terminal output during smoke test
 ```
+
+The city's imports are unchanged — `pr-gate-city` should still be there.
 
 **Copy and paste**
 
@@ -229,7 +233,7 @@ gc import list
 **Expected output**
 
 ```text
-pr-gate-city is still here at city scope.
+TBD: capture actual terminal output during smoke test
 ```
 
 Restart.
@@ -242,6 +246,8 @@ gc restart
 
 Confirm the formulas and the new refinery patrol.
 
+Five rows should be listed.
+
 **Copy and paste**
 
 ```bash
@@ -252,7 +258,7 @@ gc formula list \
 **Expected output**
 
 ```text
-five rows.
+TBD: capture actual terminal output during smoke test
 ```
 
 ### 2. Pick the next bead and run it through H1's pre-PM agents
@@ -295,6 +301,8 @@ sees all four `*_approved` flags unset and slings all four
 reviewers in succession. After draining, the refinery's session
 ends; the four reviewer sessions run in parallel.
 
+You should see four reviewer sessions plus the refinery (which may already have finished its current patrol).
+
 **Copy and paste**
 
 ```bash
@@ -304,8 +312,7 @@ gc session list
 **Expected output**
 
 ```text
-four reviewer sessions plus the refinery (which may
-already have finished its current patrol).
+TBD: capture actual terminal output during smoke test
 ```
 
 Attach to any of the reviewer sessions to follow it.

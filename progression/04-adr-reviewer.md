@@ -248,6 +248,8 @@ gc import remove --rig ascii-art review-loop-rig
 
 Verify the rig now imports `architect-rig` and not `review-loop-rig`:
 
+The rig should now import `architect-rig` and no longer import `review-loop-rig`.
+
 **Copy and paste**
 
 ```bash
@@ -257,8 +259,10 @@ gc import list --rig ascii-art
 **Expected output**
 
 ```text
-architect-rig (no review-loop-rig row).
+TBD: capture actual terminal output during smoke test
 ```
+
+The city's imports are unchanged — `pr-gate-city` should still be there.
 
 **Copy and paste**
 
@@ -269,7 +273,7 @@ gc import list
 **Expected output**
 
 ```text
-pr-gate-city is still here at city scope.
+TBD: capture actual terminal output during smoke test
 ```
 
 Lastly, we need to update order routing in the `city.toml` file:
@@ -291,6 +295,8 @@ gc restart
 
 Confirm everything loaded:
 
+All three formulas should be listed. `mol-polecat-pr` resolves transitively via `pr-gate-rig`; the two architect formulas are new with this pack.
+
 **Copy and paste**
 
 ```bash
@@ -300,8 +306,7 @@ gc formula list | grep -E "mol-architect-review|mol-refinery-architect-patrol|mo
 **Expected output**
 
 ```text
-all three rows. mol-polecat-pr resolves transitively via
-pr-gate-rig; the architect formulas are the new ones.
+TBD: capture actual terminal output during smoke test
 ```
 
 ### 2. Locate one bead from the first epic

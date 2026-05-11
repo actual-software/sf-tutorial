@@ -189,7 +189,7 @@ gc import add --rig ascii-art .gc/system/packs/principles-loop-rig
 gc import remove --rig ascii-art domain-reviewers-rig
 ```
 
-Verify the import.
+The rig should now import `principles-loop-rig` and no longer import `domain-reviewers-rig`.
 
 **Copy and paste**
 
@@ -200,10 +200,10 @@ gc import list --rig ascii-art
 **Expected output**
 
 ```text
-principles-loop-rig (no domain-reviewers-rig row).
+TBD: capture actual terminal output during smoke test
 ```
 
-Restart and confirm the new formula loaded.
+Restart and confirm the new formula loaded — one row for `mol-principles-review`.
 
 **Copy and paste**
 
@@ -216,10 +216,10 @@ gc formula list | grep mol-principles-review
 **Expected output**
 
 ```text
-one row.
+TBD: capture actual terminal output during smoke test
 ```
 
-Check the aggregator script exists and runs.
+Check the aggregator script exists, and run it bare to confirm it prints a usage message and exits 2.
 
 **Copy and paste**
 
@@ -231,10 +231,10 @@ bash "$FACTORY_PATH/.gc/system/packs/principles-loop-rig/checks/aggregate-score.
 **Expected output**
 
 ```text
-usage message, exit 2.
+TBD: capture actual terminal output during smoke test
 ```
 
-Confirm PyYAML is installed.
+Confirm PyYAML is installed (a version string prints). If you get `ModuleNotFoundError`, run `python3 -m pip install pyyaml`.
 
 **Copy and paste**
 
@@ -245,7 +245,7 @@ python3 -c "import yaml; print(yaml.__version__)"
 **Expected output**
 
 ```text
-a version string. If error, run `python3 -m pip install pyyaml`.
+TBD: capture actual terminal output during smoke test
 ```
 
 ### 2. Author and commit the principles schema doc
@@ -350,6 +350,8 @@ ls docs/reviews/principles/$BEAD_ID.*.md
 
 Run the aggregator by hand to see the JSON line it emitted:
 
+You should see `rc=0` and a JSON line on stdout with `aggregate>=0.9`.
+
 **Copy and paste**
 
 ```bash
@@ -361,7 +363,7 @@ echo "rc=$?"
 **Expected output**
 
 ```text
-rc=0; JSON line on stdout with aggregate>=0.9.
+TBD: capture actual terminal output during smoke test
 ```
 
 Confirm `adr_approved=true` and `principles_review_passed=true` are

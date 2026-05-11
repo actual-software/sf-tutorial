@@ -108,6 +108,8 @@ gc import remove --rig ascii-art bead-gate-rig
 
 Verify the imports.
 
+The rig should now import `bead-builders-rig` and no longer import `bead-gate-rig`.
+
 **Copy and paste**
 
 ```bash
@@ -117,8 +119,10 @@ gc import list --rig ascii-art
 **Expected output**
 
 ```text
-bead-builders-rig (no bead-gate-rig row).
+TBD: capture actual terminal output during smoke test
 ```
+
+The city's imports are unchanged — `pr-gate-city` should still be there.
 
 **Copy and paste**
 
@@ -129,7 +133,7 @@ gc import list
 **Expected output**
 
 ```text
-pr-gate-city is still here at city scope.
+TBD: capture actual terminal output during smoke test
 ```
 
 Restart.
@@ -142,6 +146,8 @@ gc restart
 
 Confirm the three formulas loaded.
 
+Four rows should be listed.
+
 **Copy and paste**
 
 ```bash
@@ -152,7 +158,7 @@ gc formula list \
 **Expected output**
 
 ```text
-four rows.
+TBD: capture actual terminal output during smoke test
 ```
 
 ### 2. Pick the next bead
@@ -198,6 +204,8 @@ gc session attach <design-lead-session>
 
 Once all three Leads finish, list and read the spec files.
 
+A file named `$BEAD_ID.md` should be present in each directory.
+
 **Copy and paste**
 
 ```bash
@@ -208,7 +216,7 @@ ls docs/design/ docs/testing/ docs/outlines/
 **Expected output**
 
 ```text
-$BEAD_ID.md in each.
+TBD: capture actual terminal output during smoke test
 ```
 
 **Copy and paste**
@@ -366,6 +374,8 @@ What's still missing:
 
 Confirm the three new formulas loaded.
 
+Three rows should be listed.
+
 **Copy and paste**
 
 ```bash
@@ -375,10 +385,12 @@ gc formula list | grep -E "mol-(design|test|doc)-spec"
 **Expected output**
 
 ```text
-three rows.
+TBD: capture actual terminal output during smoke test
 ```
 
 After running the three Leads on `$BEAD_ID`, the spec files exist and the bead carries the matching metadata.
+
+All three metadata fields should be set and all three files should exist.
 
 **Copy and paste**
 
@@ -390,10 +402,12 @@ gc bd show $BEAD_ID | grep -E "design_doc|test_plan|docs_outline"
 **Expected output**
 
 ```text
-all three metadata fields set, all three files exist.
+TBD: capture actual terminal output during smoke test
 ```
 
 Project-manager passes the bead with all three specs in place.
+
+`bead_review_passed=true` should be set on the bead.
 
 **Copy and paste**
 
@@ -404,7 +418,7 @@ gc bd show $BEAD_ID | grep bead_review_passed
 **Expected output**
 
 ```text
-bead_review_passed=true.
+TBD: capture actual terminal output during smoke test
 ```
 
 Project-manager blocks a bead missing one spec (step 7).
