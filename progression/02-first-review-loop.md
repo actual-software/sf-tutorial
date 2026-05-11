@@ -154,7 +154,7 @@ gc import list --rig ascii-art
 **Expected output**
 
 ```text
-review-loop-rig (no pr-gate-rig row).
+review-loop-rig	.gc/system/packs/review-loop-rig		(path)
 ```
 
 **Copy and paste**
@@ -166,15 +166,7 @@ gc import list
 **Expected output**
 
 ```text
-pr-gate-city is still here at city scope.
-```
-
-Lastly, we need to update order routing in the `city.toml` file:
-
-**Copy and paste**
-
-```bash
-sed -i '' 's/pr-gate-city.dog/review-loop-rig.dog/g' city.toml
+pr-gate-city	.gc/system/packs/pr-gate-city		(path)
 ```
 
 Restart the city so the new patches and formulas take effect:
@@ -196,8 +188,8 @@ gc formula list | grep -E "mol-refinery-review-loop-patrol|mol-polecat-pr"
 **Expected output**
 
 ```text
-both rows. mol-polecat-pr is resolved via the transitive
-pr-gate-rig import; mol-refinery-review-loop-patrol is the new one.
+mol-polecat-pr
+mol-refinery-review-loop-patrol
 ```
 
 ### 2. Locate one bead from the first epic
@@ -275,7 +267,7 @@ In another terminal, list the live agent sessions:
 **Copy and paste**
 
 ```bash
-gc session list        # confirm polecat is running
+gc session list
 ```
 
 Watch the polecat pick up the bead and address the feedback:
