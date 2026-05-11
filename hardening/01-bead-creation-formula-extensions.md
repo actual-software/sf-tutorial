@@ -69,7 +69,7 @@ The new pack declares one import: `bead-gate-rig` (which transitively brings `ar
 
 Inspect the pack before installing.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 ls "$ARTIFACTS_PATH/packs/bead-builders-rig/"
@@ -88,7 +88,7 @@ What to notice in the pack:
 
 Copy the pack into the city's pack directory.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cp -r "$ARTIFACTS_PATH/packs/bead-builders-rig" \
@@ -97,7 +97,7 @@ cp -r "$ARTIFACTS_PATH/packs/bead-builders-rig" \
 
 Register the new import at rig scope and remove the now-redundant direct `bead-gate-rig` import. Run from the city directory.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$FACTORY_PATH"
@@ -108,19 +108,37 @@ gc import remove --rig ascii-art bead-gate-rig
 
 Verify the imports.
 
-**copy and paste**
+The rig should now import `bead-builders-rig` and no longer import `bead-gate-rig`.
+
+**Copy and paste**
 
 ```bash
 gc import list --rig ascii-art
-# Expect: bead-builders-rig (no bead-gate-rig row).
+```
 
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
+```
+
+The city's imports are unchanged — `pr-gate-city` should still be there.
+
+**Copy and paste**
+
+```bash
 gc import list
-# Expect: pr-gate-city is still here at city scope.
+```
+
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
 ```
 
 Restart.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc restart
@@ -128,19 +146,26 @@ gc restart
 
 Confirm the three formulas loaded.
 
-**copy and paste**
+Four rows should be listed.
+
+**Copy and paste**
 
 ```bash
 gc formula list \
   | grep -E "mol-(design|test|doc)-spec|mol-bead-review"
-# Expect: four rows.
+```
+
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
 ```
 
 ### 2. Pick the next bead
 
 Set `$BEAD_ID` to the next open `Implement j.md` task and inspect it.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$ASCII_ART_PATH"
@@ -154,7 +179,7 @@ You should see the bead's title, description, `target_file`, and no `design_doc`
 
 The Leads are independent and can be slung in any order. Run them sequentially for now (you can fan them out in parallel once you trust the flow).
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
@@ -167,25 +192,36 @@ Each sling spawns a Lead session that reads the bead and the relevant doc tree, 
 
 Watch the sessions live.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session list
 gc session attach <design-lead-session>
-# Detach with Ctrl+b then d. Repeat for test-lead and doc-lead.
+#  Repeat for test-lead and doc-lead.
 ```
 
 ### 4. Inspect the three spec files and the bead's metadata
 
 Once all three Leads finish, list and read the spec files.
 
-**copy and paste**
+A file named `$BEAD_ID.md` should be present in each directory.
+
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
 ls docs/design/ docs/testing/ docs/outlines/
-# Expect: $BEAD_ID.md in each.
+```
 
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
+```
+
+**Copy and paste**
+
+```bash
 cat docs/design/$BEAD_ID.md
 cat docs/testing/$BEAD_ID.md
 cat docs/outlines/$BEAD_ID.md
@@ -195,7 +231,7 @@ Each file follows the section template baked into the matching agent's prompt �
 
 The bead now carries three new metadata fields.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc bd show $BEAD_ID
@@ -215,7 +251,7 @@ METADATA
 
 The polecat and architect both read these files out of the working tree. They have to land on `main` (or be picked up on the polecat's feature branch) before the polecat reads them. The simplest path is a small docs-only commit on `main`.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -230,7 +266,7 @@ git push origin main
 
 The bead now satisfies the extended checklist — title, description, `target_file`, parent epic, **plus** `design_doc`, `test_plan`, and `docs_outline` all set and pointing at files that exist.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
@@ -239,7 +275,7 @@ gc sling ascii-art/bead-builders-rig.project-manager $BEAD_ID --on mol-bead-revi
 
 Watch the session.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session list
@@ -248,7 +284,7 @@ gc session attach <project-manager-session>
 
 Confirm the verdict.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc bd show $BEAD_ID
@@ -264,7 +300,7 @@ notes include "project-manager: PASSED..."
 
 From here, the polecat / refinery / architect chain runs as in pages 01–04. Wait for the PR and merge.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 watch -n 5 'gc bd show $BEAD_ID'
@@ -279,7 +315,7 @@ gh pr merge "$PR" --merge
 
 To see the extended checklist enforce, skip one Lead and watch the project-manager block. Pick the next letter and only run two of the three Leads.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -295,7 +331,7 @@ gc sling ascii-art/bead-builders-rig.project-manager $PARTIAL_BEAD --on mol-bead
 
 Once the project-manager finishes, inspect the bead.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc bd show $PARTIAL_BEAD
@@ -310,7 +346,7 @@ bead_review_feedback citing missing docs_outline.
 
 The project-manager surfaces the missing `docs_outline` to the operator. Run the Doc Lead, commit the outline file, unset `bead_review_passed`, and re-sling the project-manager — it will pass.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
@@ -338,35 +374,56 @@ What's still missing:
 
 Confirm the three new formulas loaded.
 
-**copy and paste**
+Three rows should be listed.
+
+**Copy and paste**
 
 ```bash
 gc formula list | grep -E "mol-(design|test|doc)-spec"
-# Expect: three rows.
+```
+
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
 ```
 
 After running the three Leads on `$BEAD_ID`, the spec files exist and the bead carries the matching metadata.
 
-**copy and paste**
+All three metadata fields should be set and all three files should exist.
+
+**Copy and paste**
 
 ```bash
 ls docs/design/$BEAD_ID.md docs/testing/$BEAD_ID.md docs/outlines/$BEAD_ID.md
 gc bd show $BEAD_ID | grep -E "design_doc|test_plan|docs_outline"
-# Expect: all three metadata fields set, all three files exist.
+```
+
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
 ```
 
 Project-manager passes the bead with all three specs in place.
 
-**copy and paste**
+`bead_review_passed=true` should be set on the bead.
+
+**Copy and paste**
 
 ```bash
 gc bd show $BEAD_ID | grep bead_review_passed
-# Expect: bead_review_passed=true.
+```
+
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
 ```
 
 Project-manager blocks a bead missing one spec (step 7).
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc bd show $PARTIAL_BEAD | grep -E "status|bead_review"
@@ -376,7 +433,7 @@ gc bd show $PARTIAL_BEAD | grep -E "status|bead_review"
 
 Letter on `origin/main`.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 git fetch origin && git pull

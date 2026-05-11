@@ -23,15 +23,6 @@
 name = "pr-gate-city"
 schema = 1
 
-# ── IMPORTS ───────────────────────────────────────────────────────────
-# Patches resolve against this pack's own agents plus its declared
-# imports. `mayor` lives in setup, so we have to import setup here
-# for the patch below to find it. Without this block, composition fails
-# with `agent "mayor" not found in pack`.
-
-[imports.setup]
-source = "../setup"
-
 [[named_session]]
 template = "mayor"
 mode = "always"

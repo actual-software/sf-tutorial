@@ -106,7 +106,7 @@ patrol steps remain resolvable.
 
 Inspect the pack before installing:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 ls "$ARTIFACTS_PATH/packs/review-loop-rig/"
@@ -119,7 +119,7 @@ You should see `pack.toml`, a `formulas/` directory with one
 
 Copy the pack into the city's pack directory:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cp -r "$ARTIFACTS_PATH/packs/review-loop-rig" \
@@ -129,7 +129,7 @@ cp -r "$ARTIFACTS_PATH/packs/review-loop-rig" \
 Now register the new import at rig scope and remove the now-redundant
 direct `pr-gate-rig` import. Run from the city directory:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$FACTORY_PATH"
@@ -145,7 +145,7 @@ gc import remove --rig ascii-art pr-gate-rig
 
 Verify the rig now imports `review-loop-rig` and not `pr-gate-rig`:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc import list --rig ascii-art
@@ -154,10 +154,10 @@ gc import list --rig ascii-art
 **Expected output**
 
 ```text
-review-loop-rig (no pr-gate-rig row).
+review-loop-rig	.gc/system/packs/review-loop-rig		(path)
 ```
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc import list
@@ -166,20 +166,12 @@ gc import list
 **Expected output**
 
 ```text
-pr-gate-city is still here at city scope.
-```
-
-Lastly, we need to update order routing in the `city.toml` file:
-
-**copy and paste**
-
-```bash
-sed -i '' 's/pr-gate-city.dog/review-loop-rig.dog/g' city.toml
+pr-gate-city	.gc/system/packs/pr-gate-city		(path)
 ```
 
 Restart the city so the new patches and formulas take effect:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc restart
@@ -187,7 +179,7 @@ gc restart
 
 Confirm the new formula loaded and the refinery is pointed at it:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc formula list | grep -E "mol-refinery-review-loop-patrol|mol-polecat-pr"
@@ -196,8 +188,8 @@ gc formula list | grep -E "mol-refinery-review-loop-patrol|mol-polecat-pr"
 **Expected output**
 
 ```text
-both rows. mol-polecat-pr is resolved via the transitive
-pr-gate-rig import; mol-refinery-review-loop-patrol is the new one.
+mol-polecat-pr
+mol-refinery-review-loop-patrol
 ```
 
 ### 2. Locate one bead from the first epic
@@ -205,7 +197,7 @@ pr-gate-rig import; mol-refinery-review-loop-patrol is the new one.
 Three letters merged on page 01. List the remaining open `Implement
 <letter>.md` tasks and grab the next one:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$ASCII_ART_PATH"
@@ -214,7 +206,7 @@ bd list --type=task --status=open --limit 0 | grep "Implement [d-f]\.md"
 
 Pick `d.md` and capture its ID:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement d\.md$" | awk '{print $2}')
@@ -229,7 +221,7 @@ field yet — the refinery will write that during the first patrol.
 Same dispatch recipe as page 01 — the loop is entirely on the refinery
 side, so the polecat dispatch is unchanged:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
@@ -272,15 +264,15 @@ PARENT
 
 In another terminal, list the live agent sessions:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
-gc session list        # confirm polecat is running
+gc session list
 ```
 
 Watch the polecat pick up the bead and address the feedback:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 # Attach to the polecat session
@@ -329,7 +321,7 @@ the `feedback-loop` step. The step writes a one-or-more-sentence
 required modification onto the bead and bounces the bead back to the
 polecat pool.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session list
@@ -397,7 +389,7 @@ and is done; an approval block on the second patrol is a separate concern.
 
 ### 8. Manually merge the PR
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -414,7 +406,7 @@ Same pattern, one more time — sling, watch the loop fire, watch the
 polecat address the feedback, watch the refinery clear the second
 patrol, manually merge:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -454,7 +446,7 @@ What's still missing:
 
 ## Verification
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 # 1. Two new commits on origin/main from the polecat → loop → polecat → refinery → PR cycle.
@@ -470,7 +462,7 @@ git log --oneline origin/main
 (in addition to the 3 from page 01).
 ```
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 # 2. Two pull requests merged on the rig's GitHub repo since page 01.
@@ -483,7 +475,7 @@ gh pr list --state=merged --limit 10
 at least 5 merged PRs total (a, b, c from page 01 plus d, e from this page).
 ```
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 # 3. Worktrees cleaned up — only the main worktree remains in $ASCII_ART_PATH
@@ -496,7 +488,7 @@ git worktree list
 a single line for the rig's main checkout.
 ```
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 # 4. The two new files exist on disk.
@@ -522,7 +514,7 @@ both paths print without error.
   fine; if `gc import remove` refuses, leave `pr-gate-rig` in the rig's
   imports — `review-loop-rig`'s prompt patch will still win on next
   restart because it's loaded later, but verify with the `gc agent
-  show` check above. # TBD: validate during smoke test.
+  show` check above.
 - **Refinery patrols but `review_loops` never gets written.** The
   `feedback-loop` step never fired. Check the refinery's session logs;
   most likely the patch didn't take effect and the refinery is still

@@ -159,7 +159,7 @@ The review-cycle cap is **2 rejections**, same as page 04.
 
 Inspect the pack before installing.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 ls "$ARTIFACTS_PATH/packs/domain-reviewers-rig/"
@@ -187,7 +187,7 @@ What to notice:
 
 Copy the pack into the city's pack directory.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cp -r "$ARTIFACTS_PATH/packs/domain-reviewers-rig" \
@@ -197,7 +197,7 @@ cp -r "$ARTIFACTS_PATH/packs/domain-reviewers-rig" \
 Register the new import at rig scope and remove the now-redundant
 direct `bead-builders-rig` import.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$FACTORY_PATH"
@@ -208,19 +208,37 @@ gc import remove --rig ascii-art bead-builders-rig
 
 Verify.
 
-**copy and paste**
+The rig should now import `domain-reviewers-rig` and no longer import `bead-builders-rig`.
+
+**Copy and paste**
 
 ```bash
 gc import list --rig ascii-art
-# Expect: domain-reviewers-rig (no bead-builders-rig row).
+```
 
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
+```
+
+The city's imports are unchanged — `pr-gate-city` should still be there.
+
+**Copy and paste**
+
+```bash
 gc import list
-# Expect: pr-gate-city is still here at city scope.
+```
+
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
 ```
 
 Restart.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc restart
@@ -228,19 +246,26 @@ gc restart
 
 Confirm the formulas and the new refinery patrol.
 
-**copy and paste**
+Five rows should be listed.
+
+**Copy and paste**
 
 ```bash
 gc formula list \
   | grep -E "mol-(adr|design|testing|docs)-review|mol-refinery-domain-patrol"
-# Expect: five rows.
+```
+
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
 ```
 
 ### 2. Pick the next bead and run it through H1's pre-PM agents
 
 Same recipe as Hardening 1.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$ASCII_ART_PATH"
@@ -276,26 +301,31 @@ sees all four `*_approved` flags unset and slings all four
 reviewers in succession. After draining, the refinery's session
 ends; the four reviewer sessions run in parallel.
 
-**copy and paste**
+You should see four reviewer sessions plus the refinery (which may already have finished its current patrol).
+
+**Copy and paste**
 
 ```bash
 gc session list
-# Expect: four reviewer sessions plus the refinery (which may
-# already have finished its current patrol).
+```
+
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
 ```
 
 Attach to any of the reviewer sessions to follow it.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session attach <design-reviewer-session>
-# Detach with Ctrl+b then d.
 ```
 
 Watch the bead's metadata flip as each lane stamps a verdict.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 watch -n 5 'gc bd show $BEAD_ID | grep -E "_approved|_feedback"'
@@ -312,7 +342,7 @@ up again. `verify-reviewers` reads the four verdicts; if all four
 are `true`, the patrol falls through to `approval-review` and
 `merge-push`.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session list
@@ -321,7 +351,7 @@ gc session attach <refinery-session>
 
 Poll until `pr_number` is populated.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 watch -n 5 'gc bd show $BEAD_ID'
@@ -329,7 +359,7 @@ watch -n 5 'gc bd show $BEAD_ID'
 
 Once the PR is up, merge as before.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -345,7 +375,7 @@ clause to one doc family that the polecat is likely to violate. For
 example, edit the design spec the design-lead wrote for the next
 bead (`l.md`).
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -408,7 +438,7 @@ What's still missing:
 
 Confirm the cleared `$BEAD_ID` carries four lane verdicts.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc bd show $BEAD_ID | grep -E "_approved|_feedback"
@@ -427,7 +457,7 @@ docs_approved=true
 
 Confirm the letter landed on `origin/main`.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 git fetch origin && git pull

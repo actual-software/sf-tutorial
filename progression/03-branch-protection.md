@@ -25,17 +25,10 @@ By the end of this exercise you will have branch protection on `main` and a rule
 
 ## Prereqs
 
-- Page 02 complete: the `factory1` pack is installed, `mol-polecat-pr-work`
-  and `mol-merge-watcher` are in use, and PRs are publishing for slung beads.
+- Page 02 complete: the `factory1` pack is installed, `mol-polecat-pr`
+  and `mol-refinery-pr-patrol` are in use, and PRs are publishing for slung beads.
 - `gh auth status` succeeds and your account has **admin** permission on the
   rig's GitHub repo. Without admin, the protection API returns 403.
-- You are sitting in the rig directory. If you opened a fresh shell:
-
-  **copy and paste**
-
-  ```bash
-  cd "$ASCII_ART_PATH"
-  ```
 - `jq` is installed (used by the verification commands below).
 
 ## Context
@@ -59,7 +52,7 @@ people listed in `CODEOWNERS`. The file must live on `main` for GitHub to
 recognize it — if it's only on a feature branch, the gate has nothing to
 match against.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -71,7 +64,7 @@ cp $ARTIFACTS_PATH/github/CODEOWNERS \
 Replace the string `@your-github-handle` with your actual GitHub handle
 (or a team like `@your-org/reviewers`). Then commit and push to `main`:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 export GITHUB_USERNAME=$(gh api user -q '.login')
@@ -85,7 +78,7 @@ git push origin main
 
 Confirm GitHub picked up the file:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gh api "repos/$GITHUB_USERNAME/ascii-art/contents/.github/CODEOWNERS" -q '.path'
@@ -97,7 +90,7 @@ You should see `.github/CODEOWNERS` echoed back.
 
 Read the script before running it.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cat $ARTIFACTS_PATH/github/branch-protection.sh
@@ -131,7 +124,7 @@ What to notice:
 A dry run prints what would happen without making any API calls. Sanity-check
 `OWNER` and `REPO` before changing real settings.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 export OWNER=$GITHUB_USERNAME
@@ -147,7 +140,7 @@ No state changes yet.
 
 Drop `DRY_RUN`:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 $ARTIFACTS_PATH/github/branch-protection.sh
@@ -159,11 +152,11 @@ Confirm in the GitHub UI:
   on `main` with "Require a pull request before merging" and "Require
   approvals (1)" both checked, plus "Require review from Code Owners".
 - `https://github.com/$OWNER/$REPO/rules` lists a ruleset named
-  **Epic branches require human review** targeting `refs/heads/epic/*`.
+  **Epic branches require human review** targeting `epic/*`.
 
 Or check via API:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gh api "repos/$OWNER/$REPO/branches/main/protection" \
@@ -179,7 +172,7 @@ straight to `main`.
 
 Sling the next letter — `f.md`:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement f.md$" | awk '{print $2}')
@@ -193,7 +186,7 @@ Watch the bead go through the status changes, and attach to the
 polecat and refinery sessions to see the PR being published. Then,
 when `pr_number` is set, attempt to merge **without a review**:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -216,7 +209,7 @@ open — the next step approves it.
 
 Open the PR for review:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gh pr view "$PR" --web
@@ -228,7 +221,7 @@ check the override box first, then merge via the GitHub UI.
 
 Confirm the merge landed on `main`:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 git fetch origin && git pull
@@ -278,7 +271,7 @@ block the merge regardless of approvals.
   ```
 - The `epic/*` ruleset exists:
 
-  **copy and paste**
+  **Copy and paste**
 
   ```bash
   gh api "repos/$OWNER/$REPO/rulesets" \

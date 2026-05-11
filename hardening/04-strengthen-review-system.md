@@ -33,7 +33,7 @@ By the end of this exercise you will have:
 - Hardening 3 complete: `principles-loop-rig` is installed, the per-principle audit trail is wired, and at least one bead has been through the principles loop end-to-end.
 - **Three CLI providers** installed and authenticated on the host running the pool: `codex`, `claude`, `gemini`. Each provider is installed separately; check the Gas City installation docs (or each provider's own docs) for current install instructions. Verify each:
 
-  **copy and paste**
+  **Copy and paste**
 
   ```bash
   codex --version
@@ -44,7 +44,7 @@ By the end of this exercise you will have:
   If any provider is missing, you can either skip H4 and stay on the single-vendor flow, or run with two providers (majority rule still works at 2/2; at 1/1 the synthesizer always says `false` — see Troubleshooting).
 - You're inside the rig directory. If a fresh shell, re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and `$ARTIFACTS_PATH` per [00.3](../progression/00.3-setup-foundation.md), then:
 
-  **copy and paste**
+  **Copy and paste**
 
   ```bash
   cd "$ASCII_ART_PATH"
@@ -103,7 +103,7 @@ The other three domain lanes (design, testing, docs) continue to use their H2 si
 
 Inspect the pack:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 ls "$ARTIFACTS_PATH/packs/multi-vendor-rig/"
@@ -122,7 +122,7 @@ What to notice:
 
 Copy the pack into the city's pack directory:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cp -r "$ARTIFACTS_PATH/packs/multi-vendor-rig" \
@@ -131,7 +131,7 @@ cp -r "$ARTIFACTS_PATH/packs/multi-vendor-rig" \
 
 Register the new import at rig scope:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$FACTORY_PATH"
@@ -140,26 +140,42 @@ gc import add --rig ascii-art .gc/system/packs/multi-vendor-rig
 gc import remove --rig ascii-art principles-loop-rig
 ```
 
-Verify and restart:
+The rig should now import `multi-vendor-rig` and no longer import `principles-loop-rig`.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc import list --rig ascii-art
-# Expect: multi-vendor-rig (no principles-loop-rig row).
+```
 
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
+```
+
+Restart and confirm the new formulas loaded — four rows.
+
+**Copy and paste**
+
+```bash
 gc restart
 
 gc formula list \
   | grep -E "mol-vendor-(codex|claude|gemini)-review|mol-synthesize-reviews"
-# Expect: four rows.
+```
+
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
 ```
 
 ### 2. Sling a clean bead through the standard pipeline up to the polecat
 
 Same recipe as Hardening 1 / 2 / 3 up through the polecat publishing a branch.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$ASCII_ART_PATH"
@@ -184,7 +200,7 @@ When the polecat has pushed a branch and the bead is back at the refinery (with 
 
 Run all three slings without waiting between them. Each spawns a separate session against a different model.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
@@ -195,25 +211,31 @@ gc sling ascii-art/multi-vendor-rig.reviewer-gemini $BEAD_ID --on mol-vendor-gem
 
 Watch:
 
-**copy and paste**
+You should see three reviewer sessions running concurrently.
+
+**Copy and paste**
 
 ```bash
 gc session list
-# Expect: three reviewer sessions running concurrently.
+```
+
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
 ```
 
 Optionally attach to one:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session attach <reviewer-codex-session>
-# Detach with Ctrl+b then d.
 ```
 
 Watch the bead's metadata flip as each vendor stamps its verdict:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 watch -n 5 'gc bd show $BEAD_ID | grep -E "vendor_"'
@@ -236,7 +258,7 @@ The order they finish is non-deterministic. Ordering doesn't matter for the synt
 
 After all three vendors have stamped, sling the synthesizer.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
@@ -245,7 +267,7 @@ gc sling ascii-art/multi-vendor-rig.synthesizer $BEAD_ID --on mol-synthesize-rev
 
 Watch:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session list
@@ -254,7 +276,7 @@ gc session attach <synthesizer-session>
 
 The synthesizer reads the three verdicts, computes the count, and stamps `adr_approved` plus `synthesizer_summary`:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc bd show $BEAD_ID | grep -E "adr_approved|synthesizer_summary"
@@ -278,7 +300,7 @@ synthesizer_summary:    Codex and Claude approve. Gemini rejected
 
 Run the three single-vendor lane reviewers from H2 (manually, or let the refinery's `verify-reviewers` auto-dispatch them).
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
@@ -289,7 +311,7 @@ gc sling ascii-art/multi-vendor-rig.docs-reviewer    $BEAD_ID --on mol-docs-revi
 
 The refinery's next patrol sees all four `*_approved` fields set and proceeds to `approval-review` and `merge-push`. Wait for the PR:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 watch -n 5 'gc bd show $BEAD_ID | grep -E "pr_url|pr_number"'
@@ -305,7 +327,7 @@ gh pr merge "$PR" --merge
 
 Hand-craft a violation-rich implementation on `Implement o.md` so the three vendors honestly disagree with the diff. Stage a bad version of the file before the polecat runs:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$ASCII_ART_PATH"
@@ -324,7 +346,7 @@ git add ascii/o.md && git commit -m "implement o (deliberately weak)" && git pus
 
 Run the standard pipeline:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
@@ -350,7 +372,7 @@ What you should see:
 - All three vendors honestly score the diff. Probably 2-3 of them reject (the file isn't really an "o" — it's a square — and the ADR rules will catch that).
 - After all three stamp, sling the synthesizer:
 
-  **copy and paste**
+  **Copy and paste**
 
   ```bash
   gc sling ascii-art/multi-vendor-rig.synthesizer $WEAK_BEAD --on mol-synthesize-reviews
@@ -362,7 +384,7 @@ What you should see:
 
 Inspect the bead's notes after the loop runs:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc bd show $WEAK_BEAD
@@ -388,7 +410,7 @@ You've got the shape now.
 
 Confirm the four new formulas loaded:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc formula list \
@@ -404,7 +426,7 @@ gc formula list \
 
 After running the three vendors and the synthesizer on `$BEAD_ID`, confirm the bead carries three vendor verdicts plus a synthesizer summary plus `adr_approved`:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc bd show $BEAD_ID | grep -E "vendor_|synthesizer_summary|adr_approved"
@@ -419,7 +441,7 @@ gc bd show $BEAD_ID | grep -E "vendor_|synthesizer_summary|adr_approved"
 
 Confirm the letter landed on `origin/main`:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 git fetch origin && git pull

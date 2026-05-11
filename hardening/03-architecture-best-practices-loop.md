@@ -146,7 +146,7 @@ cross-lane cap).
 
 Inspect the pack:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 ls "$ARTIFACTS_PATH/packs/principles-loop-rig/"
@@ -171,7 +171,7 @@ What to notice:
 
 Copy the pack into the city's pack directory:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cp -r "$ARTIFACTS_PATH/packs/principles-loop-rig" \
@@ -180,7 +180,7 @@ cp -r "$ARTIFACTS_PATH/packs/principles-loop-rig" \
 
 Register the new import at rig scope:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$FACTORY_PATH"
@@ -189,25 +189,63 @@ gc import add --rig ascii-art .gc/system/packs/principles-loop-rig
 gc import remove --rig ascii-art domain-reviewers-rig
 ```
 
-Verify and restart:
+The rig should now import `principles-loop-rig` and no longer import `domain-reviewers-rig`.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc import list --rig ascii-art
-# Expect: principles-loop-rig (no domain-reviewers-rig row).
+```
 
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
+```
+
+Restart and confirm the new formula loaded — one row for `mol-principles-review`.
+
+**Copy and paste**
+
+```bash
 gc restart
 
 gc formula list | grep mol-principles-review
-# Expect: one row.
+```
 
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
+```
+
+Check the aggregator script exists, and run it bare to confirm it prints a usage message and exits 2.
+
+**Copy and paste**
+
+```bash
 ls "$FACTORY_PATH/.gc/system/packs/principles-loop-rig/checks/aggregate-score.sh"
 bash "$FACTORY_PATH/.gc/system/packs/principles-loop-rig/checks/aggregate-score.sh"
-# Expect: usage message, exit 2.
+```
 
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
+```
+
+Confirm PyYAML is installed (a version string prints). If you get `ModuleNotFoundError`, run `python3 -m pip install pyyaml`.
+
+**Copy and paste**
+
+```bash
 python3 -c "import yaml; print(yaml.__version__)"
-# Expect: a version string. If error, run `python3 -m pip install pyyaml`.
+```
+
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
 ```
 
 ### 2. Author and commit the principles schema doc
@@ -218,7 +256,7 @@ the audit trail. Drop the version from the pack into
 `docs/reviews/principles-schema.md` if your pack ships one; if
 not, write a short one inline:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$ASCII_ART_PATH"
@@ -254,7 +292,7 @@ git push origin main
 Same recipe as Hardening 1 and 2, up to and including the polecat
 publishing a branch:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd "$ASCII_ART_PATH"
@@ -278,7 +316,7 @@ manually sling the adr-reviewer with the principles formula
 **instead of** waiting for the refinery's auto-dispatch (which would
 sling `mol-adr-review`):
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
@@ -291,18 +329,17 @@ The adr-reviewer scores 23 principles, appends to the YAML, runs
 the aggregator. On a clean diff, aggregate clears 0.9 in iteration
 1.
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc session list
 gc session attach <adr-reviewer-session>
-# Detach with Ctrl+b then d.
 ```
 
 When the session ends, inspect the YAML and the per-principle
 findings:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -312,19 +349,26 @@ ls docs/reviews/principles/$BEAD_ID.*.md
 
 Run the aggregator by hand to see the JSON line it emitted:
 
-**copy and paste**
+You should see `rc=0` and a JSON line on stdout with `aggregate>=0.9`.
+
+**Copy and paste**
 
 ```bash
 $FACTORY_PATH/.gc/system/packs/principles-loop-rig/checks/aggregate-score.sh \
   docs/reviews/principles.$BEAD_ID.yaml --target=0.9 --min-per-principle=3
 echo "rc=$?"
-# Expect: rc=0; JSON line on stdout with aggregate>=0.9.
+```
+
+**Expected output**
+
+```text
+TBD: capture actual terminal output during smoke test
 ```
 
 Confirm `adr_approved=true` and `principles_review_passed=true` are
 stamped on the bead:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 gc bd show $BEAD_ID | grep -E "adr_approved|principles_review_passed"
@@ -333,7 +377,7 @@ gc bd show $BEAD_ID | grep -E "adr_approved|principles_review_passed"
 Run the other three lane reviewers (manually, or wait for the
 refinery's auto-dispatch — both work):
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
@@ -344,7 +388,7 @@ gc sling ascii-art/principles-loop-rig.docs-reviewer    $BEAD_ID --on mol-docs-r
 
 Wait for the refinery to aggregate and publish the PR:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 watch -n 5 'gc bd show $BEAD_ID'
@@ -362,7 +406,7 @@ The demonstration. Hand-craft a violation-rich implementation on
 `Implement m.md` so the loop has something to iterate against.
 Stage a bad version of the file before the polecat runs:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -382,7 +426,7 @@ git add ascii/m.md && git commit -m "implement m (deliberately weak)" && git pus
 Run the standard pipeline so the polecat opens the PR around the
 bad code:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
@@ -417,16 +461,21 @@ What you should see across iterations:
 
 Watch the YAML grow:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 watch -n 5 'wc -l docs/reviews/principles.$WEAK_BEAD.yaml'
-# Expect: ~140 lines after iteration 1, ~280 after 2, ~420 after 3.
+```
+
+**Expected output**
+
+```text
+~140 lines after iteration 1, ~280 after 2, ~420 after 3.
 ```
 
 Run the aggregator between iterations:
 
-**copy and paste**
+**Copy and paste**
 
 ```bash
 cd $ASCII_ART_PATH
@@ -464,27 +513,47 @@ What's still missing:
 
 ## Verification
 
-**copy and paste**
+Pack is installed and the formula is loaded.
+
+**Copy and paste**
 
 ```bash
-# 1. Pack is installed and the formula is loaded.
 gc formula list | grep mol-principles-review
 ls "$FACTORY_PATH/.gc/system/packs/principles-loop-rig/checks/aggregate-score.sh"
 python3 -c "import yaml" && echo "PyYAML ok"
+```
 
-# 2. After slinging on a clean bead: 23 rows in the YAML and PASS.
+After slinging on a clean bead, 23 rows in the YAML and PASS.
+
+**Copy and paste**
+
+```bash
 wc -l docs/reviews/principles.$BEAD_ID.yaml
 $FACTORY_PATH/.gc/system/packs/principles-loop-rig/checks/aggregate-score.sh \
   docs/reviews/principles.$BEAD_ID.yaml
 echo "rc=$?"
-# Expect: ~140 lines (23 rows × 6 fields), rc=0.
+```
 
-# 3. After slinging on the weak bead: at least 2 iterations of rows;
-#    final outcome PASS or escalation mail.
+**Expected output**
+
+```text
+~140 lines (23 rows × 6 fields), rc=0.
+```
+
+After slinging on the weak bead, at least 2 iterations of rows; final outcome PASS or escalation mail.
+
+**Copy and paste**
+
+```bash
 wc -l docs/reviews/principles.$WEAK_BEAD.yaml
 gc bd show $WEAK_BEAD | grep -E "principles_review_passed|adr_approved"
+```
 
-# 4. Per-principle findings exist.
+Per-principle findings exist.
+
+**Copy and paste**
+
+```bash
 ls docs/reviews/principles/$BEAD_ID.*.md | head -5
 ```
 
