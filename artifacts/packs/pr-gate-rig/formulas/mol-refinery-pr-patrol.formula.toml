@@ -1,0 +1,154 @@
+description = """
+Refinery patrol variant with an approval gate — the pr-gate version of
+`mol-refinery-patrol`.
+
+Extends `mol-refinery-patrol` and inserts an `approval-review` step
+between `handle-failures` and `merge-push`. The reviewer step is the
+refinery itself acting as approver: it reads the diff and the changed
+files, decides whether the work meets the bead's intent, and either
+clears the bead for PR publish or bounces it back to the polecat pool
+with a rejection_reason. Beads that fail approval never reach the
+merge-push step — no PR is opened.
+
+This formula is poured by the rig refinery on startup. The pr-gate pack
+ships an override of the gastown `refinery` agent prompt that selects
+this formula (instead of `mol-refinery-patrol`) when bootstrapping the
+patrol wisp.
+
+## Decision matrix
+
+| run-tests | approval | outcome |
+|-----------|----------|---------|
+| pass      | pass     | proceed to merge-push (publishes PR if merge_strategy=pr) |
+| pass      | fail     | bead returned to polecat pool with rejection_reason; no PR |
+| fail      | n/a      | inherited handle-failures behavior (kicked back or bug filed) |
+
+Approval criteria are documented in the `approval-review` step
+description below — keep them simple and concrete so the participant
+can reproduce both the pass and the block paths.
+
+## Compatibility
+
+The override of `merge-push` adds `approval-review` to its `needs` list
+so the engine cannot run merge-push concurrently with the gate."""
+formula = "mol-refinery-pr-patrol"
+extends = ["mol-refinery-patrol"]
+version = 1
+
+[[steps]]
+id = "approval-review"
+title = "Refinery acts as approver — clear or block the bead"
+needs = ["handle-failures"]
+description = """
+You are the refinery, but for this step you are also the approver. Read
+the work that the polecat produced and decide whether it should reach
+the PR stage. Approve only what you would be willing to publish.
+
+**1. Read the work bead and pull diff context:**
+```bash
+WORK=${WORK:-$(gc bd list --assignee=$GC_AGENT --status=open \\
+  --exclude-type=epic --limit=1 --json | jq -r '.[0].id // empty')}
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+[ -n "$WORK" ] && gc bd update "$WORK" --status=in_progress
+BRANCH=$(gc bd show $WORK --json | jq -r '.[0].metadata.branch')
+TARGET=$(gc bd show $WORK --json | jq -r '.[0].metadata.target // "main"')
+TARGET_FILE=$(gc bd show $WORK --json | jq -r '.[0].metadata.target_file // empty')
+
+git fetch origin
+DIFF=$(git diff "origin/$TARGET...origin/$BRANCH")
+CHANGED_FILES=$(git diff --name-only "origin/$TARGET...origin/$BRANCH")
+```
+
+**2. Apply the approval checklist.** All checks must pass for the bead
+to be approved. Any failure is a block.
+
+- The diff is non-empty (the polecat actually wrote something).
+- Exactly one file changed, and its path matches `metadata.target_file`
+  (the polecat did not stray off the bead's scope).
+- The new file is non-empty and has substantive content (more than just
+  a heading or whitespace — at minimum a few non-blank lines after the
+  heading).
+- The content is consistent with the bead's intent (e.g. for an
+  `Implement <letter>.md` task, the file should contain a recognizable
+  ASCII rendering of that letter — not unrelated text, not a stub
+  saying "TODO", not the wrong letter).
+- Nothing in the diff looks malicious or obviously wrong (no
+  unrelated config edits, no removed safety files, no secrets).
+
+Use your judgement on the last two checks. The first three are
+mechanical and are the minimum bar.
+
+**3a. APPROVED — every check clears:**
+```bash
+gc bd update $WORK \\
+  --set-metadata refinery_approved=true \\
+  --set-metadata refinery_approval_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+gc bd note $WORK "refinery approval-review: cleared for PR publish."
+```
+Close this step and let `merge-push` run as inherited. In `merge_strategy=pr`
+mode, that publishes a GitHub pull request.
+
+**3b. BLOCKED — any check fails:**
+```bash
+REASON="<one-sentence summary of which check failed and why>"
+
+# Clean up the in-flight rebase artifacts (mirrors the inherited
+# handle-failures kick-back path):
+git rebase --abort 2>/dev/null || true
+git checkout "$TARGET" 2>/dev/null || true
+git branch -D temp 2>/dev/null || true
+
+# Bounce the bead back to the polecat pool with the rejection metadata:
+gc bd update $WORK \\
+  --status=open \\
+  --assignee="" \\
+  --set-metadata refinery_approved=false \\
+  --set-metadata blocked_reason="$REASON" \\
+  --set-metadata rejection_reason="approval-review: $REASON" \\
+  --set-metadata gc.routed_to="${GC_RIG:+$GC_RIG/}{{binding_prefix}}polecat"
+
+gc bd note $WORK "refinery approval-review: BLOCKED. $REASON"
+
+# Mail the operator so the block is visible:
+gc mail send mayor/ -s "BLOCKED at approval gate: $WORK" -m "Bead: $WORK
+Branch: $BRANCH
+Reason: $REASON
+
+The refinery refused to publish a PR. Bead returned to the polecat pool."
+
+# Pour the next patrol iteration before burning, then drain & exit so
+# merge-push does NOT run for this bead:
+NEXT=$(gc bd mol wisp mol-refinery-pr-patrol --root-only \\
+  --var target_branch={{target_branch}} --var rig_name={{rig_name}} \\
+  --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
+gc bd update "$NEXT" --assignee=$GC_AGENT
+CURRENT_WISP=${GC_BEAD_ID:-}
+[ -n "$CURRENT_WISP" ] && gc bd mol burn "$CURRENT_WISP" --force
+gc runtime drain-ack
+exit 0
+```
+
+**Exit criteria:** Either `metadata.refinery_approved=true` is stamped
+and merge-push will run, or the bead is back in the polecat pool with
+`metadata.refinery_approved=false` and this wisp has been burnt."""
+
+# Override the inherited merge-push step's `needs` so it cannot run
+# concurrently with approval-review. The body is otherwise inherited
+# unchanged from mol-refinery-patrol — re-declaring `id = "merge-push"`
+# with new metadata pulls the inherited body forward and only modifies
+# the dependency edge.
+[[steps]]
+id = "merge-push"
+title = "Merge or publish PR (gated on approval-review)"
+needs = ["handle-failures", "approval-review"]
+description = """
+Inherited from `mol-refinery-patrol`. The only change in this override
+is the added `approval-review` dependency: this step cannot start until
+the approval gate has cleared the bead.
+
+If `approval-review` blocked the bead, this wisp was burnt before
+reaching here and merge-push is never invoked. If approval cleared,
+proceed exactly as the inherited step describes — direct merge for
+`merge_strategy=direct`, PR publish for `merge_strategy=pr`/`mr`.
+
+Refer to the inherited step body for the full merge/publish logic."""

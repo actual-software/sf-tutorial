@@ -1,0 +1,75 @@
+description = """
+Design-lane review of a polecat's feature branch. Poured by the
+design-reviewer agent. Reads the diff against the H1 design-lead's
+spec at `metadata.design_doc` plus any `*DESIGN*` ADRs.
+
+Read-only. Writes only design-lane verdict metadata
+(design_approved, design_feedback).
+"""
+
+formula = "mol-design-review"
+version = 1
+
+[vars]
+[vars.issue]
+description = "Bead with metadata.branch and metadata.design_doc"
+required = true
+
+[[steps]]
+id = "load-context"
+title = "Read bead, diff, and design context"
+description = """
+```bash
+gc prime
+bd prime
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+gc bd update {{issue}} --status=in_progress
+gc bd show {{issue}}
+BRANCH=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.branch')
+TARGET=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.target // \"main\"')
+DESIGN_DOC=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.design_doc // empty')
+git fetch origin
+git diff \"origin/$TARGET...origin/$BRANCH\"
+[ -n \"$DESIGN_DOC\" ] && [ -f \"$DESIGN_DOC\" ] && cat \"$DESIGN_DOC\"
+find docs/decision-records -iname '*DESIGN*' -name '*.md' -print0 \\
+  | xargs -0 -I{} sh -c 'echo \"=== {} ===\"; cat \"{}\"' 2>/dev/null || true
+```
+If design_doc is unset or missing, defer (stamp design_approved=true,
+note 'no design spec; deferring')."""
+
+[[steps]]
+id = "review-and-record"
+title = "Decide approve/reject for the design lane, reassign to refinery"
+needs = ["load-context"]
+description = """
+**APPROVED:**
+```bash
+gc bd update {{issue}} --set-metadata design_approved=true
+gc bd note {{issue}} \"design-reviewer: APPROVED.\"
+```
+
+**REJECTED:**
+```bash
+FEEDBACK=\"<sentence(s) citing the design-spec section and the concern>\"
+gc bd update {{issue}} --set-metadata design_approved=false \\
+  --set-metadata design_feedback=\"$FEEDBACK\"
+gc bd note {{issue}} \"design-reviewer: REJECTED. $FEEDBACK\"
+```
+
+Reassign:
+```bash
+REFINERY_TARGET=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery\"
+gc bd update {{issue}} --status=open --assignee=\"$REFINERY_TARGET\" \\
+  --set-metadata gc.routed_to=\"$REFINERY_TARGET\"
+```
+**Exit criterion:** design_approved set, bead routed to refinery."""
+
+[[steps]]
+id = "drain"
+title = "Signal completion"
+needs = ["review-and-record"]
+description = """
+```bash
+gc runtime drain-ack
+```
+Run this command and nothing else."""

@@ -1,0 +1,347 @@
+# Branch protection
+
+« [previous: 02 First review loop](./02-first-review-loop.md) | [next: 04 Architect agent](./04-adr-reviewer.md) »
+
+## Contents
+
+- [Objective](#objective)
+- [Prereqs](#prereqs)
+- [Context](#context)
+- [Walkthrough](#walkthrough)
+  - [1. Copy CODEOWNERS into the rig](#1-copy-codeowners-into-the-rig)
+  - [2. Inspect the protection script](#2-inspect-the-protection-script)
+  - [3. Dry-run the script](#3-dry-run-the-script)
+  - [4. Apply the protection](#4-apply-the-protection)
+  - [5. Prove the gate is on (without review)](#5-prove-the-gate-is-on-without-review)
+  - [6. Approve and merge](#6-approve-and-merge)
+  - [7. Reflect](#7-reflect)
+- [Verification](#verification)
+- [Troubleshooting](#troubleshooting)
+- [What's next](#whats-next)
+
+## Objective
+
+By the end of this exercise you will have branch protection on `main` and a ruleset on `epic/*` that blocks merges until a CODEOWNER approves the PR.
+
+## Prereqs
+
+- Page 02 complete: the `factory1` pack is installed, `mol-polecat-pr-work`
+  and `mol-merge-watcher` are in use, and PRs are publishing for slung beads.
+- `gh auth status` succeeds and your account has **admin** permission on the
+  rig's GitHub repo. Without admin, the protection API returns 403.
+- You are sitting in the rig directory. If you opened a fresh shell:
+
+  **copy and paste**
+
+  ```bash
+  cd "$ASCII_ART_PATH"
+  ```
+- `jq` is installed (used by the verification commands below).
+
+## Context
+
+Page 02's reflection named the gap: "the gate is open. Anyone can merge
+that PR with no required reviewers and no required CI." This page fixes
+the **reviewers** half. Branch protection turns merging into a gated
+action — GitHub refuses the merge until a CODEOWNER has approved. The
+gate lives in the repo's settings; no formula or agent change required.
+
+The required-CI half needs an actual workflow producing a check, so it
+is forward-referenced to **Hardening 1** and intentionally left out of
+this page.
+
+## Walkthrough
+
+### 1. Copy CODEOWNERS into the rig
+
+Branch protection's `require_code_owner_reviews=true` only enforces against
+people listed in `CODEOWNERS`. The file must live on `main` for GitHub to
+recognize it — if it's only on a feature branch, the gate has nothing to
+match against.
+
+**copy and paste**
+
+```bash
+cd $ASCII_ART_PATH
+mkdir -p .github
+cp $ARTIFACTS_PATH/github/CODEOWNERS \
+  .github/CODEOWNERS
+```
+
+Replace the string `@your-github-handle` with your actual GitHub handle
+(or a team like `@your-org/reviewers`). Then commit and push to `main`:
+
+**copy and paste**
+
+```bash
+export GITHUB_USERNAME=$(gh api user -q '.login')
+
+sed -i '' 's/@your-github-handle/$GITHUB_USERNAME/g' .github/CODEOWNERS
+
+git add .github/CODEOWNERS
+git commit -m "chore: add CODEOWNERS"
+git push origin main
+```
+
+Confirm GitHub picked up the file:
+
+**copy and paste**
+
+```bash
+gh api "repos/$GITHUB_USERNAME/ascii-art/contents/.github/CODEOWNERS" -q '.path'
+```
+
+You should see `.github/CODEOWNERS` echoed back.
+
+### 2. Inspect the protection script
+
+Read the script before running it.
+
+**copy and paste**
+
+```bash
+cat $ARTIFACTS_PATH/github/branch-protection.sh
+```
+
+What to notice:
+
+- **Two operations.** A `PUT` to `repos/<owner>/<repo>/branches/main/protection`
+  installs single-branch protection on `main`. A `POST` (or `PUT`-update if
+  one with the same name exists) to `repos/<owner>/<repo>/rulesets`
+  installs a ruleset matching `epic/*` branches.
+- **Env-var contract.** `OWNER` and `REPO` are required (exit 2 if missing).
+  `MIN_APPROVALS` defaults to `1`. `STATUS_CHECKS` defaults to empty — no
+  required CI yet, by design.
+- **`enforce_admins=true`.** This is the line that makes the gate real.
+  GitHub's classic branch protection treats admins as exempt by default;
+  with `enforce_admins=false`, a `git push origin main` from the repo
+  owner succeeds and the API just records "Bypassed rule violations" in
+  the response. Since the rig owner (you) is a repo admin, leaving this
+  off would silently let the polecat — or any other tool running with
+  your token — short-circuit the entire PR gate. The script forces it
+  on so admins are bound by the same rule as everyone else.
+- **Idempotency key.** The ruleset's `name`
+  (`"Epic branches require human review"`) is the lookup the script uses to
+  decide between create and update. Don't rename it or you'll get duplicates.
+- **Exit codes.** `2` = missing env, `3` = `gh` missing or unauthed,
+  `4` = no admin. These map to the Troubleshooting bullets below.
+
+### 3. Dry-run the script
+
+A dry run prints what would happen without making any API calls. Sanity-check
+`OWNER` and `REPO` before changing real settings.
+
+**copy and paste**
+
+```bash
+export OWNER=$GITHUB_USERNAME
+export REPO=ascii-art
+DRY_RUN=1 $ARTIFACTS_PATH/github/branch-protection.sh
+```
+
+You should see two `[DRY_RUN] gh api ...` lines on stderr (one for `main`,
+one for the ruleset) plus the closing "Branch protection installed" banner.
+No state changes yet.
+
+### 4. Apply the protection
+
+Drop `DRY_RUN`:
+
+**copy and paste**
+
+```bash
+$ARTIFACTS_PATH/github/branch-protection.sh
+```
+
+Confirm in the GitHub UI:
+
+- `https://github.com/$OWNER/$REPO/settings/branches` shows a protection rule
+  on `main` with "Require a pull request before merging" and "Require
+  approvals (1)" both checked, plus "Require review from Code Owners".
+- `https://github.com/$OWNER/$REPO/rules` lists a ruleset named
+  **Epic branches require human review** targeting `refs/heads/epic/*`.
+
+Or check via API:
+
+**copy and paste**
+
+```bash
+gh api "repos/$OWNER/$REPO/branches/main/protection" \
+  | jq '{required_pull_request_reviews, enforce_admins: .enforce_admins.enabled}'
+```
+
+You should see `required_approving_review_count: 1`,
+`require_code_owner_reviews: true`, and `enforce_admins: true`.
+The last one is what stops repo admins (you) from `git push`-ing
+straight to `main`.
+
+### 5. Prove the gate is on (without review)
+
+Sling the next letter — `f.md`:
+
+**copy and paste**
+
+```bash
+export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement f.md$" | awk '{print $2}')
+bd show $BEAD_ID
+
+cd $FACTORY_PATH
+gc sling ascii-art/review-loop-rig.polecat $BEAD_ID --on mol-polecat-pr
+```
+
+Watch the bead go through the status changes, and attach to the
+polecat and refinery sessions to see the PR being published. Then,
+when `pr_number` is set, attempt to merge **without a review**:
+
+**copy and paste**
+
+```bash
+cd $ASCII_ART_PATH
+export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
+gh pr merge "$PR" --merge
+```
+
+**Expected output**
+
+```text
+X Pull request <your-github-username>/ascii-art#N is not mergeable: the base branch policy prohibits the merge.
+```
+
+You may also see `At least 1 approving review is required by reviewers
+with write access` or `Required review from a code owner has not been
+provided`. Any of those mean the gate is doing its job. Leave the PR
+open — the next step approves it.
+
+### 6. Approve and merge
+
+Open the PR for review:
+
+**copy and paste**
+
+```bash
+gh pr view "$PR" --web
+```
+
+You must be a CODEOWNER for the approval to count. If you have another user
+that can review and approve, please have them do so. If not, feel free to
+check the override box first, then merge via the GitHub UI.
+
+Confirm the merge landed on `main`:
+
+**copy and paste**
+
+```bash
+git fetch origin && git pull
+git log --oneline origin/main -1
+ls ascii/ | grep -i 'f'
+```
+
+You should see a new merge (or squash) commit on `origin/main` and the
+`f`-letter file present in `ascii/`.
+
+### 7. Reflect
+
+**What changed.** A human — or another agent acting as a CODEOWNER — must
+approve every PR before it can merge to `main`. Direct merges are gone,
+including for repo admins: `enforce_admins=true` binds the rig owner to
+the same rule. The polecat publishes a PR, but the PR cannot land until
+a real review sits on it. The gate is no longer just a surface; it is a
+guard.
+
+**What's still missing.** Two things. First, there is no automated check
+for ADR adherence — a human has to remember to compare every diff against
+`0001.ADR.ASCII.md`, and humans forget. **Page 04 — ADR reviewer** adds
+an AI reviewer that runs `gh pr review` automatically against that ADR,
+so every PR receives a structured ADR check before the human looks.
+Second, no CI status check is required. A reviewer could approve a PR
+with broken tests and the merge would still go through. **Hardening 1 —
+Required CI** wires a workflow into branch protection so failing tests
+block the merge regardless of approvals.
+
+## Verification
+
+- `gh api "repos/$OWNER/$REPO/branches/main/protection" | jq '.required_pull_request_reviews.required_approving_review_count'`
+  returns `1`.
+- `gh api "repos/$OWNER/$REPO/branches/main/protection" | jq '.required_pull_request_reviews.require_code_owner_reviews'`
+  returns `true`.
+- `gh api "repos/$OWNER/$REPO/branches/main/protection" | jq '.enforce_admins.enabled'`
+  returns `true`. Without this, repo admins (the rig owner) can
+  `git push origin main` directly and bypass the PR gate; GitHub
+  records "Bypassed rule violations" but accepts the push.
+- A direct push to `main` from an admin-token clone fails:
+
+  **Example**
+
+  ```bash
+  git push origin <some-sha>:main
+  # ! [remote rejected] <sha> -> main (protected branch hook declined)
+  ```
+- The `epic/*` ruleset exists:
+
+  **copy and paste**
+
+  ```bash
+  gh api "repos/$OWNER/$REPO/rulesets" \
+    | jq '.[] | select(.name=="Epic branches require human review") | {id, target, enforcement}'
+  ```
+  returns one object with `target: "branch"` and `enforcement: "active"`.
+- `gh pr merge "$PR" --merge` against an unreviewed PR fails with a clear
+  "review required" / "base branch policy prohibits the merge" error.
+- After `gh pr review "$PR" --approve` from a CODEOWNER, `gh pr merge
+  "$PR" --merge` succeeds.
+- The merged file (`ascii/f*`) is on `origin/main`.
+
+## Troubleshooting
+
+- **Exit 2.** `OWNER` or `REPO` not exported. Run
+  `export OWNER=your-github-org-or-user REPO=ascii-art` and re-run.
+- **Exit 3.** `gh` missing or unauthed. Run `gh auth login`, then
+  `gh auth status`.
+- **Exit 4.** Your account is not admin on the repo. Use a repo you own,
+  or ask an admin to grant rights via
+  `Settings → Collaborators and teams → Add → Admin`.
+
+- **`gh pr merge` succeeds without a review** (gate not enforcing).
+  Three things to check, in order:
+  1. CODEOWNERS is on `main` and lists your handle:
+     `gh api "repos/$OWNER/$REPO/contents/.github/CODEOWNERS" -q '.path'`
+     must echo `.github/CODEOWNERS`.
+  2. Code-owner review is required:
+     `gh api ".../branches/main/protection" | jq '.required_pull_request_reviews.require_code_owner_reviews'`
+     must be `true`.
+  3. Admins are bound by the rule:
+     `gh api ".../branches/main/protection" | jq '.enforce_admins.enabled'`
+     must be `true`. If it's `false`, an older version of the script ran
+     (which set it explicitly off). Re-run `branch-protection.sh` to fix
+     it, or apply just that one field:
+     `gh api -X POST repos/$OWNER/$REPO/branches/main/protection/enforce_admins`.
+
+- **`gh pr review --approve` fails with "can't approve own PR".** GitHub
+  refuses to let a PR's author approve it. The polecat published this PR
+  as the rig's GitHub identity, which is typically your own account.
+  Workarounds, in order of preference: (1) have a second GitHub account
+  or teammate added as a CODEOWNER approve the PR; (2) configure the rig
+  to use a separate bot account so author and reviewer differ; (3) as a
+  last resort for a solo learner, temporarily set `MIN_APPROVALS=0` and
+  re-run the script for this one merge, then re-tighten immediately. The
+  third option defeats the gate — only use it to unblock the walkthrough.
+  Page 04's AI reviewer does not solve this either; GitHub also refuses
+  reviews from the PR-author identity. Plan for a separate approver
+  identity before relying on this gate in real work.
+
+- **Ruleset already exists with the same name.** The script handles this
+  via the `PUT`-update path. If you see a duplicate in
+  `https://github.com/$OWNER/$REPO/rules`, you renamed the ruleset
+  between runs. Rename it back to **Epic branches require human review**
+  (the script's idempotency key) and delete the duplicate manually.
+
+- **`gh pr merge` fails with "required status check" before any review.**
+  You set `STATUS_CHECKS` on a previous run and there's no workflow
+  producing that context. Re-run the script with `STATUS_CHECKS=""` (or
+  unset it) to clear the requirement until Hardening 1.
+
+## What's next
+
+Continue to [ADR reviewer](./04-adr-reviewer.md).
+
+« [previous: 02 First review loop](./02-first-review-loop.md) | [next: 04 Architect agent](./04-adr-reviewer.md) »

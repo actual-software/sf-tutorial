@@ -1,0 +1,14 @@
+# CODEOWNERS for the ascii-art rig.
+# Combined with branch protection (require_code_owner_reviews=true), this
+# enforces "human approval required" on protected branches — agent reviews
+# alone cannot satisfy the merge gate.
+#
+# Replace @your-github-handle with your own handle (or a team like @org/team).
+# You are the code owner for the entire repo. Add finer-grained rules below
+# if you want different reviewers for docs/, tests/, etc.
+
+# Default owner for everything
+*       @your-github-handle
+
+# Locked decision records — extra-careful reviews welcome
+/docs/decision-records/*    @your-github-handle

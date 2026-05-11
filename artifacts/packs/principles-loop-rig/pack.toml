@@ -1,0 +1,39 @@
+# principles-loop-rig — rig-scoped pack that adds depth to the ADR
+# reviewer lane: a per-principle scoring loop that scores every
+# polecat diff against 23 canonical Gas City architecture
+# principles, with an append-only audit trail per bead. Installed
+# in Hardening 3.
+#
+# What this pack contributes:
+#   1. `mol-principles-review` — replaces `mol-adr-review` as the
+#      formula the adr-reviewer pours. Scores the diff against 23
+#      principles (0-5 per principle), appends one row per
+#      principle to `docs/reviews/principles.<bead-id>.yaml`,
+#      writes detailed per-principle findings to
+#      `docs/reviews/principles/<bead-id>.<slug>.md`. The
+#      aggregator decides PASS / CONTINUE / ESCALATE based on
+#      aggregate score and minimum-per-principle floor.
+#   2. `checks/aggregate-score.sh` — reads the YAML, computes
+#      latest-row-wins aggregate, exits 0 (PASS), 1 (CONTINUE), or
+#      2 (ESCALATE).
+#   3. `docs/reviews/principles-schema.md` — the schema doc the
+#      reviewer prompt cites; lives in the rig (not the pack).
+#
+# Self-pour: when `aggregate-score.sh` exits 1 (CONTINUE), the
+# formula re-pours itself with `iteration` incremented. Cap at 3
+# iterations; on the 3rd CONTINUE, escalate to operator.
+#
+# Install:
+#   gc import add --rig <rig-name> .gc/system/packs/principles-loop-rig
+#   gc import remove --rig <rig-name> domain-reviewers-rig
+#
+# principles-loop-rig imports domain-reviewers-rig directly, so
+# the four reviewer agents and the new refinery patrol from H2
+# remain available transitively.
+
+[pack]
+name = "principles-loop-rig"
+schema = 1
+
+[imports.domain-reviewers-rig]
+source = "../domain-reviewers-rig"

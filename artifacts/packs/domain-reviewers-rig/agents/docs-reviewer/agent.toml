@@ -1,0 +1,11 @@
+# Docs Reviewer — reviews polecat diffs against the docs outline.
+#
+# Lane: metadata.docs_outline (the H1 doc-lead's outline) plus
+# `README.md` and `docs/current/`. Stays in its lane.
+
+scope = "rig"
+prompt_template = "agents/docs-reviewer/prompt.template.md"
+nudge = "Check your hook for new branches to docs-review."
+idle_timeout = "30m"
+min_active_sessions = 0
+max_active_sessions = 2

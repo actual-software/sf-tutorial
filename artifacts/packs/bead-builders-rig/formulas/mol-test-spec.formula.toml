@@ -1,0 +1,72 @@
+description = """
+Pre-implementation test plan for a bead.
+
+Poured by the test-lead agent on each assigned bead. Reads the bead
+and the rig's existing testing docs (testing ADRs,
+`docs/current/TESTING.md` if present), drafts a focused test plan at
+`docs/testing/<bead-id>.md`, and stamps
+`metadata.test_plan=<path>` on the bead.
+
+Read-only with respect to source code and the bead's title /
+description. Writes one new file under `docs/testing/` and one
+metadata field.
+"""
+
+formula = "mol-test-spec"
+version = 1
+
+[vars]
+[vars.issue]
+description = "Bead to author a test plan for"
+required = true
+
+[[steps]]
+id = "load-context"
+title = "Read the bead and the rig's existing testing docs"
+description = """
+```bash
+gc prime
+bd prime
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+gc bd update {{issue}} --status=in_progress
+gc bd show {{issue}}
+
+find docs/decision-records -iname '*TEST*' -name '*.md' -print0 \\
+  | xargs -0 -I{} sh -c 'echo \"=== {} ===\"; cat \"{}\"'
+[ -f docs/current/TESTING.md ] && cat docs/current/TESTING.md
+```
+
+**Exit criterion:** the bead and the existing testing docs are
+loaded into context."""
+
+[[steps]]
+id = "draft-spec"
+title = "Draft the test plan, write it to disk, stamp the bead"
+needs = ["load-context"]
+description = """
+Walk the bead through the test-plan template in your agent prompt
+and write the plan to `docs/testing/{{issue}}.md`. Cover what
+\"passing\" means, mechanical checks, behavioral checks, out of
+scope. Then stamp:
+
+```bash
+mkdir -p docs/testing
+# (your agent writes the file content with the four sections)
+
+gc bd update {{issue}} --set-metadata test_plan=\"docs/testing/{{issue}}.md\"
+gc bd note {{issue}} \"test-lead: drafted docs/testing/{{issue}}.md\"
+```
+
+**Exit criterion:** `docs/testing/{{issue}}.md` exists and
+`metadata.test_plan` is set."""
+
+[[steps]]
+id = "drain"
+title = "Signal completion"
+needs = ["draft-spec"]
+description = """
+```bash
+gc runtime drain-ack
+```
+
+Run this command and nothing else."""

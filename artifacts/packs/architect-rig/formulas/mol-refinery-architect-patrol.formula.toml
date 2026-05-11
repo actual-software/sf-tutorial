@@ -1,0 +1,240 @@
+description = """
+Refinery patrol with an architect-gated review step in front of the
+approval gate.
+
+Extends `mol-refinery-pr-patrol` and inserts a `verify-architect`
+step between `handle-failures` and `approval-review`. The step is
+flow-control PLUS cycle-cap enforcement — the architect agent does
+the substantive review and writes a verdict; the refinery counts
+rejections, decides when to bounce vs forward, and escalates to the
+mayor when the cap is reached.
+
+The cap is **2 architect rejections**. On a third rejection, the
+refinery forwards the bead to the inherited `approval-review` step
+with a `review_cap_reached=true` mark and a mail to the mayor — the
+architect's verdict is preserved on the bead for the operator and the
+inherited approval gate to read.
+
+Behavior of `verify-architect`:
+
+- If `metadata.architect_approved` is unset, the bead has not yet
+  been reviewed. The refinery reassigns the bead to the architect
+  agent (which pours `mol-architect-review`) and drains; the
+  architect writes a verdict and reassigns the bead back to the
+  refinery, which sees the verdict on the next patrol.
+- If `metadata.architect_approved=false`:
+  - If `review_loops < 2`, increment `review_loops`, bounce the bead
+    back to the polecat pool with `architect_feedback` set as
+    `rejection_reason`, and unset `architect_approved` so the next
+    refinery patrol re-routes the bead through the architect.
+  - If `review_loops >= 2`, mark `review_cap_reached=true`, set
+    `architect_approved=true`, leave `architect_feedback` intact for
+    the operator, mail the mayor, and **fall through** to the
+    `architect_approved=true` branch below. The architect itself
+    never sees the cap — only the refinery does.
+- If `metadata.architect_approved=true` (whether from the architect's
+  own approve verdict or the cap-forced flip above), the step is a
+  no-op and the patrol proceeds to `approval-review` and `merge-push`
+  as inherited from `mol-refinery-pr-patrol`. This is the single
+  proceed gate — once `architect_approved=true` at any point in the
+  step, the patrol continues forward.
+
+This formula is poured by the rig refinery on startup. The
+architect-rig pack ships an override of the refinery agent prompt
+that selects this formula instead of `mol-refinery-pr-patrol`.
+
+## Decision matrix
+
+| architect_approved | review_loops | outcome                                                                                                |
+|--------------------|--------------|--------------------------------------------------------------------------------------------------------|
+| unset              | any          | bead reassigned to architect; this wisp burns                                                          |
+| false              | < 2          | review_loops++; bead bounced to polecat with architect_feedback; burns                                 |
+| false              | >= 2         | review_cap_reached=true; architect_approved force-flipped to true; mail mayor; falls into next row     |
+| true               | any          | no-op; proceed to approval-review and merge-push as inherited                                          |
+
+## Compatibility
+
+`approval-review` and `merge-push` are re-declared with
+`verify-architect` added to their `needs` list so the engine cannot
+run them concurrently with the gate. The step bodies are inherited
+unchanged from `mol-refinery-pr-patrol`.
+"""
+
+formula = "mol-refinery-architect-patrol"
+extends = ["mol-refinery-pr-patrol"]
+version = 1
+
+[[steps]]
+id = "verify-architect"
+title = "Refinery routes through architect; gate on architect's verdict; enforce cap"
+needs = ["handle-failures"]
+description = """
+You are the refinery, but for this step you are flow-control plus
+cycle-cap enforcement. Your jobs are: read the architect's verdict,
+route accordingly, and stop the cycle once the cap is hit. You do NOT
+review the diff yourself in this step — that's the architect's job,
+and the inherited `approval-review` step is the merge-side gate.
+
+**1. Read the work bead, the architect's verdict, and the loop counter:**
+```bash
+WORK=${WORK:-$(gc bd list --assignee=$GC_AGENT --status=open \\
+  --exclude-type=epic --limit=1 --json | jq -r '.[0].id // empty')}
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+[ -n \"$WORK\" ] && gc bd update \"$WORK\" --status=in_progress
+APPROVED=$(gc bd show $WORK --json | jq -r '.[0].metadata.architect_approved // empty')
+FEEDBACK=$(gc bd show $WORK --json | jq -r '.[0].metadata.architect_feedback // empty')
+LOOPS=$(gc bd show $WORK --json | jq -r '.[0].metadata.review_loops // 0')
+```
+
+**2. UNSET — the bead has not been reviewed yet.** Reassign to the
+architect, drain, and exit. The architect will write a verdict and
+hand the bead back to the refinery on the next patrol.
+
+```bash
+if [ -z \"$APPROVED\" ]; then
+  ARCHITECT_TARGET=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}architect\"
+  # Unassign + route through the architect's pool. The reconciler spawns
+  # an architect instance from the routed pool (mirrors polecat). The
+  # architect's prompt query has a fallback that finds work via
+  # gc.routed_to=<role> with assignee unset.
+  gc bd update $WORK --status=open --assignee=\"\" \\
+    --set-metadata gc.routed_to=\"$ARCHITECT_TARGET\"
+  gc bd note $WORK \"verify-architect: routing to architect for review (loop $LOOPS).\"
+
+  # Pour the next patrol iteration before burning, then drain & exit
+  # so approval-review does NOT run for this bead on this patrol:
+  NEXT=$(gc bd mol wisp mol-refinery-architect-patrol --root-only \\
+    --var target_branch={{target_branch}} --var rig_name={{rig_name}} \\
+    --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
+  gc bd update \"$NEXT\" --assignee=$GC_AGENT
+  CURRENT_WISP=${GC_BEAD_ID:-}
+  [ -n \"$CURRENT_WISP\" ] && gc bd mol burn \"$CURRENT_WISP\" --force
+  gc runtime drain-ack
+  exit 0
+fi
+```
+
+**3. REJECTED at the cap — `architect_approved=false` and
+`review_loops >= 2`.** Force-flip `architect_approved` to `true` and
+mail the mayor. Do NOT exit; let the unified approve check below
+fire so the patrol falls through to `approval-review` and
+`merge-push`. The architect's last feedback stays on the bead as
+the durable record of open concerns.
+
+```bash
+if [ \"$APPROVED\" = \"false\" ] && [ \"$LOOPS\" -ge 2 ]; then
+  gc bd update $WORK \\
+    --set-metadata review_cap_reached=true \\
+    --set-metadata architect_approved=true
+  gc bd note $WORK \"verify-architect: review-cycle cap (2) reached after architect rejection ($LOOPS/2). Forwarding to approval-review with open concerns. Last architect feedback: $FEEDBACK\"
+  gc mail send mayor/ -s \"Architect cap reached: $WORK\" -m \"Bead: $WORK
+Last architect feedback: $FEEDBACK
+Loop count: $LOOPS / 2
+
+The architect rejected this bead $LOOPS times. The refinery has forwarded the bead to the merge gates with the architect's concerns preserved as metadata.architect_feedback. Operator review recommended before merge.\"
+  APPROVED=\"true\"   # fall through to the unified approve check below
+fi
+```
+
+**4. REJECTED under the cap — `architect_approved=false` and
+`review_loops < 2`.** Bump the counter and bounce the bead back to
+the polecat pool with the architect's feedback as the rejection
+reason. Unset `architect_approved` so the next refinery patrol
+re-routes the bead through the architect for re-review.
+
+```bash
+if [ \"$APPROVED\" = \"false\" ]; then
+  NEW_LOOPS=$((LOOPS + 1))
+
+  # Clean up the in-flight rebase artifacts (mirrors the inherited
+  # kick-back path):
+  TARGET=$(gc bd show $WORK --json | jq -r '.[0].metadata.target // \"main\"')
+  git rebase --abort 2>/dev/null || true
+  git checkout \"$TARGET\" 2>/dev/null || true
+  git branch -D temp 2>/dev/null || true
+
+  gc bd update $WORK \\
+    --status=open \\
+    --assignee=\"\" \\
+    --unset-metadata architect_approved \\
+    --set-metadata review_loops=\"$NEW_LOOPS\" \\
+    --set-metadata review_feedback=\"$FEEDBACK\" \\
+    --set-metadata rejection_reason=\"architect: $FEEDBACK\" \\
+    --set-metadata gc.routed_to=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}polecat\"
+
+  gc bd note $WORK \"verify-architect: architect rejected the bead (loop $NEW_LOOPS/2). Bouncing to polecat pool. $FEEDBACK\"
+
+  gc mail send mayor/ -s \"Architect rejected: $WORK\" -m \"Bead: $WORK
+Architect feedback: $FEEDBACK
+Loop count: $NEW_LOOPS / 2
+
+The architect found at least one architectural concern. Bead returned to the polecat pool for revision.\"
+
+  # Pour the next patrol iteration before burning, then drain & exit
+  # so approval-review does NOT run for this bead on this patrol:
+  NEXT=$(gc bd mol wisp mol-refinery-architect-patrol --root-only \\
+    --var target_branch={{target_branch}} --var rig_name={{rig_name}} \\
+    --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
+  gc bd update \"$NEXT\" --assignee=$GC_AGENT
+  CURRENT_WISP=${GC_BEAD_ID:-}
+  [ -n \"$CURRENT_WISP\" ] && gc bd mol burn \"$CURRENT_WISP\" --force
+  gc runtime drain-ack
+  exit 0
+fi
+```
+
+**5. APPROVED — `architect_approved=true`.** Single, unified proceed
+gate. Reached either because the architect's own verdict was approve,
+or because step 3 force-flipped the flag at the cap. Either way, the
+patrol falls through to the inherited `approval-review` and
+`merge-push` steps.
+
+```bash
+if [ \"$APPROVED\" = \"true\" ]; then
+  gc bd note $WORK \"verify-architect: architect_approved=true (loop $LOOPS); proceeding to approval-review.\"
+  exit 0
+fi
+```
+
+**Exit criteria:** Either `architect_approved=true` and the patrol is
+proceeding to `approval-review` (whether via the architect's own
+approval or via cap-forced flip), the bead has been routed to the
+architect for first/repeat review (and this wisp burnt), or the bead
+has been bounced to the polecat pool with the architect's feedback
+(and this wisp burnt)."""
+
+# Override approval-review's `needs` so it runs only after the
+# architect has cleared the bead (or this wisp has been burnt by one
+# of the routing branches above). Body is otherwise inherited from
+# `mol-refinery-pr-patrol`.
+
+[[steps]]
+id = "approval-review"
+title = "Refinery acts as approver (after architect verdict)"
+needs = ["handle-failures", "verify-architect"]
+description = """
+Inherited from `mol-refinery-pr-patrol`. The only change in this
+override is the added `verify-architect` dependency: this step cannot
+run until the architect has cleared the bead, the cap has been
+reached and the bead force-forwarded, or this wisp has been burnt by
+one of the architect-routing branches in `verify-architect`.
+
+If `metadata.review_cap_reached=true`, the architect's last rejection
+is preserved at `metadata.architect_feedback`. Treat that as a strong
+signal during your own approval read — a cap-reached bead has open
+architectural concerns even though the refinery has waved
+`architect_approved` to `true` for flow-control purposes.
+
+Refer to the inherited step body for the full approval logic."""
+
+# Same dependency widening for merge-push so the engine schedules it
+# strictly after both gates.
+
+[[steps]]
+id = "merge-push"
+title = "Merge or publish PR (gated on verify-architect and approval-review)"
+needs = ["handle-failures", "verify-architect", "approval-review"]
+description = """
+Inherited from `mol-refinery-pr-patrol`. The only change is the
+added `verify-architect` dependency for safe scheduling — the body is
+otherwise unchanged from the inherited step."""

@@ -1,0 +1,140 @@
+description = """
+Pre-merge architecture review of a polecat's feature branch.
+
+Poured by the architect agent when the refinery's `verify-architect`
+step routes a bead that has not yet been reviewed. The architect reads
+the diff against the rig's ADRs (`docs/decision-records/`) and current
+architecture docs (`docs/current/`), writes a verdict back onto the
+bead, and reassigns the bead to the refinery.
+
+This formula is read-only with respect to the rig: it does NOT push
+code, NOT merge, and NOT close the bead. It writes only the architect's
+verdict (`architect_approved` and `architect_feedback`) on the work bead.
+
+The architect does NOT count review cycles or enforce a loop cap. That
+is the refinery's job in `mol-refinery-architect-patrol` — when the
+architect rejects, the refinery decides whether to bounce the bead
+back to the polecat pool (within the cap) or to forward despite the
+rejection (cap reached) and mail the mayor.
+
+## Decision matrix
+
+| architect verdict | metadata written                            |
+|-------------------|---------------------------------------------|
+| approve           | architect_approved=true                     |
+| reject            | architect_approved=false, architect_feedback |
+
+## Compatibility
+
+`mol-refinery-architect-patrol` (in the same pack) reads
+`architect_approved` and either proceeds with the inherited
+`approval-review` and `merge-push` steps, bounces the bead back to
+the polecat pool with `architect_feedback` as the rejection reason
+(and increments `review_loops`), or — once the cap is hit — forwards
+the bead to the merge gates with a note and a mail to the mayor.
+"""
+
+formula = "mol-architect-review"
+version = 1
+
+[vars]
+[vars.issue]
+description = "Work bead carrying metadata.branch and metadata.target for the feature branch to review"
+required = true
+
+[[steps]]
+id = "load-context"
+title = "Read the bead, the diff, and the architecture docs"
+description = """
+Prime and gather the inputs you need before reviewing.
+
+```bash
+gc prime
+bd prime
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+gc bd update {{issue}} --status=in_progress
+gc bd show {{issue}}
+
+BRANCH=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.branch')
+TARGET=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.target // \"main\"')
+LOOPS=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.review_loops // 0')
+
+git fetch origin
+git diff --name-only \"origin/$TARGET...origin/$BRANCH\"
+git diff \"origin/$TARGET...origin/$BRANCH\"
+
+find docs/decision-records -name '*.md' -print0 \\
+  | xargs -0 -I{} sh -c 'echo \"=== {} ===\"; cat \"{}\"'
+find docs/current -name '*.md' -print0 \\
+  | xargs -0 -I{} sh -c 'echo \"=== {} ===\"; cat \"{}\"' 2>/dev/null || true
+```
+
+`LOOPS` is informational here — the refinery owns the cap. It can
+help you tone the verdict (e.g., on `LOOPS >= 1` you have already
+rejected this bead at least once; check whether the polecat addressed
+your last feedback before rejecting again).
+
+If `BRANCH` is empty or the branch is not fetchable, do not proceed —
+the upstream polecat or refinery did not stamp this bead correctly.
+Mail the mayor describing what is missing, drain, and exit.
+
+**Exit criterion:** the diff and the architecture docs are loaded into
+context, OR you have escalated and exited."""
+
+[[steps]]
+id = "review-and-record"
+title = "Decide approve/reject, write verdict, reassign to refinery"
+needs = ["load-context"]
+description = """
+Read the diff and the architecture docs. Walk every changed file
+against the ADRs in `docs/decision-records/` and the design described
+in `docs/current/`. Your agent prompt holds the full review protocol;
+this step gives you the mechanical write paths.
+
+You write only the verdict — you do NOT increment `review_loops` or
+enforce any cap. The refinery owns those.
+
+**1a. APPROVED — diff is consistent with the architecture:**
+
+```bash
+gc bd update {{issue}} --set-metadata architect_approved=true
+gc bd note {{issue}} \"architect: APPROVED. <one-line rationale citing docs walked>\"
+```
+
+**1b. REJECTED — at least one ADR rule fails or a documented invariant
+is contradicted:**
+
+```bash
+FEEDBACK=\"<one or two sentences citing the failing doc and the concern>\"
+gc bd update {{issue}} \\
+  --set-metadata architect_approved=false \\
+  --set-metadata architect_feedback=\"$FEEDBACK\"
+gc bd note {{issue}} \"architect: REJECTED. $FEEDBACK\"
+```
+
+**2. Reassign to refinery.** Both verdicts route through the refinery
+next; the refinery reads `architect_approved`, increments
+`review_loops` if rejected, and decides whether to bounce or forward.
+
+```bash
+REFINERY_TARGET=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery\"
+gc bd update {{issue}} --status=open --assignee=\"$REFINERY_TARGET\" \\
+  --set-metadata gc.routed_to=\"$REFINERY_TARGET\"
+```
+
+**Exit criterion:** `metadata.architect_approved` is set to `true` or
+`false` on the bead, and the bead is reassigned to the refinery."""
+
+[[steps]]
+id = "drain"
+title = "Signal completion"
+needs = ["review-and-record"]
+description = """
+The verdict is written and the bead is on its way to the refinery.
+Release this session:
+
+```bash
+gc runtime drain-ack
+```
+
+Run this command and nothing else."""

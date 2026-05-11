@@ -1,0 +1,63 @@
+description = """
+ADR-lane vendor review by reviewer-claude. Stamps
+`vendor_claude_approved` / `vendor_claude_feedback`.
+"""
+formula = "mol-vendor-claude-review"
+version = 1
+
+[vars]
+[vars.issue]
+description = "Bead with metadata.branch / metadata.target"
+required = true
+
+[[steps]]
+id = "load-context"
+title = "Read diff and ADR corpus"
+description = """
+```bash
+gc prime
+bd prime
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+gc bd update {{issue}} --status=in_progress
+gc bd show {{issue}}
+BRANCH=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.branch')
+TARGET=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.target // \"main\"')
+git fetch origin
+git diff \"origin/$TARGET...origin/$BRANCH\"
+find docs/decision-records -name '*.md' -print0 \\
+  | xargs -0 -I{} sh -c 'echo \"=== {} ===\"; cat \"{}\"'
+```"""
+
+[[steps]]
+id = "review-and-record"
+title = "Stamp vendor_claude_approved and reassign to refinery"
+needs = ["load-context"]
+description = """
+**APPROVED:**
+```bash
+gc bd update {{issue}} --set-metadata vendor_claude_approved=true
+gc bd note {{issue}} \"reviewer-claude: APPROVED.\"
+```
+
+**REJECTED:**
+```bash
+FEEDBACK=\"<sentence(s)>\"
+gc bd update {{issue}} --set-metadata vendor_claude_approved=false \\
+  --set-metadata vendor_claude_feedback=\"$FEEDBACK\"
+gc bd note {{issue}} \"reviewer-claude: REJECTED. $FEEDBACK\"
+```
+
+```bash
+REFINERY_TARGET=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery\"
+gc bd update {{issue}} --status=open --assignee=\"$REFINERY_TARGET\" \\
+  --set-metadata gc.routed_to=\"$REFINERY_TARGET\"
+```"""
+
+[[steps]]
+id = "drain"
+title = "Signal completion"
+needs = ["review-and-record"]
+description = """
+```bash
+gc runtime drain-ack
+```"""

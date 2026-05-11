@@ -1,0 +1,47 @@
+# multi-vendor-rig — rig-scoped pack that fans out the ADR lane to
+# three vendor-pinned reviewer agents (Codex, Claude, Gemini) plus
+# a synthesizer that fuses the three verdicts into one. Installed
+# in Hardening 4.
+#
+# What this pack contributes:
+#   1. `reviewer-codex`, `reviewer-claude`, `reviewer-gemini` —
+#      three reviewer agents, each with its `provider` field
+#      pinned to a different CLI / API. Each reads the same diff
+#      and the same ADR corpus; each stamps its own
+#      `vendor_<name>_approved` and `vendor_<name>_feedback`.
+#   2. `synthesizer` — reads the three vendor verdicts, applies
+#      majority rule, stamps `adr_approved=true|false` plus
+#      `synthesizer_summary` that distills the three verdicts into
+#      one short paragraph.
+#   3. Four formulas:
+#       - `mol-vendor-codex-review`
+#       - `mol-vendor-claude-review`
+#       - `mol-vendor-gemini-review`
+#       - `mol-synthesize-reviews`
+#
+# This pack supersedes principles-loop-rig's single-vendor
+# adr-reviewer flow with a vendor-diverse fan-out. The other three
+# domain lanes (design, testing, docs) continue to use the H2
+# single-vendor reviewers.
+#
+# Install:
+#   gc import add --rig <rig-name> .gc/system/packs/multi-vendor-rig
+#   gc import remove --rig <rig-name> principles-loop-rig
+#
+# multi-vendor-rig imports principles-loop-rig directly so the H1
+# Leads, H2 design/testing/docs reviewers, H3 principles formula,
+# and the standard polecat / refinery / project-manager flow remain
+# resolvable transitively.
+#
+# REQUIRES: each of the three CLI providers (`codex`, `claude`,
+# `gemini`) installed and authenticated on the host running the
+# pool. If a provider is missing, that vendor lane will fail to
+# spawn — the synthesizer's majority rule still works at two
+# vendors, but at one vendor it always says "iterate".
+
+[pack]
+name = "multi-vendor-rig"
+schema = 1
+
+[imports.principles-loop-rig]
+source = "../principles-loop-rig"

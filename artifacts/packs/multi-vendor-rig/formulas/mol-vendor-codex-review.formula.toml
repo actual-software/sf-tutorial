@@ -1,0 +1,68 @@
+description = """
+ADR-lane vendor review by reviewer-codex. Reads diff and ADR
+corpus, stamps `vendor_codex_approved` and `vendor_codex_feedback`.
+Read-only with respect to source. Sibling formulas
+(`mol-vendor-claude-review`, `mol-vendor-gemini-review`) run in
+parallel against their own vendor slugs.
+"""
+formula = "mol-vendor-codex-review"
+version = 1
+
+[vars]
+[vars.issue]
+description = "Bead with metadata.branch / metadata.target"
+required = true
+
+[[steps]]
+id = "load-context"
+title = "Read diff and ADR corpus"
+description = """
+```bash
+gc prime
+bd prime
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+gc bd update {{issue}} --status=in_progress
+gc bd show {{issue}}
+BRANCH=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.branch')
+TARGET=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.target // \"main\"')
+git fetch origin
+git diff \"origin/$TARGET...origin/$BRANCH\"
+find docs/decision-records -name '*.md' -print0 \\
+  | xargs -0 -I{} sh -c 'echo \"=== {} ===\"; cat \"{}\"'
+```
+**Exit criterion:** diff and ADR corpus loaded."""
+
+[[steps]]
+id = "review-and-record"
+title = "Stamp vendor_codex_approved and reassign to refinery"
+needs = ["load-context"]
+description = """
+**APPROVED:**
+```bash
+gc bd update {{issue}} --set-metadata vendor_codex_approved=true
+gc bd note {{issue}} \"reviewer-codex: APPROVED. <rationale>\"
+```
+
+**REJECTED:**
+```bash
+FEEDBACK=\"<sentence(s) citing the failing ADR>\"
+gc bd update {{issue}} --set-metadata vendor_codex_approved=false \\
+  --set-metadata vendor_codex_feedback=\"$FEEDBACK\"
+gc bd note {{issue}} \"reviewer-codex: REJECTED. $FEEDBACK\"
+```
+
+```bash
+REFINERY_TARGET=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery\"
+gc bd update {{issue}} --status=open --assignee=\"$REFINERY_TARGET\" \\
+  --set-metadata gc.routed_to=\"$REFINERY_TARGET\"
+```
+**Exit criterion:** vendor_codex_approved set, bead routed to refinery."""
+
+[[steps]]
+id = "drain"
+title = "Signal completion"
+needs = ["review-and-record"]
+description = """
+```bash
+gc runtime drain-ack
+```"""

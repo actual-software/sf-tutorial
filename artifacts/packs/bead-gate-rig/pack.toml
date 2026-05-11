@@ -1,0 +1,46 @@
+# bead-gate-rig — rig-scoped pack that places a `project-manager`
+# agent at the front of the factory. The project-manager runs
+# conformity checks on each bead BEFORE any polecat is allowed to
+# claim it. Installed in Progression page 05.1.
+#
+# What this pack contributes:
+#   1. `project-manager` — a new rig-scoped agent (scope = "rig",
+#      pool min=0/max=1) that reads each bead's title, description,
+#      and metadata and decides whether the bead is well-formed
+#      enough for a polecat to start work on it.
+#   2. `mol-bead-review` — formula poured by the project-manager on
+#      each assigned bead. PASS → stamp `bead_review_passed=true`,
+#      route to the polecat pool. FAIL → set bead status to
+#      `blocked`, write the failing checks as notes, mail operator,
+#      and leave the bead for the human to fix and re-route.
+#
+# Install (sits on top of architect-rig):
+#   gc import add --rig <rig-name> .gc/system/packs/bead-gate-rig
+#   gc import remove --rig <rig-name> architect-rig
+#
+# bead-gate-rig imports architect-rig, so the architect agent and
+# the post-implementation review flow remain resolvable. The
+# project-manager is a brand-new agent, so this pack does NOT need
+# any [[patches.agent]] blocks. It does not change the polecat,
+# refinery, or architect prompts.
+#
+# Leave pr-gate-city in place at city scope. The mayor's pr-gate
+# guidance is for the post-PM polecat dispatch and is unchanged; the
+# new entry point — `gc sling <rig>/project-manager <bead>
+# --on mol-bead-review` — is taught in the lesson rather than
+# patched into the mayor's prompt.
+
+[pack]
+name = "bead-gate-rig"
+schema = 1
+
+# ── IMPORTS ───────────────────────────────────────────────────────────
+# The project-manager is a brand-new agent and `mol-bead-review`
+# extends nothing, so this pack does not strictly need any imports
+# for resolution. We import architect-rig explicitly so that when it
+# is removed from the rig's *direct* imports per the install
+# instructions above, the architect/refinery formulas remain
+# resolvable through this pack's transitive dependency chain.
+
+[imports.architect-rig]
+source = "../architect-rig"

@@ -1,0 +1,105 @@
+description = """
+Polecat PR-mode variant — feature-branch lifecycle that asks the refinery
+to publish a PR instead of fast-forwarding into {{base_branch}}.
+
+Extends `mol-polecat-work` and replaces the `submit-and-exit` step with
+a version that includes a single new execution:
+```bash
+-STRAT=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.merge_strategy // empty')
+-if [ -z "$STRAT" ]; then
+-  gc bd update {{issue}} --set-metadata merge_strategy=pr
+-fi
+```
+
+This step writes `metadata.merge_strategy=pr` onto the
+work bead if it is not already set. The OOTB `mol-refinery-patrol` (and the
+pr-gate override `mol-refinery-pr-patrol`) read that key at patrol time
+and switch from direct-merge to PR publish.
+"""
+
+formula = "mol-polecat-pr"
+extends = ["mol-polecat-work"]
+version = 1
+
+[[steps]]
+id = "submit-and-exit"
+title = "Submit work to refinery and exit"
+needs = ["self-review"]
+description = """
+Hand off your work and self-clean. You cease to exist after this step.
+
+**1. Final clean-state verification (safeguard):**
+```bash
+git status --porcelain
+```
+If ANY output (untracked files, uncommitted changes):
+```bash
+git add -A && git commit -m "chore: capture remaining work ({{issue}})"
+```
+This is a belt-and-suspenders check — self-review should have caught this,
+but we never push with untracked work left behind.
+
+**2. Push your branch:**
+```bash
+git push origin HEAD
+```
+
+**3. Clean up local branch (prevent stale branch accumulation):**
+```bash
+BRANCH=$(git branch --show-current)
+git checkout --detach                 # Detach so we can delete the branch
+git branch -D "$BRANCH"              # Branch is pushed; refinery owns it now
+```
+
+**4. Update metadata on the work bead:**
+```bash
+gc bd update {{issue}} \
+  --set-metadata target={{base_branch}} \
+  --notes "Implemented: <brief summary>"
+```
+
+```bash
+STRAT=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.merge_strategy // empty')
+if [ -z "$STRAT" ]; then
+  gc bd update {{issue}} --set-metadata merge_strategy=pr
+fi
+```
+Branch was recorded in workspace-setup and is already in metadata.
+This adds the target for the refinery. If an existing pull request was
+provided by the caller, `metadata.existing_pr` is preserved for refinery
+validation. The refinery records canonical `pr_url` only after verifying
+the PR is open and matches the branch, base, and origin repository.
+
+**5. Reassign to refinery:**
+```bash
+REFINERY_TARGET="${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery"
+gc bd update {{issue}} --status=open --assignee="$REFINERY_TARGET" --set-metadata gc.routed_to="$REFINERY_TARGET"
+```
+
+`${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery` resolves to
+`$GC_RIG/{{binding_prefix}}refinery` when running inside a rig session,
+or `{{binding_prefix}}refinery` when running in an HQ-only city where
+the workspace is the rig. Writing a rendered empty rig prefix produces
+`/{{binding_prefix}}refinery` and strands beads outside the refinery pool.
+
+Update both `assignee` AND `gc.routed_to` so the reconciler stops
+counting this bead for the polecat pool and starts counting it for
+the refinery pool. Without updating `gc.routed_to`, the reconciler
+spawns phantom polecats that can't claim the bead.
+
+The refinery will pick this up, rebase onto {{base_branch}}, run tests,
+merge, and close the bead. If there's a conflict, the refinery puts the
+bead back in the pool with `rejection_reason` metadata — a new polecat
+picks it up and resumes from the existing branch.
+
+**6. Signal reconciler and exit.**
+```bash
+gc runtime drain-ack
+exit
+```
+
+`gc runtime drain-ack` tells the reconciler to kill this session. The
+reconciler only restarts you if the pool check command finds more work.
+You are GONE. Done means gone. There is no idle state.
+
+**Exit criteria:** Branch pushed, metadata set, bead reassigned, drain acknowledged, session exited."""

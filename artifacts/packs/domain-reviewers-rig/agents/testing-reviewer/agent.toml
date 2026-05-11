@@ -1,0 +1,11 @@
+# Testing Reviewer — reviews polecat diffs against the test plan.
+#
+# Lane: metadata.test_plan (the H1 test-lead's plan) plus testing
+# ADRs (`docs/decision-records/*TEST*.md`). Stays in its lane.
+
+scope = "rig"
+prompt_template = "agents/testing-reviewer/prompt.template.md"
+nudge = "Check your hook for new branches to testing-review."
+idle_timeout = "30m"
+min_active_sessions = 0
+max_active_sessions = 2

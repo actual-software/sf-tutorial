@@ -1,0 +1,9 @@
+# Reviewer (Gemini provider) — vendor-pinned ADR-lane reviewer.
+
+scope = "rig"
+provider = "gemini"
+prompt_template = "agents/shared/vendor-reviewer.template.md"
+nudge = "Check your hook for new branches to vendor-review."
+idle_timeout = "30m"
+min_active_sessions = 0
+max_active_sessions = 1

@@ -1,0 +1,19 @@
+# Project Manager — pre-implementation bead conformity reviewer.
+#
+# Sits at the front of the factory. Reads each bead's title,
+# description, and metadata; runs a checklist; routes well-formed
+# beads to the polecat pool and blocks malformed beads for the
+# operator to fix. This is the new entry point into the factory —
+# users sling beads at the project-manager rather than at the
+# polecat.
+#
+# Pool size 1 because bead review is fast (no diff, no docs walk,
+# no model heavy lifting) and serial review keeps the mail/note
+# stream readable.
+
+scope = "rig"
+prompt_template = "agents/project-manager/prompt.template.md"
+nudge = "Check your hook for new beads to review."
+idle_timeout = "30m"
+min_active_sessions = 0
+max_active_sessions = 1

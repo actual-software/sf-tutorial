@@ -1,0 +1,48 @@
+# review-loop-rig — rig-scoped pack that adds a single required review
+# loop on top of the pr-gate-rig refinery patrol. Installed in
+# Progression page 02.
+#
+# What this pack contributes:
+#   1. `mol-refinery-review-loop-patrol` — refinery patrol formula that
+#      extends `mol-refinery-pr-patrol` with one new step:
+#      `feedback-loop`. On the first patrol of a given bead, the
+#      refinery reads the diff, identifies at least one required
+#      modification, writes targeted feedback onto the bead, and
+#      bounces the bead back to the polecat pool with
+#      `metadata.review_loops=1`. The polecat addresses the feedback
+#      and reassigns to the refinery. On the second patrol,
+#      `feedback-loop` is a no-op and the patrol proceeds as inherited
+#      (handle-failures → approval-review → merge-push).
+#   2. A `[[patches.agent]]` that overrides the refinery prompt to
+#      point at `mol-refinery-review-loop-patrol` instead of
+#      `mol-refinery-pr-patrol` on next start.
+#
+# Install (replaces pr-gate-rig in the rig's imports):
+#   gc import add --rig <rig-name> .gc/system/packs/review-loop-rig
+#   gc import remove --rig <rig-name> pr-gate-rig
+#
+# review-loop-rig transitively imports pr-gate-rig, so `mol-polecat-pr`
+# and the inherited `mol-refinery-pr-patrol` remain resolvable. Leave
+# pr-gate-city in place at city scope — the mayor's pr-gate guidance
+# (dispatch with `--on mol-polecat-pr`) still applies.
+
+[pack]
+name = "review-loop-rig"
+schema = 1
+
+# ── IMPORTS ───────────────────────────────────────────────────────────
+# Patches resolve against this pack's own agents plus its declared
+# imports. We import pr-gate-rig so the new formula can extend `mol-refinery-pr-patrol`.
+
+[imports.pr-gate-rig]
+source = "../pr-gate-rig"
+
+# ── PATCHES ───────────────────────────────────────────────────────────
+# Override the existing refinery prompt in place. The new prompt points at
+# `mol-refinery-review-loop-patrol`. Patches with `dir = ""` match by
+# name alone; gascity resolves the prompt_template path relative to
+# this pack's directory.
+
+[[patches.agent]]
+name = "refinery"
+prompt_template = "prompts/refinery.template.md"

@@ -1,0 +1,43 @@
+# pr-gate-city — city-scoped half of the pr-gate pair installed in
+# Progression page 01.
+#
+# Pairs with pr-gate-rig. Two packs because pack-v2 patches can only
+# target agents in the same composition pass: mayor is city-scoped, so
+# its prompt patch lives here; refinery is rig-scoped, so its patch
+# (and the polecat/refinery formulas) live in pr-gate-rig.
+#
+# What this pack contributes:
+#   1. A `[[patches.agent]]` that overrides the gastown mayor's
+#      prompt_template, teaching the mayor about the PR-gate flow,
+#      the new dispatch recipe (`--on mol-polecat-pr`), and the
+#      blocked-bead triage path.
+#
+# Install:
+#   gc import add .gc/system/packs/pr-gate-city
+#   (lands as [imports.pr-gate-city] in the city pack.toml)
+#
+# This pack is safe to import alone, but you almost certainly want
+# pr-gate-rig too — the gate doesn't actually run without it.
+
+[pack]
+name = "pr-gate-city"
+schema = 1
+
+# ── IMPORTS ───────────────────────────────────────────────────────────
+# Patches resolve against this pack's own agents plus its declared
+# imports. `mayor` lives in gastown, so we have to import gastown here
+# for the patch below to find it. Without this block, composition fails
+# with `agent "mayor" not found in pack`.
+
+[imports.gastown]
+source = "../gastown"
+
+# ── PATCHES ───────────────────────────────────────────────────────────
+# Override gastown's mayor agent in place rather than redeclaring it
+# (which would trigger a "duplicate name" error). Patches with dir = ""
+# match by name alone; gascity resolves the prompt_template path
+# relative to this pack's directory.
+
+[[patches.agent]]
+name = "mayor"
+prompt_template = "prompts/mayor.template.md"

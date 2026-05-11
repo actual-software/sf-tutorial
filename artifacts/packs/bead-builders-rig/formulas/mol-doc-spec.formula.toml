@@ -1,0 +1,71 @@
+description = """
+Pre-implementation documentation outline for a bead.
+
+Poured by the doc-lead agent on each assigned bead. Reads the bead
+and the rig's existing user-facing docs (`README.md`,
+`docs/current/`), drafts a focused doc outline at
+`docs/outlines/<bead-id>.md`, and stamps
+`metadata.docs_outline=<path>` on the bead.
+
+Read-only with respect to source code and the bead's title /
+description. Writes one new file under `docs/outlines/` and one
+metadata field.
+"""
+
+formula = "mol-doc-spec"
+version = 1
+
+[vars]
+[vars.issue]
+description = "Bead to author a documentation outline for"
+required = true
+
+[[steps]]
+id = "load-context"
+title = "Read the bead and the rig's existing user-facing docs"
+description = """
+```bash
+gc prime
+bd prime
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+gc bd update {{issue}} --status=in_progress
+gc bd show {{issue}}
+
+[ -f README.md ] && head -200 README.md
+find docs/current -name '*.md' -print0 \\
+  | xargs -0 -I{} sh -c 'echo \"=== {} ===\"; cat \"{}\"' 2>/dev/null || true
+```
+
+**Exit criterion:** the bead and the existing user-facing docs are
+loaded into context."""
+
+[[steps]]
+id = "draft-spec"
+title = "Draft the doc outline, write it to disk, stamp the bead"
+needs = ["load-context"]
+description = """
+Walk the bead through the doc-outline template in your agent prompt
+and write the outline to `docs/outlines/{{issue}}.md`. Cover doc
+impact, per-file outline, no-impact paths. Then stamp:
+
+```bash
+mkdir -p docs/outlines
+# (your agent writes the file content with the three sections)
+
+gc bd update {{issue}} --set-metadata docs_outline=\"docs/outlines/{{issue}}.md\"
+gc bd note {{issue}} \"doc-lead: drafted docs/outlines/{{issue}}.md\"
+```
+
+**Exit criterion:** `docs/outlines/{{issue}}.md` exists and
+`metadata.docs_outline` is set."""
+
+[[steps]]
+id = "drain"
+title = "Signal completion"
+needs = ["draft-spec"]
+description = """
+```bash
+gc runtime drain-ack
+```
+
+Run this command and nothing else."""

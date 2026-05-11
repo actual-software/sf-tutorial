@@ -1,0 +1,51 @@
+# domain-reviewers-rig — rig-scoped pack that supersedes the
+# architect-rig's single architect with FOUR parallel domain
+# reviewers (ADR, design, testing, docs). The refinery waits for
+# approvals from all four lanes before letting a bead reach the
+# inherited approval-review and merge-push steps. Installed in
+# Hardening 2.
+#
+# What this pack contributes:
+#   1. `adr-reviewer` — reviews against `docs/decision-records/`
+#      (ADRs). Stamps `metadata.adr_approved=true|false` plus
+#      `adr_feedback`.
+#   2. `design-reviewer` — reviews against `metadata.design_doc`
+#      (the Lead's design spec from H1) and any design ADRs.
+#      Stamps `metadata.design_approved` and `design_feedback`.
+#   3. `testing-reviewer` — reviews against `metadata.test_plan`
+#      and testing ADRs. Stamps `metadata.testing_approved` and
+#      `testing_feedback`.
+#   4. `docs-reviewer` — reviews against `metadata.docs_outline`
+#      and `docs/current/`. Stamps `metadata.docs_approved` and
+#      `docs_feedback`.
+#   5. Four formulas — `mol-adr-review`, `mol-design-review`,
+#      `mol-testing-review`, `mol-docs-review` — one per lane.
+#   6. `mol-refinery-domain-patrol` — refinery patrol formula that
+#      replaces `mol-refinery-architect-patrol`. The new
+#      `verify-reviewers` step fans out to any lane whose verdict
+#      is unset, aggregates all four, and either proceeds (all
+#      approved), bounces (any rejected, under cap), or
+#      force-forwards (cap reached).
+#   7. A `[[patches.agent]]` that overrides the refinery prompt to
+#      point at `mol-refinery-domain-patrol`.
+#
+# Install (replaces architect-rig's single-architect flow with the
+# four-lane flow):
+#   gc import add --rig <rig-name> .gc/system/packs/domain-reviewers-rig
+#   gc import remove --rig <rig-name> bead-builders-rig
+#
+# domain-reviewers-rig imports bead-builders-rig directly (which
+# transitively imports bead-gate-rig → architect-rig → pr-gate-rig
+# → gastown), so the project-manager, the three Leads, and the
+# polecat / refinery flow remain resolvable.
+
+[pack]
+name = "domain-reviewers-rig"
+schema = 1
+
+[imports.bead-builders-rig]
+source = "../bead-builders-rig"
+
+[[patches.agent]]
+name = "refinery"
+prompt_template = "prompts/refinery.template.md"

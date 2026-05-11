@@ -1,0 +1,14 @@
+# Test Lead — pre-implementation test plan author.
+#
+# Reads a bead and the rig's existing testing docs, then writes a
+# focused test plan to `docs/testing/<bead-id>.md` and stamps
+# `metadata.test_plan` on the bead. The polecat reads this plan at
+# implement time and is expected to have automated tests for the
+# checks the plan calls out (or escalate if the plan is unimplementable).
+
+scope = "rig"
+prompt_template = "agents/test-lead/prompt.template.md"
+nudge = "Check your hook for new beads to plan tests for."
+idle_timeout = "30m"
+min_active_sessions = 0
+max_active_sessions = 1

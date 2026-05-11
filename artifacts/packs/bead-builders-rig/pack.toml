@@ -1,0 +1,43 @@
+# bead-builders-rig — rig-scoped pack that adds three "light-side"
+# helper agents (design-lead, test-lead, doc-lead) at the very front
+# of the factory, BEFORE the project-manager. Each agent enriches a
+# bead with a specific kind of context — design, testing, or
+# documentation — by reading the rig's existing docs and writing a
+# focused spec back onto the bead. Installed in Hardening 1.
+#
+# What this pack contributes:
+#   1. `design-lead` — reads a bead and the rig's design docs
+#      (`docs/decision-records/*DESIGN*.md`, `docs/current/`) and
+#      writes a design spec to `docs/design/<bead-id>.md`, stamping
+#      `metadata.design_doc=<path>` on the bead.
+#   2. `test-lead` — reads a bead and the rig's testing docs (ADR
+#      0002 and `docs/current/TESTING.md` if present) and writes a
+#      test plan to `docs/testing/<bead-id>.md`, stamping
+#      `metadata.test_plan=<path>`.
+#   3. `doc-lead` — reads a bead and the rig's docs (`docs/current/`,
+#      README) and writes a documentation outline to
+#      `docs/outlines/<bead-id>.md`, stamping
+#      `metadata.docs_outline=<path>`.
+#   4. Three formulas — `mol-design-spec`, `mol-test-spec`,
+#      `mol-doc-spec` — one per Lead, each a 3-step formula
+#      (load-context → draft-spec → drain).
+#
+# Install (sits on top of bead-gate-rig):
+#   gc import add --rig <rig-name> .gc/system/packs/bead-builders-rig
+#   gc import remove --rig <rig-name> bead-gate-rig
+#
+# bead-builders-rig imports bead-gate-rig, so the project-manager,
+# architect, and refinery flow remain resolvable transitively.
+#
+# These agents are "light-side" — they help the operator shape
+# higher-quality work with less effort. They are slung explicitly
+# (`gc sling <rig>/design-lead <bead> --on mol-design-spec`); the
+# project-manager's checklist (extended in this hardening) requires
+# their outputs to be present on the bead.
+
+[pack]
+name = "bead-builders-rig"
+schema = 1
+
+[imports.bead-gate-rig]
+source = "../bead-gate-rig"

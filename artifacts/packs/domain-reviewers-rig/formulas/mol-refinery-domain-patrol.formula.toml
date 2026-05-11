@@ -1,0 +1,232 @@
+description = """
+Refinery patrol with a four-lane domain-reviewer fan-out replacing
+the architect-rig's single architect lane.
+
+Extends `mol-refinery-pr-patrol` and inserts a `verify-reviewers`
+step between `handle-failures` and `approval-review`. The new step
+checks four lane-verdict metadata fields — `adr_approved`,
+`design_approved`, `testing_approved`, `docs_approved` — and acts:
+
+- Any lane unset: dispatch the matching reviewer agent (via
+  `gc sling`) for each unset lane in parallel; drain and burn
+  this wisp.
+- All four = "true": no-op pass-through; inherited
+  `approval-review` and `merge-push` run.
+- Any = "false" and `review_loops < 2`: increment `review_loops`,
+  unset all four `*_approved` flags, bounce to polecat pool with a
+  combined `*_feedback` string as the rejection reason.
+- Any = "false" and `review_loops >= 2`: cap reached. Force all
+  four to "true", set `review_cap_reached=true`, mail mayor, fall
+  through to inherited gates.
+
+Single proceed gate: any time all four lanes report "true" — whether
+from honest approvals or the cap-forced flip — the patrol falls
+through to `approval-review`.
+
+This formula is poured by the rig refinery on startup. The
+domain-reviewers-rig pack ships an override of the refinery agent
+prompt that selects this formula instead of
+`mol-refinery-architect-patrol`.
+
+## Decision matrix
+
+| State                          | Outcome                                                              |
+|--------------------------------|----------------------------------------------------------------------|
+| Any lane unset                 | Dispatch matching reviewer(s); this wisp burns                       |
+| All four = true                | No-op; proceed to approval-review and merge-push                     |
+| Any = false, review_loops < 2  | review_loops++; unset all four; bounce to polecat with combined feedback |
+| Any = false, review_loops >= 2 | review_cap_reached=true; force all four to true; mail mayor; fall through |
+"""
+
+formula = "mol-refinery-domain-patrol"
+extends = ["mol-refinery-pr-patrol"]
+version = 1
+
+[[steps]]
+id = "verify-reviewers"
+title = "Refinery fans out to four domain reviewers; gate on all four verdicts; enforce cap"
+needs = ["handle-failures"]
+description = """
+You are the refinery, but for this step you are flow-control plus
+fan-out plus cap enforcement. You do NOT review the diff yourself —
+the four domain reviewers (ADR, design, testing, docs) do.
+
+**1. Read the work bead and the four lane verdicts:**
+```bash
+WORK=${WORK:-$(gc bd list --assignee=$GC_AGENT --status=open \\
+  --exclude-type=epic --limit=1 --json | jq -r '.[0].id // empty')}
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+[ -n \"$WORK\" ] && gc bd update \"$WORK\" --status=in_progress
+
+ADR=$(gc bd show $WORK --json | jq -r '.[0].metadata.adr_approved // empty')
+DESIGN=$(gc bd show $WORK --json | jq -r '.[0].metadata.design_approved // empty')
+TESTING=$(gc bd show $WORK --json | jq -r '.[0].metadata.testing_approved // empty')
+DOCS=$(gc bd show $WORK --json | jq -r '.[0].metadata.docs_approved // empty')
+LOOPS=$(gc bd show $WORK --json | jq -r '.[0].metadata.review_loops // 0')
+```
+
+**2. Any lane is unset.** Dispatch the matching reviewer(s) in
+parallel. Each reviewer reads the diff, stamps its lane's verdict,
+and reassigns the bead to the refinery. Drain and burn this wisp;
+the refinery picks the bead up again on the next patrol.
+
+```bash
+NEED_DISPATCH=0
+RIG_PREFIX=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}\"
+
+if [ -z \"$ADR\" ]; then
+  gc sling \"${RIG_PREFIX}adr-reviewer\" \"$WORK\" --on mol-adr-review
+  NEED_DISPATCH=1
+fi
+if [ -z \"$DESIGN\" ]; then
+  gc sling \"${RIG_PREFIX}design-reviewer\" \"$WORK\" --on mol-design-review
+  NEED_DISPATCH=1
+fi
+if [ -z \"$TESTING\" ]; then
+  gc sling \"${RIG_PREFIX}testing-reviewer\" \"$WORK\" --on mol-testing-review
+  NEED_DISPATCH=1
+fi
+if [ -z \"$DOCS\" ]; then
+  gc sling \"${RIG_PREFIX}docs-reviewer\" \"$WORK\" --on mol-docs-review
+  NEED_DISPATCH=1
+fi
+
+if [ \"$NEED_DISPATCH\" -eq 1 ]; then
+  gc bd note $WORK \"verify-reviewers: dispatched missing lane reviewer(s) (ADR=$ADR design=$DESIGN testing=$TESTING docs=$DOCS).\"
+  NEXT=$(gc bd mol wisp mol-refinery-domain-patrol --root-only \\
+    --var target_branch={{target_branch}} --var rig_name={{rig_name}} \\
+    --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
+  gc bd update \"$NEXT\" --assignee=$GC_AGENT
+  CURRENT_WISP=${GC_BEAD_ID:-}
+  [ -n \"$CURRENT_WISP\" ] && gc bd mol burn \"$CURRENT_WISP\" --force
+  gc runtime drain-ack
+  exit 0
+fi
+```
+
+**3. Any lane rejected at the cap.** Force-flip all four to true,
+mark `review_cap_reached=true`, mail mayor, fall through.
+
+```bash
+ANY_REJECTED=0
+[ \"$ADR\" = \"false\" ] || [ \"$DESIGN\" = \"false\" ] || [ \"$TESTING\" = \"false\" ] || [ \"$DOCS\" = \"false\" ] && ANY_REJECTED=1
+
+if [ \"$ANY_REJECTED\" -eq 1 ] && [ \"$LOOPS\" -ge 2 ]; then
+  ADR_FB=$(gc bd show $WORK --json | jq -r '.[0].metadata.adr_feedback // empty')
+  DESIGN_FB=$(gc bd show $WORK --json | jq -r '.[0].metadata.design_feedback // empty')
+  TESTING_FB=$(gc bd show $WORK --json | jq -r '.[0].metadata.testing_feedback // empty')
+  DOCS_FB=$(gc bd show $WORK --json | jq -r '.[0].metadata.docs_feedback // empty')
+
+  gc bd update $WORK \\
+    --set-metadata review_cap_reached=true \\
+    --set-metadata adr_approved=true \\
+    --set-metadata design_approved=true \\
+    --set-metadata testing_approved=true \\
+    --set-metadata docs_approved=true
+  gc bd note $WORK \"verify-reviewers: cap (2) reached. Force-forwarding with open concerns. ADR: $ADR_FB | Design: $DESIGN_FB | Testing: $TESTING_FB | Docs: $DOCS_FB\"
+  gc mail send mayor/ -s \"Domain reviewers cap reached: $WORK\" -m \"Bead: $WORK
+Loop count: $LOOPS / 2
+
+Lane verdicts (last):
+  ADR:     $ADR_FB
+  Design:  $DESIGN_FB
+  Testing: $TESTING_FB
+  Docs:    $DOCS_FB
+
+The refinery has forwarded the bead to the merge gates with the
+reviewers' last concerns preserved as metadata.*_feedback. Operator
+review recommended before merge.\"
+  ANY_REJECTED=0   # fall through to step 5 below
+  ADR=\"true\"; DESIGN=\"true\"; TESTING=\"true\"; DOCS=\"true\"
+fi
+```
+
+**4. Any lane rejected, under the cap.** Increment `review_loops`,
+unset all four `*_approved` flags so the next patrol re-dispatches
+all reviewers, bounce to polecat pool with a combined feedback string.
+
+```bash
+if [ \"$ANY_REJECTED\" -eq 1 ]; then
+  NEW_LOOPS=$((LOOPS + 1))
+  ADR_FB=$(gc bd show $WORK --json | jq -r '.[0].metadata.adr_feedback // empty')
+  DESIGN_FB=$(gc bd show $WORK --json | jq -r '.[0].metadata.design_feedback // empty')
+  TESTING_FB=$(gc bd show $WORK --json | jq -r '.[0].metadata.testing_feedback // empty')
+  DOCS_FB=$(gc bd show $WORK --json | jq -r '.[0].metadata.docs_feedback // empty')
+  COMBINED=\"ADR: $ADR_FB | Design: $DESIGN_FB | Testing: $TESTING_FB | Docs: $DOCS_FB\"
+
+  TARGET=$(gc bd show $WORK --json | jq -r '.[0].metadata.target // \"main\"')
+  git rebase --abort 2>/dev/null || true
+  git checkout \"$TARGET\" 2>/dev/null || true
+  git branch -D temp 2>/dev/null || true
+
+  gc bd update $WORK \\
+    --status=open \\
+    --assignee=\"\" \\
+    --unset-metadata adr_approved \\
+    --unset-metadata design_approved \\
+    --unset-metadata testing_approved \\
+    --unset-metadata docs_approved \\
+    --set-metadata review_loops=\"$NEW_LOOPS\" \\
+    --set-metadata review_feedback=\"$COMBINED\" \\
+    --set-metadata rejection_reason=\"reviewers: $COMBINED\" \\
+    --set-metadata gc.routed_to=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}polecat\"
+
+  gc bd note $WORK \"verify-reviewers: at least one lane rejected (loop $NEW_LOOPS/2). Bouncing to polecat pool. $COMBINED\"
+  gc mail send mayor/ -s \"Domain reviewers rejected: $WORK\" -m \"Bead: $WORK
+Loop count: $NEW_LOOPS / 2
+
+Lane feedback:
+  ADR:     $ADR_FB
+  Design:  $DESIGN_FB
+  Testing: $TESTING_FB
+  Docs:    $DOCS_FB\"
+
+  NEXT=$(gc bd mol wisp mol-refinery-domain-patrol --root-only \\
+    --var target_branch={{target_branch}} --var rig_name={{rig_name}} \\
+    --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
+  gc bd update \"$NEXT\" --assignee=$GC_AGENT
+  CURRENT_WISP=${GC_BEAD_ID:-}
+  [ -n \"$CURRENT_WISP\" ] && gc bd mol burn \"$CURRENT_WISP\" --force
+  gc runtime drain-ack
+  exit 0
+fi
+```
+
+**5. All four approved.** Single proceed gate. Reached either by
+honest approvals or by the cap-forced flip in step 3.
+
+```bash
+if [ \"$ADR\" = \"true\" ] && [ \"$DESIGN\" = \"true\" ] && [ \"$TESTING\" = \"true\" ] && [ \"$DOCS\" = \"true\" ]; then
+  gc bd note $WORK \"verify-reviewers: all four lanes approved (loop $LOOPS); proceeding to approval-review.\"
+  exit 0
+fi
+```
+
+**Exit criteria:** Either all four lanes approved and the patrol is
+proceeding, missing lane(s) have been dispatched (and this wisp
+burnt), the bead has been bounced to the polecat pool with combined
+feedback (and this wisp burnt), or the cap has been reached and the
+bead has been force-forwarded."""
+
+[[steps]]
+id = "approval-review"
+title = "Refinery acts as approver (after all four lanes cleared)"
+needs = ["handle-failures", "verify-reviewers"]
+description = """
+Inherited from `mol-refinery-pr-patrol`. The only change in this
+override is the added `verify-reviewers` dependency: this step
+cannot run until all four domain lanes have approved (or the cap
+has been reached and the bead force-forwarded).
+
+If `metadata.review_cap_reached=true`, the four `*_feedback` fields
+preserve the reviewers' last concerns. Treat that as a strong
+signal during your own approval read."""
+
+[[steps]]
+id = "merge-push"
+title = "Merge or publish PR (gated on verify-reviewers and approval-review)"
+needs = ["handle-failures", "verify-reviewers", "approval-review"]
+description = """
+Inherited from `mol-refinery-pr-patrol`. The only change is the
+added `verify-reviewers` dependency for safe scheduling — the body
+is otherwise unchanged from the inherited step."""

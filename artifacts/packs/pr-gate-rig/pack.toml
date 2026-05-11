@@ -1,0 +1,48 @@
+# pr-gate-rig — rig-scoped half of the pr-gate pair installed in
+# Progression page 01.
+#
+# Pairs with pr-gate-city. Two packs because pack-v2 patches can only
+# target agents in the same composition pass: refinery is rig-scoped,
+# so its prompt patch and the polecat/refinery formulas live here;
+# mayor's prompt patch lives in pr-gate-city.
+#
+# What this pack contributes:
+#   1. `mol-polecat-pr` — polecat formula that stamps
+#      `merge_strategy=pr` on the work bead, pushing the refinery into
+#      PR-publish mode instead of direct-merge to `main`.
+#   2. `mol-refinery-pr-patrol` — refinery patrol formula that inserts
+#      an `approval-review` step between checks and merge-push. Beads
+#      that don't pass approval are bounced back to the polecat pool;
+#      only approved beads make it to the PR stage.
+#   3. A `[[patches.agent]]` that overrides the gastown refinery's
+#      prompt_template, pointing the rig refinery at
+#      `mol-refinery-pr-patrol` instead of `mol-refinery-patrol`.
+#
+# Install:
+#   gc import add --rig <rig-name> .gc/system/packs/pr-gate-rig
+#   (lands as [rigs.imports.pr-gate-rig] for that rig in city.toml)
+#
+# Without pr-gate-city, the mayor still runs the OOTB gastown prompt
+# and won't know to dispatch with `--on mol-polecat-pr`. Install both.
+
+[pack]
+name = "pr-gate-rig"
+schema = 1
+
+# ── IMPORTS ───────────────────────────────────────────────────────────
+# Patches resolve against this pack's own agents plus its declared
+# imports. `refinery` lives in gastown, so we have to import gastown
+# here for the patch below to find it. Without this block, composition
+# fails with `agent "refinery" not found in pack`.
+
+[imports.gastown]
+source = "../gastown"
+
+# ── PATCHES ───────────────────────────────────────────────────────────
+# Override gastown's refinery agent in place rather than redeclaring
+# it. Patches with dir = "" match by name alone; gascity resolves the
+# prompt_template path relative to this pack's directory.
+
+[[patches.agent]]
+name = "refinery"
+prompt_template = "prompts/refinery.template.md"

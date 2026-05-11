@@ -1,0 +1,88 @@
+description = """
+Fuse the three vendor reviewer verdicts into one ADR-lane
+decision. Reads `vendor_codex_approved`, `vendor_claude_approved`,
+`vendor_gemini_approved`, applies majority rule, and stamps
+`adr_approved=true|false` plus a one-paragraph
+`synthesizer_summary`. Reassigns the bead to the refinery.
+
+Read-only with respect to source code and the diff. Reads only the
+three vendor verdicts already on the bead.
+"""
+
+formula = "mol-synthesize-reviews"
+version = 1
+
+[vars]
+[vars.issue]
+description = "Bead with three vendor_*_approved fields stamped"
+required = true
+
+[[steps]]
+id = "load-context"
+title = "Read the three vendor verdicts"
+description = """
+```bash
+gc prime
+bd prime
+gc bd show {{issue}}
+
+CODEX=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.vendor_codex_approved // empty')
+CLAUDE=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.vendor_claude_approved // empty')
+GEMINI=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.vendor_gemini_approved // empty')
+
+if [ -z \"$CODEX\" ] || [ -z \"$CLAUDE\" ] || [ -z \"$GEMINI\" ]; then
+  gc bd note {{issue}} \"synthesizer: missing vendor verdict (codex=$CODEX claude=$CLAUDE gemini=$GEMINI). Escalating.\"
+  gc mail send mayor/ -s \"Synthesizer escalated: {{issue}}\" -m \"At least one vendor reviewer did not stamp a verdict before the synthesizer was slung. Sling the missing reviewer(s), then re-sling the synthesizer.\"
+  gc runtime drain-ack
+  exit 0
+fi
+
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+gc bd update {{issue}} --status=in_progress
+```
+
+**Exit criterion:** all three vendor verdicts loaded, OR escalated."""
+
+[[steps]]
+id = "synthesize"
+title = "Apply majority rule, write summary, stamp adr_approved, reassign"
+needs = ["load-context"]
+description = """
+```bash
+APPROVES=0
+[ \"$CODEX\" = \"true\" ] && APPROVES=$((APPROVES + 1))
+[ \"$CLAUDE\" = \"true\" ] && APPROVES=$((APPROVES + 1))
+[ \"$GEMINI\" = \"true\" ] && APPROVES=$((APPROVES + 1))
+
+CODEX_FB=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.vendor_codex_feedback // empty')
+CLAUDE_FB=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.vendor_claude_feedback // empty')
+GEMINI_FB=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.vendor_gemini_feedback // empty')
+
+SUMMARY=\"<your one-paragraph synthesis citing each vendor's verdict and any disagreements>\"
+
+if [ \"$APPROVES\" -ge 2 ]; then
+  gc bd update {{issue}} --set-metadata adr_approved=true \\
+    --set-metadata synthesizer_summary=\"$SUMMARY\"
+  gc bd note {{issue}} \"synthesizer: ADR APPROVED ($APPROVES of 3 vendors). $SUMMARY\"
+else
+  gc bd update {{issue}} --set-metadata adr_approved=false \\
+    --set-metadata adr_feedback=\"$SUMMARY\" \\
+    --set-metadata synthesizer_summary=\"$SUMMARY\"
+  gc bd note {{issue}} \"synthesizer: ADR REJECTED ($APPROVES of 3 vendors approved). $SUMMARY\"
+fi
+
+REFINERY_TARGET=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery\"
+gc bd update {{issue}} --status=open --assignee=\"$REFINERY_TARGET\" \\
+  --set-metadata gc.routed_to=\"$REFINERY_TARGET\"
+```
+
+**Exit criterion:** adr_approved set; bead routed to refinery."""
+
+[[steps]]
+id = "drain"
+title = "Signal completion"
+needs = ["synthesize"]
+description = """
+```bash
+gc runtime drain-ack
+```"""

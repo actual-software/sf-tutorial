@@ -1,0 +1,14 @@
+# Design Lead — pre-implementation design spec author.
+#
+# Reads a bead and the rig's existing design docs, then writes a
+# focused design spec to `docs/design/<bead-id>.md` and stamps
+# `metadata.design_doc` on the bead. The polecat reads this spec at
+# implement time; the architect references it during the
+# architecture review.
+
+scope = "rig"
+prompt_template = "agents/design-lead/prompt.template.md"
+nudge = "Check your hook for new beads to spec a design for."
+idle_timeout = "30m"
+min_active_sessions = 0
+max_active_sessions = 1

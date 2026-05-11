@@ -1,0 +1,13 @@
+# Design Reviewer — reviews polecat diffs against the design spec.
+#
+# Lane: metadata.design_doc (the H1 design-lead's spec) plus any
+# `docs/decision-records/*DESIGN*.md` ADRs. Stays in its lane —
+# does not check ADRs (adr-reviewer), tests (testing-reviewer), or
+# user-facing docs (docs-reviewer).
+
+scope = "rig"
+prompt_template = "agents/design-reviewer/prompt.template.md"
+nudge = "Check your hook for new branches to design-review."
+idle_timeout = "30m"
+min_active_sessions = 0
+max_active_sessions = 2

@@ -1,0 +1,136 @@
+description = """
+Pre-implementation conformity review of a bead's definition.
+
+Poured by the project-manager agent on each assigned bead. Reads the
+bead's title, description, type, and metadata; walks the conformity
+checklist; and either routes the bead to the polecat pool (PASS) or
+sets the bead to status=blocked for the operator to fix (FAIL).
+
+This formula is read-only with respect to the rig: it does NOT push
+code, NOT touch the working tree, NOT merge, and NOT close the
+bead. It writes only verdict metadata and (on FAIL) flips the bead's
+status to `blocked` so the polecat pool ignores it until the
+operator addresses the feedback.
+
+## Decision matrix
+
+| outcome | metadata written                                      | bead status |
+|---------|-------------------------------------------------------|-------------|
+| PASS    | bead_review_passed=true, gc.routed_to=<rig>/polecat   | open        |
+| FAIL    | bead_review_passed=false, bead_review_feedback=<msg>  | blocked     |
+
+A blocked bead is not picked up by the polecat pool. The operator
+fixes the underlying problem on the bead, sets status back to open,
+and re-slings the project-manager for a clean re-review.
+
+## Compatibility
+
+The polecat formulas (`mol-polecat-pr` and friends) do not need to
+gate on `bead_review_passed=true` — beads simply do not reach the
+polecat pool unless the project-manager has routed them there. If
+you sling a polecat directly at a bead, you bypass this gate. Use
+the project-manager as the entry point.
+"""
+
+formula = "mol-bead-review"
+version = 1
+
+[vars]
+[vars.issue]
+description = "Bead to review for conformity"
+required = true
+
+[[steps]]
+id = "load-context"
+title = "Read the bead and its parent (if any)"
+description = """
+Prime and read the basics off the bead. Skip the work entirely if
+the bead has already been reviewed and passed.
+
+```bash
+gc prime
+bd prime
+gc bd show {{issue}}
+
+PASSED=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.bead_review_passed // empty')
+if [ \"$PASSED\" = \"true\" ]; then
+  gc bd note {{issue}} \"project-manager: bead_review_passed=true is already set; no-op.\"
+  gc runtime drain-ack
+  exit 0
+fi
+
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+gc bd update {{issue}} --status=in_progress
+
+TITLE=$(gc bd show {{issue}} --json | jq -r '.[0].title')
+DESCRIPTION=$(gc bd show {{issue}} --json | jq -r '.[0].description')
+TYPE=$(gc bd show {{issue}} --json | jq -r '.[0].type')
+PARENT=$(gc bd show {{issue}} --json | jq -r '.[0].parent // empty')
+TARGET_FILE=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.target_file // empty')
+
+if [ -n \"$PARENT\" ]; then
+  gc bd show $PARENT
+fi
+```
+
+**Exit criterion:** the bead's title, description, type, and
+metadata are loaded, OR the early-exit fired and you have drained."""
+
+[[steps]]
+id = "review-and-record"
+title = "Walk the conformity checklist; PASS or FAIL"
+needs = ["load-context"]
+description = """
+Walk the bead through the conformity checklist in your agent prompt.
+The checks are narrow on purpose — this gate cares about whether the
+polecat can act on the bead, not whether the polecat will succeed.
+Architecture review happens later in the architect lane.
+
+**1a. PASS — every relevant check clears:**
+
+```bash
+gc bd update {{issue}} \\
+  --status=open \\
+  --assignee=\"\" \\
+  --set-metadata bead_review_passed=true \\
+  --set-metadata gc.routed_to=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}polecat\"
+gc bd note {{issue}} \"project-manager: PASSED. <one-line summary>. Routing to polecat pool.\"
+```
+
+**1b. FAIL — at least one check fails:**
+
+```bash
+FEEDBACK=\"<one short paragraph naming the failing checks and what the operator should fix>\"
+gc bd update {{issue}} \\
+  --status=blocked \\
+  --set-metadata bead_review_passed=false \\
+  --set-metadata bead_review_feedback=\"$FEEDBACK\" \\
+  --set-metadata gc.routed_to=\"\"
+gc bd note {{issue}} \"project-manager: FAILED. $FEEDBACK\"
+
+gc mail send mayor/ -s \"Bead blocked at project-manager: {{issue}}\" -m \"Bead: {{issue}}
+Reason: $FEEDBACK
+
+The bead has been set to status=blocked. The operator should review the bead, address the failing checks, then unblock it (set status=open) and re-sling at the project-manager.\"
+```
+
+A blocked bead is not picked up by the polecat pool — that is the
+point. The operator fixes the bead's definition, runs `bd update
+{{issue}} --status=open`, and re-slings the project-manager for
+re-review.
+
+**Exit criterion:** the bead is either routed to the polecat pool
+(PASS) or set to status=blocked (FAIL)."""
+
+[[steps]]
+id = "drain"
+title = "Signal completion"
+needs = ["review-and-record"]
+description = """
+The verdict is written. Release this session:
+
+```bash
+gc runtime drain-ack
+```
+
+Run this command and nothing else."""

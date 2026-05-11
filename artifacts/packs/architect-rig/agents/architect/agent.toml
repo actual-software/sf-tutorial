@@ -1,0 +1,21 @@
+# Architect — pre-merge architecture reviewer for the rig.
+#
+# Sits between the polecat and the refinery. Reads each polecat's
+# feature-branch diff against the rig's ADRs (docs/decision-records/)
+# and current architecture documentation (docs/current/), decides
+# approve or reject, and writes a verdict + feedback back onto the
+# work bead. The refinery's `verify-architect` step gates
+# `approval-review` and `merge-push` on this verdict.
+#
+# This is the simplest form of the code-review-loop pattern from the
+# Gas City 1.0 announcement: ONE reviewer, no synthesizer, no fan-out.
+# Hardening 2 specializes this into domain reviewers (design, testing,
+# docs). Hardening 4 fans out to vendor-diverse reviewers plus a
+# synthesizer.
+
+scope = "rig"
+prompt_template = "agents/architect/prompt.template.md"
+nudge = "Check your hook for new work to review."
+idle_timeout = "30m"
+min_active_sessions = 0
+max_active_sessions = 2

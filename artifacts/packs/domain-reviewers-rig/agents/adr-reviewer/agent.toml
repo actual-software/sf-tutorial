@@ -1,0 +1,13 @@
+# ADR Reviewer — reviews polecat diffs against the ADR corpus.
+#
+# Lane: docs/decision-records/*.md (ADRs). Replaces the single
+# architect from architect-rig with a focused-lane reviewer. Three
+# siblings (design-reviewer, testing-reviewer, docs-reviewer) run
+# in parallel against their own doc families.
+
+scope = "rig"
+prompt_template = "agents/adr-reviewer/prompt.template.md"
+nudge = "Check your hook for new branches to ADR-review."
+idle_timeout = "30m"
+min_active_sessions = 0
+max_active_sessions = 2

@@ -1,0 +1,67 @@
+# architect-rig — rig-scoped pack that inserts an architecture-aware
+# `architect` agent between the polecat and the refinery. Installed in
+# Progression page 04.
+#
+# What this pack contributes:
+#   1. `architect` — a new rig-scoped agent (scope = "rig", pool
+#      min=0/max=2) that reviews each polecat's branch against the
+#      rig's ADRs (`docs/decision-records/`) and current architecture
+#      docs (`docs/current/`). The architect writes its verdict back
+#      onto the work bead as `metadata.architect_approved=true|false`
+#      and (on rejection) `metadata.architect_feedback=...`, then
+#      reassigns the bead to the refinery.
+#   2. `mol-architect-review` — formula poured by the architect agent
+#      on each assigned bead. Reads the diff and the architecture
+#      docs, decides approve/reject, and writes the verdict. Enforces
+#      the review-cycle cap: after 2 rejections (`review_loops>=2`)
+#      the architect forcibly approves with a note rather than looping
+#      forever.
+#   3. `mol-refinery-architect-patrol` — refinery patrol that replaces
+#      the review-loop pack's `feedback-loop` step with a
+#      `verify-architect` step. The new step is purely flow-control:
+#      if `architect_approved` is unset, the bead is reassigned to the
+#      architect; if `false`, it is bounced to the polecat pool with
+#      `architect_feedback` carried as the rejection reason; if
+#      `true`, the bead falls through to the inherited
+#      `approval-review` and `merge-push` steps.
+#   4. A `[[patches.agent]]` that overrides the refinery prompt to
+#      point at `mol-refinery-architect-patrol` on next start.
+#
+# Install (replaces review-loop-rig in the rig's direct imports):
+#   gc import add --rig <rig-name> .gc/system/packs/architect-rig
+#   gc import remove --rig <rig-name> review-loop-rig
+#
+# architect-rig imports pr-gate-rig directly (for the polecat formula
+# `mol-polecat-pr` and the patrol formula `mol-refinery-pr-patrol`
+# that this pack extends), bringing gastown along transitively for the
+# refinery agent patch. It does NOT import review-loop-rig — the
+# review loop concept moves into the architect rather than the
+# refinery, so the review-loop pack is superseded by this one.
+#
+# Leave pr-gate-city in place at city scope. The mayor's pr-gate
+# guidance (dispatch with `--on mol-polecat-pr`) is unchanged; the
+# architect picks up its work via reassignment from the refinery.
+
+[pack]
+name = "architect-rig"
+schema = 1
+
+# ── IMPORTS ───────────────────────────────────────────────────────────
+# Patches resolve against this pack's own agents plus its declared
+# imports. The refinery prompt patch needs `refinery` to be reachable;
+# that lives in gastown, brought in transitively via pr-gate-rig. The
+# new patrol formula extends `mol-refinery-pr-patrol`, which lives in
+# pr-gate-rig directly.
+
+[imports.pr-gate-rig]
+source = "../pr-gate-rig"
+
+# ── PATCHES ───────────────────────────────────────────────────────────
+# Override the refinery prompt to point at
+# `mol-refinery-architect-patrol`. Patches with dir = "" match by name
+# alone; gascity resolves the prompt_template path relative to this
+# pack's directory.
+
+[[patches.agent]]
+name = "refinery"
+prompt_template = "prompts/refinery.template.md"

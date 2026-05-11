@@ -1,0 +1,73 @@
+description = """
+Pre-implementation design spec for a bead.
+
+Poured by the design-lead agent on each assigned bead. Reads the
+bead and the rig's existing design docs, drafts a focused design
+spec at `docs/design/<bead-id>.md`, and stamps
+`metadata.design_doc=<path>` on the bead.
+
+Read-only with respect to source code and the bead's title /
+description. Writes one new file under `docs/design/` and one
+metadata field.
+"""
+
+formula = "mol-design-spec"
+version = 1
+
+[vars]
+[vars.issue]
+description = "Bead to author a design spec for"
+required = true
+
+[[steps]]
+id = "load-context"
+title = "Read the bead and the rig's existing design docs"
+description = """
+```bash
+gc prime
+bd prime
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+gc bd update {{issue}} --status=in_progress
+gc bd show {{issue}}
+TITLE=$(gc bd show {{issue}} --json | jq -r '.[0].title')
+DESCRIPTION=$(gc bd show {{issue}} --json | jq -r '.[0].description')
+
+find docs/decision-records -iname '*DESIGN*' -name '*.md' -print0 \\
+  | xargs -0 -I{} sh -c 'echo \"=== {} ===\"; cat \"{}\"'
+find docs/current -name '*.md' -print0 \\
+  | xargs -0 -I{} sh -c 'echo \"=== {} ===\"; cat \"{}\"' 2>/dev/null || true
+```
+
+**Exit criterion:** the bead and the existing design docs are
+loaded into context."""
+
+[[steps]]
+id = "draft-spec"
+title = "Draft the design spec, write it to disk, stamp the bead"
+needs = ["load-context"]
+description = """
+Walk the bead through the design-spec template in your agent prompt
+and write the spec to `docs/design/{{issue}}.md`. Cover deliverable,
+approach, trade-offs, open questions. Then stamp:
+
+```bash
+mkdir -p docs/design
+# (your agent writes the file content with the four sections)
+
+gc bd update {{issue}} --set-metadata design_doc=\"docs/design/{{issue}}.md\"
+gc bd note {{issue}} \"design-lead: drafted docs/design/{{issue}}.md\"
+```
+
+**Exit criterion:** `docs/design/{{issue}}.md` exists and
+`metadata.design_doc` is set."""
+
+[[steps]]
+id = "drain"
+title = "Signal completion"
+needs = ["draft-spec"]
+description = """
+```bash
+gc runtime drain-ack
+```
+
+Run this command and nothing else."""

@@ -1,0 +1,174 @@
+description = """
+Refinery patrol with a single required review loop layered on top of
+the pr-gate approval gate.
+
+Extends `mol-refinery-pr-patrol` and inserts a `feedback-loop` step
+between `handle-failures` and `approval-review`. The feedback-loop step
+runs once per bead: on the first patrol, the refinery reads the diff,
+identifies at least one required modification, writes targeted feedback
+onto the bead, bumps `metadata.review_loops` to 1, and bounces the bead
+back to the polecat pool. The polecat addresses the feedback and
+reassigns to the refinery. On the second patrol,
+`metadata.review_loops>=1` so feedback-loop is a no-op and the patrol
+proceeds as inherited (approval-review → merge-push).
+
+This formula is poured by the rig refinery on startup. The
+review-loop-rig pack ships an override of the refinery agent prompt
+that selects this formula instead of `mol-refinery-pr-patrol`.
+
+## Decision matrix
+
+| review_loops | feedback-loop | outcome |
+|--------------|---------------|---------|
+| 0 (or unset) | first pass    | bead returned to polecat with `review_feedback`; `review_loops=1`; this wisp burns |
+| ≥ 1          | no-op         | proceed to approval-review (and merge-push if approved) as inherited |
+
+## Compatibility
+
+`approval-review` and `merge-push` are re-declared with `feedback-loop`
+added to their `needs` list so the engine cannot run them concurrently
+with the loop. The step bodies are inherited unchanged from
+`mol-refinery-pr-patrol`.
+"""
+
+formula = "mol-refinery-review-loop-patrol"
+extends = ["mol-refinery-pr-patrol"]
+version = 1
+
+[[steps]]
+id = "feedback-loop"
+title = "Refinery feedback loop — one required review pass"
+needs = ["handle-failures"]
+description = """
+You are the refinery. On the first patrol of any work bead, you owe the
+polecat one round of targeted feedback before the bead is allowed to
+reach the approval gate. On subsequent patrols, this step is a no-op.
+
+**1. Read the work bead and the loop counter:**
+```bash
+WORK=${WORK:-$(gc bd list --assignee=$GC_AGENT --status=open \\
+  --exclude-type=epic --limit=1 --json | jq -r '.[0].id // empty')}
+LOOPS=$(gc bd show $WORK --json | jq -r '.[0].metadata.review_loops // 0')
+```
+
+**2. If `LOOPS >= 1`, the loop is already complete.** Note it on the
+bead and exit the step cleanly. The inherited `approval-review` and
+`merge-push` steps will run as in `mol-refinery-pr-patrol`.
+
+```bash
+if [ "$LOOPS" -ge 1 ]; then
+  gc bd note $WORK "feedback-loop: already completed (review_loops=$LOOPS); proceeding to approval-review."
+  exit 0
+fi
+```
+
+**3. First pass — read the diff and identify required modifications:**
+
+```bash
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+[ -n "$WORK" ] && gc bd update "$WORK" --status=in_progress
+BRANCH=$(gc bd show $WORK --json | jq -r '.[0].metadata.branch')
+TARGET=$(gc bd show $WORK --json | jq -r '.[0].metadata.target // "main"')
+TARGET_FILE=$(gc bd show $WORK --json | jq -r '.[0].metadata.target_file // empty')
+
+git fetch origin
+DIFF=$(git diff "origin/$TARGET...origin/$BRANCH")
+CHANGED_FILES=$(git diff --name-only "origin/$TARGET...origin/$BRANCH")
+```
+
+Read the diff. Identify **at least one required modification** the
+polecat must make. Concrete examples for the ascii-art rig:
+
+- Letter ASCII is too small or inconsistent in stroke width — ask for a
+  taller rendering (e.g., 5+ rows).
+- Heading is a level higher or lower than other letter files — ask for
+  alignment with the established convention.
+- Trailing whitespace, missing trailing newline, or stray decorative
+  characters — ask for cleanup.
+- Content matches the bead's intent but lacks a small enrichment that
+  the rest of the corpus has — ask for that addition.
+
+If you genuinely find nothing wrong, **invent** a low-cost stylistic
+modification. The point of this loop is to exercise the round-trip; it
+is not a performance review of the polecat. Keep the ask small,
+specific, and actionable in a single polecat pass.
+
+**4. Write feedback onto the bead, bump the loop counter, and bounce
+the bead back to the polecat pool:**
+
+```bash
+FEEDBACK="<one or more sentences describing at least one required modification>"
+
+# Clean up the in-flight rebase artifacts (mirrors the inherited
+# kick-back path):
+git rebase --abort 2>/dev/null || true
+git checkout "$TARGET" 2>/dev/null || true
+git branch -D temp 2>/dev/null || true
+
+# Bounce the bead back with the feedback metadata. Note: we do NOT set
+# refinery_approved=false here — that's the approval gate's signal.
+# review_loops=1 is the durable "one round consumed" record.
+gc bd update $WORK \\
+  --status=open \\
+  --assignee="" \\
+  --set-metadata review_loops=1 \\
+  --set-metadata review_feedback="$FEEDBACK" \\
+  --set-metadata rejection_reason="feedback-loop: $FEEDBACK" \\
+  --set-metadata gc.routed_to="${GC_RIG:+$GC_RIG/}{{binding_prefix}}polecat"
+
+gc bd note $WORK "feedback-loop pass 1: $FEEDBACK"
+
+# Mail the operator so the loop firing is visible in the inbox:
+gc mail send mayor/ -s "Review loop fired: $WORK" -m "Bead: $WORK
+Branch: $BRANCH
+Required modification: $FEEDBACK
+
+The refinery returned the bead to the polecat pool for one round of
+revision. On the next refinery patrol, feedback-loop will no-op and the
+bead will reach the approval gate."
+
+# Pour the next patrol iteration before burning, then drain & exit so
+# approval-review does NOT run for this bead on this patrol:
+NEXT=$(gc bd mol wisp mol-refinery-review-loop-patrol --root-only \\
+  --var target_branch={{target_branch}} --var rig_name={{rig_name}} \\
+  --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
+gc bd update "$NEXT" --assignee=$GC_AGENT
+CURRENT_WISP=${GC_BEAD_ID:-}
+[ -n "$CURRENT_WISP" ] && gc bd mol burn "$CURRENT_WISP" --force
+gc runtime drain-ack
+exit 0
+```
+
+**Exit criteria:** Either `metadata.review_loops>=1` was already set
+(no-op pass-through into approval-review) or the bead has been bounced
+with `metadata.review_loops=1`, `metadata.review_feedback`, and a
+`rejection_reason`, and this wisp has been burnt."""
+
+# Override approval-review's `needs` so it runs only after the loop has
+# either fired (and burnt this wisp) or no-op'd through on a later
+# patrol. Body is otherwise inherited from `mol-refinery-pr-patrol`.
+
+[[steps]]
+id = "approval-review"
+title = "Refinery acts as approver (after feedback loop)"
+needs = ["handle-failures", "feedback-loop"]
+description = """
+Inherited from `mol-refinery-pr-patrol`. The only change in this
+override is the added `feedback-loop` dependency: this step cannot run
+until the feedback loop has either delivered its required round of
+feedback (and burnt this wisp before reaching here) or no-op'd through
+on a subsequent patrol.
+
+Refer to the inherited step body for the full approval logic."""
+
+# Same dependency widening for merge-push so the engine schedules it
+# strictly after both gates.
+
+[[steps]]
+id = "merge-push"
+title = "Merge or publish PR (gated on feedback-loop and approval-review)"
+needs = ["handle-failures", "feedback-loop", "approval-review"]
+description = """
+Inherited from `mol-refinery-pr-patrol`. The only change is the added
+`feedback-loop` dependency for safe scheduling — the body is otherwise
+unchanged from the inherited step."""

@@ -1,0 +1,14 @@
+# Doc Lead — pre-implementation documentation outline author.
+#
+# Reads a bead and the rig's existing user-facing docs, then writes
+# a documentation outline to `docs/outlines/<bead-id>.md` and stamps
+# `metadata.docs_outline` on the bead. The polecat reads this
+# outline at implement time and is expected to add or update docs
+# matching the outline as part of its diff.
+
+scope = "rig"
+prompt_template = "agents/doc-lead/prompt.template.md"
+nudge = "Check your hook for new beads to outline docs for."
+idle_timeout = "30m"
+min_active_sessions = 0
+max_active_sessions = 1

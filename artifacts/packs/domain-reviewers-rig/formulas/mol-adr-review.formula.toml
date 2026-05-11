@@ -1,0 +1,76 @@
+description = """
+ADR-lane review of a polecat's feature branch. Poured by the
+adr-reviewer agent on each assigned bead. Reads the diff against
+`docs/decision-records/`, writes `architect-style` verdict on the
+ADR lane (metadata.adr_approved + adr_feedback), and reassigns to
+the refinery.
+
+Read-only with respect to the rig. Writes only ADR-lane verdict
+metadata.
+"""
+
+formula = "mol-adr-review"
+version = 1
+
+[vars]
+[vars.issue]
+description = "Bead with metadata.branch / metadata.target to ADR-review"
+required = true
+
+[[steps]]
+id = "load-context"
+title = "Read the bead, the diff, and the ADR corpus"
+description = """
+```bash
+gc prime
+bd prime
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+gc bd update {{issue}} --status=in_progress
+gc bd show {{issue}}
+BRANCH=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.branch')
+TARGET=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.target // \"main\"')
+git fetch origin
+git diff \"origin/$TARGET...origin/$BRANCH\"
+find docs/decision-records -name '*.md' -print0 \\
+  | xargs -0 -I{} sh -c 'echo \"=== {} ===\"; cat \"{}\"'
+```
+**Exit criterion:** diff and ADR corpus loaded."""
+
+[[steps]]
+id = "review-and-record"
+title = "Decide approve/reject for the ADR lane, reassign to refinery"
+needs = ["load-context"]
+description = """
+Walk the diff against every ADR. Cite specific ADR rules.
+
+**APPROVED:**
+```bash
+gc bd update {{issue}} --set-metadata adr_approved=true
+gc bd note {{issue}} \"adr-reviewer: APPROVED. <rationale>\"
+```
+
+**REJECTED:**
+```bash
+FEEDBACK=\"<one or two sentences citing the failing ADR>\"
+gc bd update {{issue}} --set-metadata adr_approved=false \\
+  --set-metadata adr_feedback=\"$FEEDBACK\"
+gc bd note {{issue}} \"adr-reviewer: REJECTED. $FEEDBACK\"
+```
+
+Reassign:
+```bash
+REFINERY_TARGET=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery\"
+gc bd update {{issue}} --status=open --assignee=\"$REFINERY_TARGET\" \\
+  --set-metadata gc.routed_to=\"$REFINERY_TARGET\"
+```
+**Exit criterion:** adr_approved set, bead routed to refinery."""
+
+[[steps]]
+id = "drain"
+title = "Signal completion"
+needs = ["review-and-record"]
+description = """
+```bash
+gc runtime drain-ack
+```
+Run this command and nothing else."""

@@ -1,0 +1,210 @@
+description = """
+Per-principle architecture review of a polecat's feature branch.
+
+Replaces `mol-adr-review` as the formula the adr-reviewer pours.
+Scores the diff against 23 canonical Gas City architecture
+principles, appends one row per principle to a per-bead
+append-only YAML audit trail, and decides PASS / CONTINUE /
+ESCALATE based on aggregate score.
+
+The 23 principles are byte-identical with the `CANONICAL` list in
+`checks/aggregate-score.sh` — any reviewer that writes a name not
+in the canonical list trips the aggregator and escalates.
+
+Self-pours on CONTINUE. Caps at 3 iterations.
+
+## Audit trail
+
+`docs/reviews/principles.<bead-id>.yaml` — append-only. Each row:
+
+```yaml
+- principle: <canonical name>
+  iteration: <integer, starts at 1>
+  score: <0-5>
+  timestamp: <ISO 8601>
+  reviewer: <agent name>
+  notes_file: docs/reviews/principles/<bead-id>.<slug>.md
+```
+
+Aggregator: `(sum of latest-per-principle scores) / (5 * 23)`. Min
+floor: every principle must score >= 3 in its latest row.
+
+## Decision matrix
+
+| aggregate-score.sh exit | meaning                                 | action                                                            |
+|-------------------------|-----------------------------------------|-------------------------------------------------------------------|
+| 0 (PASS)                | aggregate >= 0.9 AND every floor >= 3   | stamp adr_approved=true, principles_review_passed=true; reassign  |
+| 1 (CONTINUE)            | aggregate < 0.9 or some floor < 3       | self-pour with iteration+=1 (cap at 3 = ESCALATE)                 |
+| 2 (ESCALATE)            | malformed YAML, missing principle, etc. | mail operator, stamp adr_approved=false, escalate                 |
+"""
+
+formula = "mol-principles-review"
+version = 1
+
+[vars]
+[vars.issue]
+description = "Bead with metadata.branch and metadata.pr_url for the diff to score"
+required = true
+
+[vars.iteration]
+description = "Loop iteration counter (starts at 1; cap at 3)"
+default = "1"
+
+[vars.target]
+description = "Aggregate score target (0.0-1.0)"
+default = "0.9"
+
+[vars.min_per_principle]
+description = "Minimum score per principle in the latest row"
+default = "3"
+
+[[steps]]
+id = "load-context"
+title = "Read the bead, the diff, the ADRs, the prior YAML, and the principles list"
+description = """
+```bash
+gc prime
+bd prime
+# Claim the bead for observability — show this gate phase as in_progress in the ledger.
+gc bd update {{issue}} --status=in_progress
+gc bd show {{issue}}
+BRANCH=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.branch')
+TARGET_BRANCH=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.target // \"main\"')
+git fetch origin
+git diff \"origin/$TARGET_BRANCH...origin/$BRANCH\"
+find docs/decision-records -name '*.md' -print0 \\
+  | xargs -0 -I{} sh -c 'echo \"=== {} ===\"; cat \"{}\"'
+
+mkdir -p docs/reviews docs/reviews/principles
+[ -f docs/reviews/principles.{{issue}}.yaml ] && cat docs/reviews/principles.{{issue}}.yaml
+[ -f docs/reviews/principles-schema.md ] && cat docs/reviews/principles-schema.md
+```
+**Exit criterion:** diff, ADR corpus, prior YAML (if any), and
+schema doc are loaded into context."""
+
+[[steps]]
+id = "score-principles"
+title = "Score the diff against all 23 principles, append rows, write findings"
+needs = ["load-context"]
+description = """
+Walk the diff against each of the 23 canonical principles in turn.
+For each principle, assign a 0-5 score (5 = exemplary, 0 =
+critically violated, 3 = acceptable floor). Write a short findings
+file per principle:
+
+```bash
+SLUG=$(echo \"<principle name>\" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g')
+cat > docs/reviews/principles/{{issue}}.$SLUG.md <<EOF
+# {{issue}} — <principle name>
+Iteration: {{iteration}}
+Score: <0-5>
+
+## Findings
+<one or two sentences citing diff lines and the principle>
+
+## Recommendation
+<short suggestion if score < 5>
+EOF
+```
+
+Append one row to `docs/reviews/principles.{{issue}}.yaml` per
+principle (use the canonical name verbatim — no parenthetical
+aliases):
+
+```bash
+cat >> docs/reviews/principles.{{issue}}.yaml <<EOF
+- principle: <canonical name>
+  iteration: {{iteration}}
+  score: <0-5>
+  timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+  reviewer: $GC_AGENT
+  notes_file: docs/reviews/principles/{{issue}}.$SLUG.md
+EOF
+```
+
+Repeat 22 more times. The 23 canonical names are listed in
+`checks/aggregate-score.sh` (the `CANONICAL` array).
+
+**Exit criterion:** 23 new rows in the YAML for this iteration; 23
+findings files exist."""
+
+[[steps]]
+id = "aggregate-and-decide"
+title = "Run the aggregator; PASS / CONTINUE / ESCALATE"
+needs = ["score-principles"]
+description = """
+The aggregator is the source of truth. Run it on the YAML; branch
+on the exit code.
+
+```bash
+./checks/aggregate-score.sh docs/reviews/principles.{{issue}}.yaml \\
+  --target={{target}} --min-per-principle={{min_per_principle}}
+RC=$?
+```
+
+**RC=0 (PASS):**
+```bash
+gc bd update {{issue}} \\
+  --set-metadata adr_approved=true \\
+  --set-metadata principles_review_passed=true
+gc bd note {{issue}} \"adr-reviewer: PRINCIPLES PASS at iteration {{iteration}}.\"
+
+REFINERY_TARGET=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery\"
+gc bd update {{issue}} --status=open --assignee=\"$REFINERY_TARGET\" \\
+  --set-metadata gc.routed_to=\"$REFINERY_TARGET\"
+exit 0
+```
+
+**RC=1 (CONTINUE):** Cap at iteration 3.
+
+```bash
+ITER={{iteration}}
+if [ \"$ITER\" -ge 3 ]; then
+  gc bd update {{issue}} \\
+    --set-metadata adr_approved=false \\
+    --set-metadata principles_review_passed=false \\
+    --set-metadata adr_feedback=\"Principles loop exhausted at iteration $ITER without convergence.\"
+  gc bd note {{issue}} \"adr-reviewer: PRINCIPLES ESCALATED — cap reached at iteration $ITER.\"
+  gc mail send mayor/ -s \"Principles loop exhausted: {{issue}}\" -m \"Bead: {{issue}}
+Iteration cap reached without aggregate >= {{target}} and floor >= {{min_per_principle}}.
+Inspect docs/reviews/principles.{{issue}}.yaml and the per-principle findings.\"
+
+  REFINERY_TARGET=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery\"
+  gc bd update {{issue}} --status=open --assignee=\"$REFINERY_TARGET\" \\
+    --set-metadata gc.routed_to=\"$REFINERY_TARGET\"
+  exit 0
+fi
+
+NEXT=$((ITER + 1))
+gc bd note {{issue}} \"adr-reviewer: PRINCIPLES CONTINUE — re-pouring iteration $NEXT.\"
+gc sling \"${GC_RIG:+$GC_RIG/}{{binding_prefix}}adr-reviewer\" {{issue}} --on mol-principles-review --var iteration=\"$NEXT\"
+```
+
+**RC=2 (ESCALATE):**
+```bash
+gc bd update {{issue}} \\
+  --set-metadata adr_approved=false \\
+  --set-metadata principles_review_passed=false \\
+  --set-metadata adr_feedback=\"Principles aggregator escalated (malformed YAML or rule violation).\"
+gc bd note {{issue}} \"adr-reviewer: PRINCIPLES ESCALATED — aggregator returned 2.\"
+gc mail send mayor/ -s \"Principles aggregator escalated: {{issue}}\" -m \"Bead: {{issue}}
+The aggregator returned 2. Inspect docs/reviews/principles.{{issue}}.yaml for malformed rows or non-canonical principle names.\"
+
+REFINERY_TARGET=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery\"
+gc bd update {{issue}} --status=open --assignee=\"$REFINERY_TARGET\" \\
+  --set-metadata gc.routed_to=\"$REFINERY_TARGET\"
+```
+
+**Exit criterion:** adr_approved set to true or false; on CONTINUE,
+the next iteration has been slung."""
+
+[[steps]]
+id = "drain"
+title = "Signal completion"
+needs = ["aggregate-and-decide"]
+description = """
+```bash
+gc runtime drain-ack
+```
+
+Run this command and nothing else."""
