@@ -252,10 +252,24 @@ Verify the rig now imports `architect-rig` and not `review-loop-rig`:
 
 ```bash
 gc import list --rig ascii-art
-# Expect: architect-rig (no review-loop-rig row).
+```
 
+**Expected output**
+
+```text
+architect-rig (no review-loop-rig row).
+```
+
+**Copy and paste**
+
+```bash
 gc import list
-# Expect: pr-gate-city is still here at city scope.
+```
+
+**Expected output**
+
+```text
+pr-gate-city is still here at city scope.
 ```
 
 Lastly, we need to update order routing in the `city.toml` file:
@@ -281,8 +295,13 @@ Confirm everything loaded:
 
 ```bash
 gc formula list | grep -E "mol-architect-review|mol-refinery-architect-patrol|mol-polecat-pr"
-# Expect: all three rows. mol-polecat-pr resolves transitively via
-# pr-gate-rig; the architect formulas are the new ones.
+```
+
+**Expected output**
+
+```text
+all three rows. mol-polecat-pr resolves transitively via
+pr-gate-rig; the architect formulas are the new ones.
 ```
 
 ### 2. Locate one bead from the first epic

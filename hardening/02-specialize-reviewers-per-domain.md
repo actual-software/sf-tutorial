@@ -212,10 +212,24 @@ Verify.
 
 ```bash
 gc import list --rig ascii-art
-# Expect: domain-reviewers-rig (no bead-builders-rig row).
+```
 
+**Expected output**
+
+```text
+domain-reviewers-rig (no bead-builders-rig row).
+```
+
+**Copy and paste**
+
+```bash
 gc import list
-# Expect: pr-gate-city is still here at city scope.
+```
+
+**Expected output**
+
+```text
+pr-gate-city is still here at city scope.
 ```
 
 Restart.
@@ -233,7 +247,12 @@ Confirm the formulas and the new refinery patrol.
 ```bash
 gc formula list \
   | grep -E "mol-(adr|design|testing|docs)-review|mol-refinery-domain-patrol"
-# Expect: five rows.
+```
+
+**Expected output**
+
+```text
+five rows.
 ```
 
 ### 2. Pick the next bead and run it through H1's pre-PM agents
@@ -280,8 +299,13 @@ ends; the four reviewer sessions run in parallel.
 
 ```bash
 gc session list
-# Expect: four reviewer sessions plus the refinery (which may
-# already have finished its current patrol).
+```
+
+**Expected output**
+
+```text
+four reviewer sessions plus the refinery (which may
+already have finished its current patrol).
 ```
 
 Attach to any of the reviewer sessions to follow it.

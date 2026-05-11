@@ -140,19 +140,35 @@ gc import add --rig ascii-art .gc/system/packs/multi-vendor-rig
 gc import remove --rig ascii-art principles-loop-rig
 ```
 
-Verify and restart:
+Verify the import.
 
 **Copy and paste**
 
 ```bash
 gc import list --rig ascii-art
-# Expect: multi-vendor-rig (no principles-loop-rig row).
+```
 
+**Expected output**
+
+```text
+multi-vendor-rig (no principles-loop-rig row).
+```
+
+Restart and confirm the new formulas loaded.
+
+**Copy and paste**
+
+```bash
 gc restart
 
 gc formula list \
   | grep -E "mol-vendor-(codex|claude|gemini)-review|mol-synthesize-reviews"
-# Expect: four rows.
+```
+
+**Expected output**
+
+```text
+four rows.
 ```
 
 ### 2. Sling a clean bead through the standard pipeline up to the polecat
@@ -199,7 +215,12 @@ Watch:
 
 ```bash
 gc session list
-# Expect: three reviewer sessions running concurrently.
+```
+
+**Expected output**
+
+```text
+three reviewer sessions running concurrently.
 ```
 
 Optionally attach to one:

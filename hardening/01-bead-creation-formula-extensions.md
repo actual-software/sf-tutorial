@@ -112,10 +112,24 @@ Verify the imports.
 
 ```bash
 gc import list --rig ascii-art
-# Expect: bead-builders-rig (no bead-gate-rig row).
+```
 
+**Expected output**
+
+```text
+bead-builders-rig (no bead-gate-rig row).
+```
+
+**Copy and paste**
+
+```bash
 gc import list
-# Expect: pr-gate-city is still here at city scope.
+```
+
+**Expected output**
+
+```text
+pr-gate-city is still here at city scope.
 ```
 
 Restart.
@@ -133,7 +147,12 @@ Confirm the three formulas loaded.
 ```bash
 gc formula list \
   | grep -E "mol-(design|test|doc)-spec|mol-bead-review"
-# Expect: four rows.
+```
+
+**Expected output**
+
+```text
+four rows.
 ```
 
 ### 2. Pick the next bead
@@ -184,8 +203,17 @@ Once all three Leads finish, list and read the spec files.
 ```bash
 cd $ASCII_ART_PATH
 ls docs/design/ docs/testing/ docs/outlines/
-# Expect: $BEAD_ID.md in each.
+```
 
+**Expected output**
+
+```text
+$BEAD_ID.md in each.
+```
+
+**Copy and paste**
+
+```bash
 cat docs/design/$BEAD_ID.md
 cat docs/testing/$BEAD_ID.md
 cat docs/outlines/$BEAD_ID.md
@@ -342,7 +370,12 @@ Confirm the three new formulas loaded.
 
 ```bash
 gc formula list | grep -E "mol-(design|test|doc)-spec"
-# Expect: three rows.
+```
+
+**Expected output**
+
+```text
+three rows.
 ```
 
 After running the three Leads on `$BEAD_ID`, the spec files exist and the bead carries the matching metadata.
@@ -352,7 +385,12 @@ After running the three Leads on `$BEAD_ID`, the spec files exist and the bead c
 ```bash
 ls docs/design/$BEAD_ID.md docs/testing/$BEAD_ID.md docs/outlines/$BEAD_ID.md
 gc bd show $BEAD_ID | grep -E "design_doc|test_plan|docs_outline"
-# Expect: all three metadata fields set, all three files exist.
+```
+
+**Expected output**
+
+```text
+all three metadata fields set, all three files exist.
 ```
 
 Project-manager passes the bead with all three specs in place.
@@ -361,7 +399,12 @@ Project-manager passes the bead with all three specs in place.
 
 ```bash
 gc bd show $BEAD_ID | grep bead_review_passed
-# Expect: bead_review_passed=true.
+```
+
+**Expected output**
+
+```text
+bead_review_passed=true.
 ```
 
 Project-manager blocks a bead missing one spec (step 7).
