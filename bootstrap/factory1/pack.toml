@@ -1,0 +1,7 @@
+[pack]
+name = "factory1"
+schema = 2
+
+[[named_session]]
+template = "mayor"
+mode = "always"
