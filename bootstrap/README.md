@@ -25,17 +25,17 @@ This folder contains the bootstrap scripts for the Software Factory Intensive tu
 	./bootstrap.sh <TUTORIAL_STEP>
 	```
 
-For example:
+  For example:
 
 	```bash
 	./bootstrap.sh 00.2-setup-foundation
 	```
 
-	Runs the work for 00.1 *and* 00.2, then stops. Your factory now looks like it would after you'd manually completed 00.2 — so you can inspect that state, or start 00.3 from a clean baseline.
+  Runs the work for 00.1 *and* 00.2, then stops. Your factory now looks like it would after you'd manually completed 00.2 — so you can inspect that state, or start 00.3 from a clean baseline.
 
 **Mental model:** `./bootstrap.sh <step>` answers "make my factory look like I just finished `<step>`," not "make my factory ready for me to start `<step>`."
 
-## Bootstrap Script
+## About the Bootstrap Script
 
 ### Running the script
 
@@ -43,7 +43,7 @@ Run this script from this folder to bootstrap your factory into the **end state*
 
 ### What it does to your environment
 
-**This script is destructive and meant to be re-runnable.** Read this before your first run.
+This script is destructive and meant to be re-runnable. **If you made any changes/customizations you want to keep, Make sure you pack them up somewhere Before running this.** Read this before your first run.
 
 **Confirmation prompt.** On launch, you'll see:
 
