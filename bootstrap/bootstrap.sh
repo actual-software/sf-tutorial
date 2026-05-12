@@ -99,6 +99,36 @@ if [ -z "$SOFTWARE_FACTORY_INTENSIVE_PATH" ]; then
   exit 1
 fi
 
+# Sanity check: warn if .env's SOFTWARE_FACTORY_INTENSIVE_PATH doesn't match
+# the parent directory of sf-tutorial. A mismatch typically means the user
+# has sf-tutorial cloned somewhere other than what .env says, which would
+# create two parallel software-factory-intensive trees (one with sf-tutorial,
+# another with factory1/ascii-art). Most of the time this is misconfiguration,
+# not intent — so stop and let the user confirm or abort.
+DERIVED_SFI_PATH="$(cd "$TUTORIAL_PATH/.." && pwd -P)"
+if [ -d "$SOFTWARE_FACTORY_INTENSIVE_PATH" ]; then
+  NORMALIZED_ENV_SFI="$(cd "$SOFTWARE_FACTORY_INTENSIVE_PATH" && pwd -P)"
+else
+  NORMALIZED_ENV_SFI="${SOFTWARE_FACTORY_INTENSIVE_PATH%/}"
+fi
+if [ "$NORMALIZED_ENV_SFI" != "$DERIVED_SFI_PATH" ]; then
+  echo ""
+  echo "==> WARNING: SOFTWARE_FACTORY_INTENSIVE_PATH does not match the parent of sf-tutorial."
+  echo ""
+  echo "    .env SOFTWARE_FACTORY_INTENSIVE_PATH : $SOFTWARE_FACTORY_INTENSIVE_PATH"
+  echo "    sf-tutorial parent directory         : $DERIVED_SFI_PATH"
+  echo ""
+  echo "    Continuing will run the bootstrap against the .env path, leaving"
+  echo "    sf-tutorial separate from factory1/ascii-art. If that's not what"
+  echo "    you want, abort and either move sf-tutorial or fix .env."
+  echo ""
+  read -p "Continue anyway? (Y/n) " sfi_path_confirm
+  if [ "$sfi_path_confirm" != "Y" ]; then
+    echo "==> Exiting script."
+    exit 1
+  fi
+fi
+
 if [ -z "$MODEL_PROVIDER" ]; then
   echo "==> MODEL_PROVIDER environment variable not found"
   echo "==> Please set the MODEL_PROVIDER environment variable in the .env file."
