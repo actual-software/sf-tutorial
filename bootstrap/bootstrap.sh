@@ -160,11 +160,11 @@ if [ "$GITHUB_CLONE_METHOD" == "https" ]; then
   git clone https://github.com/actual-software/sf-tutorial.git $SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial
 elif [ "$GITHUB_CLONE_METHOD" == "ssh" ]; then
   git clone git@github.com:actual-software/sf-tutorial.git $SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial
-elif [ "$GITHUB_CLONE_METHOD" == "git" ]; then
-  git clone git@github.com:actual-software/sf-tutorial.git $SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial
+elif [ "$GITHUB_CLONE_METHOD" == "gh" ]; then
+  gh repo clone actual-software/sf-tutorial $SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial
 else
   echo "==> GITHUB_CLONE_METHOD environment variable is not valid"
-  echo "==> Please set the GITHUB_CLONE_METHOD environment variable to a valid value (https, ssh, git)."
+  echo "==> Please set the GITHUB_CLONE_METHOD environment variable to a valid value (https, ssh, gh)."
   exit 1
 fi
 
@@ -350,11 +350,11 @@ if [ "$GITHUB_CLONE_METHOD" == "https" ]; then
   git clone https://github.com/mattpocock/skills.git $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
 elif [ "$GITHUB_CLONE_METHOD" == "ssh" ]; then
   git clone git@github.com:mattpocock/skills.git $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
-elif [ "$GITHUB_CLONE_METHOD" == "git" ]; then
-  git clone git@github.com:mattpocock/skills.git $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
+elif [ "$GITHUB_CLONE_METHOD" == "gh" ]; then
+  gh repo clone mattpocock/skills $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
 else
   echo "==> GITHUB_CLONE_METHOD environment variable is not valid"
-  echo "==> Please set the GITHUB_CLONE_METHOD environment variable to a valid value (https, ssh, git)."
+  echo "==> Please set the GITHUB_CLONE_METHOD environment variable to a valid value (https, ssh, gh)."
   exit 1
 fi
 cd "$ASCII_ART_PATH"
