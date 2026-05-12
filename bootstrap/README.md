@@ -29,7 +29,8 @@ This folder contains the bootstrap scripts for the Software Factory Intensive tu
 For example:
 
 	```bash
-	./bootstrap.sh 00.2-setup-foundation
+         # This will set up your factory to be ready to use the examples in 01-basic-flow
+	./bootstrap.sh 01-basic-flow
 	```
 
 Runs the work for 00.1 *and* 00.2, then stops. Your factory now looks like it would after you'd manually completed 00.2 — so you can inspect that state, or start 00.3 from a clean baseline.
