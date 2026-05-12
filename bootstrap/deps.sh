@@ -18,9 +18,19 @@
   esac
   case "$os" in
     darwin|linux) ;;
-    *) echo "Unsupported OS: $os" >&2; exit 1 ;;                                                                                          
+    *) echo "Unsupported OS: $os" >&2; exit 1 ;;
   esac
-  
+
+  # Pick an available SHA-256 checker: sha256sum on Linux, shasum on macOS (and Linux with Perl).
+  if command -v sha256sum >/dev/null 2>&1; then
+    SHA256_CHECK=(sha256sum -c)
+  elif command -v shasum >/dev/null 2>&1; then
+    SHA256_CHECK=(shasum -a 256 -c)
+  else
+    echo "Neither sha256sum nor shasum found; cannot verify checksums." >&2
+    exit 1
+  fi
+
   tmp=$(mktemp -d) && trap 'rm -rf "$tmp"' EXIT
   cd "$tmp"
 
@@ -30,7 +40,7 @@
     "https://github.com/gastownhall/beads/releases/download/v${BD_VERSION}/${bd_asset}"
   curl -fsSL -o checksums.txt \
     "https://github.com/gastownhall/beads/releases/download/v${BD_VERSION}/checksums.txt"
-  shasum -a 256 -c <(grep " ${bd_asset}\$" checksums.txt)
+  "${SHA256_CHECK[@]}" <(grep " ${bd_asset}\$" checksums.txt)
   tar -xzf "$bd_asset"
   install -m 755 bd "${INSTALL_DIR}/bd"
 

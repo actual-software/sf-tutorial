@@ -8,6 +8,13 @@ if [ -z "$TUTORIAL_STEP" ]; then
   exit 1
 fi
 
+# Portable in-place sed: BSD sed (macOS) requires an empty arg after -i, GNU sed (Linux) does not.
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  SED_I=(-i '')
+else
+  SED_I=(-i)
+fi
+
 read -p "Are you comfortable with resetting all of \$SOFTWARE_FACTORY_INTENSIVE_PATH? (Y/n) " confirm
 if [ "$confirm" != "Y" ]; then
   echo "==> Exiting script."
@@ -166,7 +173,7 @@ fi
 gc init factory1 --provider $MODEL_PROVIDER
 cd factory1
 export FACTORY_PATH="$(pwd)"
-sed -i '' '/^\[\[agent\]\]$/,/^$/d' $FACTORY_PATH/pack.toml
+sed "${SED_I[@]}" '/^\[\[agent\]\]$/,/^$/d' $FACTORY_PATH/pack.toml
 if [ $(ps aux | grep "dolt sql-server" | grep factory1 | grep -v grep | wc -l) -gt 1 ]; then
   echo "==> You have more than one Dolt process for factory1"
   echo "==> Please stop the other Dolt processes and try again."
@@ -257,7 +264,7 @@ gc import add .gc/system/packs/pr-gate-city
 gc import add --rig ascii-art .gc/system/packs/pr-gate-rig
 gc import remove --rig ascii-art setup
 rm -rf "$FACTORY_PATH/agents/mayor"
-sed -i '' '/\[named_session\]/,/\[named_session\]/d' "$FACTORY_PATH/pack.toml"
+sed "${SED_I[@]}" '/\[named_session\]/,/\[named_session\]/d' "$FACTORY_PATH/pack.toml"
 
 if [ "$TUTORIAL_STEP" == "01-basic-flow" ]; then
   gc start
@@ -276,5 +283,23 @@ gc import remove --rig ascii-art pr-gate-rig
 if [ "$TUTORIAL_STEP" == "02-first-review-loop" ]; then
   gc start
   echo "==> Ready to test on 02-first-review-loop"
+exit 1
+fi
+
+# Run 03-branch-protection
+
+cd $ASCII_ART_PATH
+mkdir -p .github
+cp $ARTIFACTS_PATH/github/CODEOWNERS \
+  .github/CODEOWNERS
+sed "${SED_I[@]}" 's/@your-github-handle/$GITHUB_USERNAME/g' .github/CODEOWNERS
+git add .github/CODEOWNERS
+git commit -m "chore: add CODEOWNERS"
+git push origin main
+gh api "repos/$GITHUB_USERNAME/ascii-art/contents/.github/CODEOWNERS" -q '.path'
+OWNER=$GITHUB_USERNAME REPO=ascii-art $ARTIFACTS_PATH/github/branch-protection.sh
+
+if [ "$TUTORIAL_STEP" == "03-branch-protection" ]; then
+  echo "==> Ready to test on 03-branch-protection"
 exit 1
 fi
