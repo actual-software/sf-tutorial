@@ -114,16 +114,16 @@ seed_letter_epic "Letters a–m" "letters-a-m" "a" "m"
 seed_letter_epic "Letters n–z" "letters-n-z" "n" "z"
 
 # Ten number epics, ten beads each.
-seed_number_epic "Numbers 1–10"   "numbers-1-10"     1  10
-seed_number_epic "Numbers 11–20"  "numbers-11-20"   11  20
-seed_number_epic "Numbers 21–30"  "numbers-21-30"   21  30
-seed_number_epic "Numbers 31–40"  "numbers-31-40"   31  40
-seed_number_epic "Numbers 41–50"  "numbers-41-50"   41  50
-seed_number_epic "Numbers 51–60"  "numbers-51-60"   51  60
-seed_number_epic "Numbers 61–70"  "numbers-61-70"   61  70
-seed_number_epic "Numbers 71–80"  "numbers-71-80"   71  80
-seed_number_epic "Numbers 81–90"  "numbers-81-90"   81  90
-seed_number_epic "Numbers 91–100" "numbers-91-100"  91 100
+# seed_number_epic "Numbers 1–10"   "numbers-1-10"     1  10
+# seed_number_epic "Numbers 11–20"  "numbers-11-20"   11  20
+# seed_number_epic "Numbers 21–30"  "numbers-21-30"   21  30
+# seed_number_epic "Numbers 31–40"  "numbers-31-40"   31  40
+# seed_number_epic "Numbers 41–50"  "numbers-41-50"   41  50
+# seed_number_epic "Numbers 51–60"  "numbers-51-60"   51  60
+# seed_number_epic "Numbers 61–70"  "numbers-61-70"   61  70
+# seed_number_epic "Numbers 71–80"  "numbers-71-80"   71  80
+# seed_number_epic "Numbers 81–90"  "numbers-81-90"   81  90
+# seed_number_epic "Numbers 91–100" "numbers-91-100"  91 100
 
 # --- summary -----------------------------------------------------------------
 
