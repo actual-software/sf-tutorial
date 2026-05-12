@@ -300,6 +300,59 @@ gh api "repos/$GITHUB_USERNAME/ascii-art/contents/.github/CODEOWNERS" -q '.path'
 OWNER=$GITHUB_USERNAME REPO=ascii-art $ARTIFACTS_PATH/github/branch-protection.sh
 
 if [ "$TUTORIAL_STEP" == "03-branch-protection" ]; then
+  gc start
   echo "==> Ready to test on 03-branch-protection"
+exit 1
+fi
+
+# Run 04-adr-reviewer
+
+cp -r "$ARTIFACTS_PATH/packs/architect-rig" \
+      "$FACTORY_PATH/.gc/system/packs/architect-rig"
+cd "$FACTORY_PATH"
+gc import add --rig ascii-art .gc/system/packs/architect-rig
+gc import remove --rig ascii-art review-loop-rig
+
+if [ "$TUTORIAL_STEP" == "04-adr-reviewer" ]; then
+  gc start
+  echo "==> Ready to test on 04-adr-reviewer"
+exit 1
+fi
+
+# Run 05.1-bead-gate-checks
+
+cp -r "$ARTIFACTS_PATH/packs/bead-gate-rig" \
+      "$FACTORY_PATH/.gc/system/packs/bead-gate-rig"
+cd "$FACTORY_PATH"
+gc import add --rig ascii-art .gc/system/packs/bead-gate-rig
+gc import remove --rig ascii-art architect-rig
+
+if [ "$TUTORIAL_STEP" == "05.1-bead-gate-checks" ]; then
+  gc start
+  echo "==> Ready to test on 05.1-bead-gate-checks"
+exit 1
+fi
+
+# Run 05.2-bead-gate-checks
+
+if [ "$GITHUB_CLONE_METHOD" == "https" ]; then
+  git clone https://github.com/mattpocock/skills.git $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
+elif [ "$GITHUB_CLONE_METHOD" == "ssh" ]; then
+  git clone git@github.com:mattpocock/skills.git $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
+elif [ "$GITHUB_CLONE_METHOD" == "git" ]; then
+  git clone git@github.com:mattpocock/skills.git $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
+else
+  echo "==> GITHUB_CLONE_METHOD environment variable is not valid"
+  echo "==> Please set the GITHUB_CLONE_METHOD environment variable to a valid value (https, ssh, git)."
+  exit 1
+fi
+cd "$ASCII_ART_PATH"
+mkdir -p .claude/skills/grill-me
+cp $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills/skills/productivity/grill-me/SKILL.md \
+   .claude/skills/grill-me/SKILL.md
+
+if [ "$TUTORIAL_STEP" == "05.2-bead-gate-checks" ]; then
+  gc start
+  echo "==> Ready to test on 05.2-bead-gate-checks"
 exit 1
 fi
