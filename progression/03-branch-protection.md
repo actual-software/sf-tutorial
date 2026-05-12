@@ -17,7 +17,8 @@
 - [Try It](#try-it)
   - [1. Prove the gate is on (without review)](#1-prove-the-gate-is-on-without-review)
   - [2. Approve and merge](#2-approve-and-merge)
-  - [3. Reflect](#3-reflect)
+  - [3. Watch a direct push get rejected](#3-watch-a-direct-push-get-rejected)
+  - [4. Reflect](#4-reflect)
 - [Verification](#verification)
 - [Troubleshooting](#troubleshooting)
 - [What's next](#whats-next)
@@ -239,9 +240,9 @@ Open the PR for review:
 gh pr view "$PR" --web
 ```
 
-You must be a CODEOWNER for the approval to count. If you have another user
-that can review and approve, please have them do so. If not, feel free to
-check the override box first, then merge via the GitHub UI.
+You must be a CODEOWNER **other than the PR author** for the approval to count — GitHub refuses to let a PR's author approve their own PR, and the polecat opened this PR using your token. Have a teammate listed in `CODEOWNERS` approve it, then run `gh pr merge "$PR" --merge`.
+
+If you're working solo and your only CODEOWNER is you, none of the merge surfaces will work — `enforce_admins=true` (set in step 4) binds you to the same rule as everyone else, so the UI's override checkbox won't appear either. See the [`can't approve own PR`](#troubleshooting) troubleshooting bullet for the three documented escape hatches (second CODEOWNER, separate bot identity, or temporary `MIN_APPROVALS=0`).
 
 Confirm the merge landed on `main`:
 
@@ -256,7 +257,69 @@ ls ascii/ | grep -i 'f'
 You should see a new merge (or squash) commit on `origin/main` and the
 `f`-letter file present in `ascii/`.
 
-### 3. Reflect
+### 3. Watch a direct push get rejected
+
+The PR path works because branch protection allows it. To see what protection actually blocks, try the obvious shortcut — commit a change to `main` locally and push it.
+
+First, pin the current `main` commit so you can restore it afterward.
+
+**Copy and paste**
+
+```bash
+cd "$ASCII_ART_PATH"
+git checkout main
+git fetch origin && git pull
+export CURRENT_COMMIT=$(git rev-parse HEAD)
+echo "Pinned main at $CURRENT_COMMIT"
+```
+
+Make a trivial change directly on `main` and commit it.
+
+**Copy and paste**
+
+```bash
+echo "bypass attempt $(date +%s)" >> README.md
+git add README.md
+git commit -m "chore: try to bypass branch protection"
+```
+
+Now push.
+
+**Copy and paste**
+
+```bash
+git push origin main
+```
+
+**Expected output**
+
+```text
+remote: error: GH006: Protected branch update failed for refs/heads/main.
+remote: error: At least 1 approving review is required by reviewers with write access.
+ ! [remote rejected] main -> main (protected branch hook declined)
+error: failed to push some refs to '…/ascii-art.git'
+```
+
+GitHub refuses the push. `enforce_admins=true` binds you to the same rule a non-admin would hit. The polecat — running under your token — would get the same rejection if it tried to fast-forward `main` directly, which is why `mol-polecat-pr` opens a PR instead.
+
+Reset `main` back to where it was and discard the local bypass commit.
+
+**Copy and paste**
+
+```bash
+git reset --hard $CURRENT_COMMIT
+git log --oneline -1
+```
+
+**Expected output**
+
+```text
+HEAD is at <CURRENT_COMMIT short> <subject of the last legitimate merge commit>
+```
+
+Your local `main` once again matches `origin/main`. Nothing landed on the remote.
+
+### 4. Reflect
 
 **What changed.** A human — or another agent acting as a CODEOWNER — must
 approve every PR before it can merge to `main`. Direct merges are gone,
