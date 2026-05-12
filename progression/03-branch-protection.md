@@ -7,14 +7,17 @@
 - [Objective](#objective)
 - [Prereqs](#prereqs)
 - [Context](#context)
-- [Walkthrough](#walkthrough)
-  - [1. Copy CODEOWNERS into the rig](#1-copy-codeowners-into-the-rig)
-  - [2. Inspect the protection script](#2-inspect-the-protection-script)
-  - [3. Dry-run the script](#3-dry-run-the-script)
-  - [4. Apply the protection](#4-apply-the-protection)
-  - [5. Prove the gate is on (without review)](#5-prove-the-gate-is-on-without-review)
-  - [6. Approve and merge](#6-approve-and-merge)
-  - [7. Reflect](#7-reflect)
+- [Setup](#setup)
+  - [Bootstrap Factory1 with Script](#bootstrap-factory1-with-script)
+  - [Build Factory1 by Hand](#build-factory1-by-hand)
+    - [1. Copy CODEOWNERS into the rig](#1-copy-codeowners-into-the-rig)
+    - [2. Inspect the protection script](#2-inspect-the-protection-script)
+    - [3. Dry-run the script](#3-dry-run-the-script)
+    - [4. Apply the protection](#4-apply-the-protection)
+- [Try It](#try-it)
+  - [1. Prove the gate is on (without review)](#1-prove-the-gate-is-on-without-review)
+  - [2. Approve and merge](#2-approve-and-merge)
+  - [3. Reflect](#3-reflect)
 - [Verification](#verification)
 - [Troubleshooting](#troubleshooting)
 - [What's next](#whats-next)
@@ -43,7 +46,26 @@ The required-CI half needs an actual workflow producing a check, so it
 is forward-referenced to **Hardening 1** and intentionally left out of
 this page.
 
-## Walkthrough
+## Setup
+
+This lesson has two paths to the same end state. Pick one.
+
+### Bootstrap Factory1 with Script
+
+If this is your first run, complete the one-time setup in the [bootstrap README](../bootstrap/README.md) (`.env`, `deps.sh`) before invoking the script.
+
+**Copy and paste**
+
+```bash
+cd path/to/sf-tutorial/bootstrap
+./bootstrap.sh 03-branch-protection
+```
+
+The script reproduces every step up through this lesson — `.github/CODEOWNERS` is copied in, committed, and pushed to `main`, and `branch-protection.sh` runs against the rig's GitHub repo to install the `main` protection rule and the `epic/*` ruleset.
+
+After it finishes, re-export the four env vars per [00.3](./00.3-setup-foundation.md), then jump to [Try It](#try-it).
+
+### Build Factory1 by Hand
 
 ### 1. Copy CODEOWNERS into the rig
 
@@ -168,7 +190,9 @@ You should see `required_approving_review_count: 1`,
 The last one is what stops repo admins (you) from `git push`-ing
 straight to `main`.
 
-### 5. Prove the gate is on (without review)
+## Try It
+
+### 1. Prove the gate is on (without review)
 
 Sling the next letter — `f.md`:
 
@@ -205,7 +229,7 @@ with write access` or `Required review from a code owner has not been
 provided`. Any of those mean the gate is doing its job. Leave the PR
 open — the next step approves it.
 
-### 6. Approve and merge
+### 2. Approve and merge
 
 Open the PR for review:
 
@@ -232,7 +256,7 @@ ls ascii/ | grep -i 'f'
 You should see a new merge (or squash) commit on `origin/main` and the
 `f`-letter file present in `ascii/`.
 
-### 7. Reflect
+### 3. Reflect
 
 **What changed.** A human — or another agent acting as a CODEOWNER — must
 approve every PR before it can merge to `main`. Direct merges are gone,
@@ -317,7 +341,7 @@ block the merge regardless of approvals.
   to use a separate bot account so author and reviewer differ; (3) as a
   last resort for a solo learner, temporarily set `MIN_APPROVALS=0` and
   re-run the script for this one merge, then re-tighten immediately. The
-  third option defeats the gate — only use it to unblock the walkthrough.
+  third option defeats the gate — only use it to unblock the exercise.
   Page 04's AI reviewer does not solve this either; GitHub also refuses
   reviews from the PR-author identity. Plan for a separate approver
   identity before relying on this gate in real work.
