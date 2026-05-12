@@ -4,7 +4,9 @@ This folder contains the bootstrap scripts for the Software Factory Intensive tu
 
 ## Dependencies Script
 
-To run the script, first please fill out the `.env` file in this folder with the correct values, then make the script executable and run it from this folder.
+This script will install particular pegged versions of `bd` (1.0.3) and `dolt` (2.0.1).
+
+To run the script, simply make the script executable and run it from this folder.
 
 ```bash
 chmod +x deps.sh
@@ -15,8 +17,7 @@ chmod +x deps.sh
 
 ### Environment Variables
 
-
-Then source the `.env` file. Then run the script.
+This script has some configuration you must set first in `.env`. Please check out `.env.example` for a full example with notes of what to choose.
 
 ### Running the script
 
