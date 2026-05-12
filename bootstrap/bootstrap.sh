@@ -20,26 +20,12 @@ fi
 
 echo "==> Continuing script."
 
-# Prerequisites:
-
-# 1. ~/software-factory-intensive (or the value of SOFTWARE_FACTORY_INTENSIVE_PATH in the .env file) is a directory
-# ```bash
-# export SOFTWARE_FACTORY_INTENSIVE_PATH=~/software-factory-intensive
-# mkdir -p $SOFTWARE_FACTORY_INTENSIVE_PATH
-# ```
-
-# 2. https://github.com/actual-software/sf-tutorial.git is cloned in ~/software-factory-intensive/sf-tutorial
-# ```bash
-# cd $SOFTWARE_FACTORY_INTENSIVE_PATH
-# git clone https://github.com/actual-software/sf-tutorial.git
-# ```
-
-# 3. bootstrap.sh has been made executable
+# 1. bootstrap.sh has been made executable
 # ```bash
 # chmod +x bootstrap.sh
 # ```
 
-# 4. bd is installaed on the correct version
+# 2. bd is installaed on the correct version
 # MacOS Installation:
 # ```bash
 # brew install bd
@@ -49,7 +35,7 @@ echo "==> Continuing script."
 # curl -fsSL https://raw.githubusercontent.com/bd-ls/bd/main/install.sh | bash
 # ```
 
-# 5. bd is on the correct version
+# 3. bd is on the correct version
 
 # Check if bd is installed on the correct version
 if ! command -v bd &> /dev/null; then
@@ -65,7 +51,7 @@ if [[ "$bd_version" != "1.0.3" ]]; then
   exit 1
 fi
 
-# 6. gc is installed on the correct version
+# 4. gc is installed on the correct version
 
 # Check if gc is installed
 if ! command -v gc &> /dev/null; then
@@ -81,7 +67,7 @@ if [ "$gc_version" != "1.1.0" ]; then
   exit 1
 fi
 
-# 7. dolt is installed on the correct version
+# 5. dolt is installed on the correct version
 # ```bash
 # dolt version
 # ```
@@ -94,9 +80,9 @@ if ! command -v dolt &> /dev/null; then
 fi
 
 dolt_version=$(dolt version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-if [[ "$dolt_version" != "1.8.8" ]]; then
+if [[ "$dolt_version" != "2.0.1" ]]; then
   echo "==> dolt is not on the correct version (found: ${dolt_version:-unknown})"
-  echo "==> Please install dolt 1.8.8."
+  echo "==> Please install dolt 2.0.1."
   exit 1
 fi
 
@@ -133,6 +119,13 @@ if ! [[ "$TUTORIAL_STEP" =~ ^(00\.1-setup-foundation|00\.2-setup-foundation|00\.
 04-adr-reviewer
 05.1-bead-gate-checks
 05.2-bead-gate-checks"
+  exit 1
+fi
+
+## Check if the SOFTWARE_FACTORY_INTENSIVE_PATH environment variable is set
+if [ -z "$SOFTWARE_FACTORY_INTENSIVE_PATH" ]; then
+  echo "==> SOFTWARE_FACTORY_INTENSIVE_PATH environment variable not found"
+  echo "==> Please set the SOFTWARE_FACTORY_INTENSIVE_PATH environment variable in the .env file."
   exit 1
 fi
 
@@ -183,6 +176,9 @@ if ! [[ "$ALLOW_ASCII_ART_PUSH_FORCE" =~ ^(true|false)$ ]]; then
   exit 1
 fi
 
+## Delete all existing directories
+mkdir -p $SOFTWARE_FACTORY_INTENSIVE_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH
 ## Check that no gas cities are running
 if gc cities | grep -q "factory"; then
   for city in $(gc cities | grep "factory" | awk '{print $2}'); do
@@ -191,20 +187,27 @@ if gc cities | grep -q "factory"; then
     cd ..
   done
 fi
-
-## Delete all existing directories
-cd $SOFTWARE_FACTORY_INTENSIVE_PATH/
 rm -rf factory*/
 rm -rf ascii-art
 rm -rf sf-tutorial
+
+if [ "$GITHUB_CLONE_METHOD" == "https" ]; then
+  git clone https://github.com/actual-software/sf-tutorial.git $SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial
+elif [ "$GITHUB_CLONE_METHOD" == "ssh" ]; then
+  git clone git@github.com:actual-software/sf-tutorial.git $SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial
+elif [ "$GITHUB_CLONE_METHOD" == "git" ]; then
+  git clone git@github.com:actual-software/sf-tutorial.git $SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial
+else
+  echo "==> GITHUB_CLONE_METHOD environment variable is not valid"
+  echo "==> Please set the GITHUB_CLONE_METHOD environment variable to a valid value (https, ssh, git)."
+  exit 1
+fi
 
 # Run 00.1-setup-foundation
 gc init factory1 --provider $MODEL_PROVIDER
 cd factory1
 export FACTORY_PATH="$(pwd)"
 sed -i '' '/^\[\[agent\]\]$/,/^$/d' $FACTORY_PATH/pack.toml
-gc import add ../sf-tutorial/artifacts/packs/setup
-chmod +x .gc/system/packs/setup/assets/scripts/worktree-setup.sh
 gc start
 if [ $(ps aux | grep "dolt sql-server" | grep factory1 | grep -v grep | wc -l) -gt 1 ]; then
   echo "==> You have more than one Dolt process for factory1"
@@ -213,7 +216,7 @@ if [ $(ps aux | grep "dolt sql-server" | grep factory1 | grep -v grep | wc -l) -
 fi
 
 if [ "$TUTORIAL_STEP" == "00.1-setup-foundation" ]; then
-  echo "==> Ready to start on 00.2-setup-foundation"
+  echo "==> Ready to test on 00.1-setup-foundation"
 exit 1
 fi
 
@@ -245,13 +248,15 @@ fi
 cp -r "$ARTIFACTS_PATH/packs/setup" \
       "$FACTORY_PATH/.gc/system/packs/setup"
 cd $FACTORY_PATH
+gc import add ../sf-tutorial/artifacts/packs/setup
+chmod +x .gc/system/packs/setup/assets/scripts/worktree-setup.sh
 gc import add --rig ascii-art .gc/system/packs/setup
 gc import list --rig ascii-art
 gc restart
 cd $ASCII_ART_PATH
 cp "$ARTIFACTS_PATH/beads/seed-epics.sh" ./seed-epics.sh
 chmod +x ./seed-epics.sh
-./seed-epics.sh
+./seed-epics.sh # You will see `Warning: auto-export: git add failed: exit status 1`, but you can ignore it.
 
 ts=$(date +%s)
 for rig_path in "$FACTORY_PATH" "$ASCII_ART_PATH"; do
@@ -274,6 +279,6 @@ for rig_path in "$FACTORY_PATH" "$ASCII_ART_PATH"; do
 done
 
 if [ "$TUTORIAL_STEP" == "00.2-setup-foundation" ]; then
-  echo "==> Ready to start on 00.2-setup-foundation"
+  echo "==> Ready to test on 00.2-setup-foundation"
 exit 1
 fi

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-# Install bd 1.0.3 and dolt 1.8.8 into ~/.local/bin
+# Install bd 1.0.3 and dolt 2.0.1 into ~/.local/bin
   set -euo pipefail
   
   BD_VERSION=1.0.3
-  DOLT_VERSION=1.8.8
+  DOLT_VERSION=2.0.1
   INSTALL_DIR="${HOME}/.local/bin"
   mkdir -p "$INSTALL_DIR"
   
