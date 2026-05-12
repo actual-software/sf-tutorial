@@ -18,6 +18,7 @@ This folder contains the bootstrap scripts for the Software Factory Intensive tu
 	chmod +x deps.sh
 	./deps.sh
 	```	
+
 3. Run the bootstrap script to fast-forward your `factory1` instance to the **state at the end of** a given lesson. The script runs the setup work for every step up to and including the one you pass, leaving you in the post-lesson state — ready to verify that lesson's outcome or move on to the next one.
 
 	```bash
