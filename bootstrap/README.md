@@ -23,7 +23,7 @@ Then source the `.env` file. Then run the script.
 Run this script from this folder to bootstrap your factory to be ready to execute a given lesson. Pass the tutorial step as the first argument.
 
 ```bash
-c
+chmod +x bootstrap.sh
 ./bootstrap.sh <TUTORIAL_STEP>
 ```
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-# Capture the tutorial step from the first positional argument.
 TUTORIAL_STEP="$1"
 
 if [ -z "$TUTORIAL_STEP" ]; then
@@ -8,9 +7,6 @@ if [ -z "$TUTORIAL_STEP" ]; then
   echo "==> Please pass the tutorial step as the first argument."
   exit 1
 fi
-
-# Give the user a Y/n prompt to confirm they are comfortable with
-# with resettng the associated files/folders in this script.
 
 read -p "Are you comfortable with resetting all of \$SOFTWARE_FACTORY_INTENSIVE_PATH? (Y/n) " confirm
 if [ "$confirm" != "Y" ]; then
@@ -20,24 +16,6 @@ fi
 
 echo "==> Continuing script."
 
-# 1. bootstrap.sh has been made executable
-# ```bash
-# chmod +x bootstrap.sh
-# ```
-
-# 2. bd is installaed on the correct version
-# MacOS Installation:
-# ```bash
-# brew install bd
-# ```
-
-# Linux Installation:
-# curl -fsSL https://raw.githubusercontent.com/bd-ls/bd/main/install.sh | bash
-# ```
-
-# 3. bd is on the correct version
-
-# Check if bd is installed on the correct version
 if ! command -v bd &> /dev/null; then
   echo "==> bd could not be found"
   echo "==> Please install bd."
@@ -51,9 +29,6 @@ if [[ "$bd_version" != "1.0.3" ]]; then
   exit 1
 fi
 
-# 4. gc is installed on the correct version
-
-# Check if gc is installed
 if ! command -v gc &> /dev/null; then
   echo "==> gc could not be found"
   echo "==> Please install gc."
@@ -67,12 +42,6 @@ if [ "$gc_version" != "1.1.0" ]; then
   exit 1
 fi
 
-# 5. dolt is installed on the correct version
-# ```bash
-# dolt version
-# ```
-
-# Check if dolt is installed
 if ! command -v dolt &> /dev/null; then
   echo "==> dolt could not be found"
   echo "==> Please install dolt."
@@ -86,7 +55,6 @@ if [[ "$dolt_version" != "2.0.1" ]]; then
   exit 1
 fi
 
-# Check if the .env file exists and is populated
 if [ ! -f .env ]; then
   echo "==> .env file not found"
   echo "==> Please create a .env file in this folder with the correct values."
@@ -95,17 +63,13 @@ fi
 
 # Initial Setup:
 
-## Source the .env file
 source .env
 
-## Export current directory as TUTORIAL_PATH
 export TUTORIAL_PATH="$(pwd)/.."
 export ARTIFACTS_PATH="$TUTORIAL_PATH/artifacts"
 
-## Remove file extension from the TUTORIAL_STEP argument
 TUTORIAL_STEP=$(echo "$TUTORIAL_STEP" | sed 's/\.md$//')
 
-## Check if the TUTORIAL_STEP argument is valid
 if ! [[ "$TUTORIAL_STEP" =~ ^(00\.1-setup-foundation|00\.2-setup-foundation|00\.3-setup-foundation|01-basic-flow|02-first-review-loop|03-branch-protection|04-adr-reviewer|05\.1-bead-gate-checks|05\.2-bead-gate-checks)$ ]]; then
   echo "==> TUTORIAL_STEP argument is not valid"
   echo "==> Please pass one of the following values as the first argument:
@@ -122,28 +86,24 @@ if ! [[ "$TUTORIAL_STEP" =~ ^(00\.1-setup-foundation|00\.2-setup-foundation|00\.
   exit 1
 fi
 
-## Check if the SOFTWARE_FACTORY_INTENSIVE_PATH environment variable is set
 if [ -z "$SOFTWARE_FACTORY_INTENSIVE_PATH" ]; then
   echo "==> SOFTWARE_FACTORY_INTENSIVE_PATH environment variable not found"
   echo "==> Please set the SOFTWARE_FACTORY_INTENSIVE_PATH environment variable in the .env file."
   exit 1
 fi
 
-## Check if the MODEL_PROVIDER environment variable is set
 if [ -z "$MODEL_PROVIDER" ]; then
   echo "==> MODEL_PROVIDER environment variable not found"
   echo "==> Please set the MODEL_PROVIDER environment variable in the .env file."
   exit 1
 fi
 
-## Check if the MODEL_PROVIDER environment variable is valid
 if ! [[ "$MODEL_PROVIDER" =~ ^(claude|codex|gemini)$ ]]; then
   echo "==> MODEL_PROVIDER environment variable is not valid"
   echo "==> Please set the MODEL_PROVIDER environment variable to a valid value (claude, codex, gemini)."
   exit 1
 fi
 
-## Check if the GITHUB_USERNAME environment variable is set
 if [ -z "$GITHUB_USERNAME" ]; then
   echo "==> GITHUB_USERNAME environment variable not found"
   echo "==> Please set the GITHUB_USERNAME environment variable in the .env file."
@@ -162,24 +122,21 @@ if ! [[ "$ASCII_ART_REPO_EXISTS" =~ ^(true|false)$ ]]; then
   exit 1
 fi
 
-## Check if the ALLOW_ASCII_ART_PUSH_FORCE environment variable is set
 if [ -z "$ALLOW_ASCII_ART_PUSH_FORCE" ]; then
   echo "==> ALLOW_ASCII_ART_PUSH_FORCE environment variable not found"
   echo "==> Please set the ALLOW_ASCII_ART_PUSH_FORCE environment variable in the .env file."
   exit 1
 fi
 
-## Check if the ALLOW_ASCII_ART_PUSH_FORCE environment variable is valid
 if ! [[ "$ALLOW_ASCII_ART_PUSH_FORCE" =~ ^(true|false)$ ]]; then
   echo "==> ALLOW_ASCII_ART_PUSH_FORCE environment variable is not valid"
   echo "==> Please set the ALLOW_ASCII_ART_PUSH_FORCE environment variable to a valid value (true, false)."
   exit 1
 fi
 
-## Delete all existing directories
 mkdir -p $SOFTWARE_FACTORY_INTENSIVE_PATH
 cd $SOFTWARE_FACTORY_INTENSIVE_PATH
-## Check that no gas cities are running
+
 if gc cities | grep -q "factory"; then
   for city in $(gc cities | grep "factory" | awk '{print $2}'); do
     cd $city
@@ -187,6 +144,7 @@ if gc cities | grep -q "factory"; then
     cd ..
   done
 fi
+
 rm -rf factory*/
 rm -rf ascii-art
 rm -rf sf-tutorial
@@ -256,17 +214,14 @@ cd $ASCII_ART_PATH
 cp "$ARTIFACTS_PATH/beads/seed-epics.sh" ./seed-epics.sh
 chmod +x ./seed-epics.sh
 ./seed-epics.sh # You will see `Warning: auto-export: git add failed: exit status 1`, but you can ignore it.
-
 ts=$(date +%s)
 for rig_path in "$FACTORY_PATH" "$ASCII_ART_PATH"; do
   rig_name=$(basename "$rig_path")
-
   pre=$(cd "$rig_path" && bd config get export.auto 2>&1 || echo "<unset>")
   echo "    $rig_name export.auto (pre):  $pre"
   (cd "$rig_path" && bd config set export.auto false)
   post=$(cd "$rig_path" && bd config get export.auto 2>&1 || echo "<error>")
   echo "    $rig_name export.auto (post): $post"
-
   jsonl="$rig_path/.beads/issues.jsonl"
   if [ -f "$jsonl" ]; then
     backup="/tmp/${rig_name}-issues-backup-${ts}.jsonl"
@@ -307,5 +262,19 @@ sed -i '' '/\[named_session\]/,/\[named_session\]/d' "$FACTORY_PATH/pack.toml"
 if [ "$TUTORIAL_STEP" == "01-basic-flow" ]; then
   gc start
   echo "==> Ready to test on 01-basic-flow"
+exit 1
+fi
+
+# Run 02-first-review-loop
+
+cp -r "$ARTIFACTS_PATH/packs/review-loop-rig" \
+      "$FACTORY_PATH/.gc/system/packs/review-loop-rig"
+cd "$FACTORY_PATH"
+gc import add --rig ascii-art .gc/system/packs/review-loop-rig
+gc import remove --rig ascii-art pr-gate-rig
+
+if [ "$TUTORIAL_STEP" == "02-first-review-loop" ]; then
+  gc start
+  echo "==> Ready to test on 02-first-review-loop"
 exit 1
 fi
