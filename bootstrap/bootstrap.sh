@@ -146,27 +146,20 @@ cd $SOFTWARE_FACTORY_INTENSIVE_PATH
 
 if gc cities | grep -q "factory"; then
   for city in $(gc cities | grep "factory" | awk '{print $2}'); do
-    cd $city
-    gc stop
-    cd ..
+    # Subshell so `cd` doesn't leak. `gc cities` returns absolute paths that may
+    # point outside $SOFTWARE_FACTORY_INTENSIVE_PATH (stale registrations from
+    # prior runs with a different .env). Leaking cwd here caused subsequent
+    # rm -rf calls to nuke directories outside $SOFTWARE_FACTORY_INTENSIVE_PATH.
+    (cd "$city" 2>/dev/null && gc stop) || true
   done
 fi
 
 rm -rf factory*/
 rm -rf ascii-art
-rm -rf sf-tutorial
-
-if [ "$GITHUB_CLONE_METHOD" == "https" ]; then
-  git clone https://github.com/actual-software/sf-tutorial.git $SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial
-elif [ "$GITHUB_CLONE_METHOD" == "ssh" ]; then
-  git clone git@github.com:actual-software/sf-tutorial.git $SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial
-elif [ "$GITHUB_CLONE_METHOD" == "gh" ]; then
-  gh repo clone actual-software/sf-tutorial $SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial
-else
-  echo "==> GITHUB_CLONE_METHOD environment variable is not valid"
-  echo "==> Please set the GITHUB_CLONE_METHOD environment variable to a valid value (https, ssh, gh)."
-  exit 1
-fi
+# Intentionally NOT removing sf-tutorial here: this script lives inside the
+# sf-tutorial repo, so the user must already have it. If a future change needs
+# to pin sf-tutorial to a step-specific revision, use `git fetch` + a tag
+# checkout rather than delete-and-clone.
 
 # Run 00.1-setup-foundation
 
@@ -204,9 +197,17 @@ git commit --allow-empty -m 'first commit'
 git add docs/ .gitignore
 git commit -m "Add docs describing initial vision for ASCII Art project"
 if [ "$ASCII_ART_REPO_EXISTS" == "true" ]; then
-gh repo create $GITHUB_USERNAME/ascii-art --description "A reference project for a software factory to build." --public
+  if gh repo view "$GITHUB_USERNAME/ascii-art" >/dev/null 2>&1; then
+    echo "==> ascii-art repo already exists on GitHub for $GITHUB_USERNAME; skipping create."
+  else
+    gh repo create $GITHUB_USERNAME/ascii-art --description "A reference project for a software factory to build." --public
+  fi
 fi
-git remote add origin https://github.com/$GITHUB_USERNAME/ascii-art.git
+if [ "$GITHUB_CLONE_METHOD" == "https" ]; then
+  git remote add origin https://github.com/$GITHUB_USERNAME/ascii-art.git
+else
+  git remote add origin git@github.com:$GITHUB_USERNAME/ascii-art.git
+fi
 # On a re-run, branch protection and the epic/* ruleset from a previous step 03
 # are still active on the remote and will reject this push (force or not).
 # Clear them now; step 03 re-applies them.
