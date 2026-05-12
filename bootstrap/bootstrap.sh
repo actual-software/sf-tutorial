@@ -207,6 +207,17 @@ if [ "$ASCII_ART_REPO_EXISTS" == "true" ]; then
 gh repo create $GITHUB_USERNAME/ascii-art --description "A reference project for a software factory to build." --public
 fi
 git remote add origin https://github.com/$GITHUB_USERNAME/ascii-art.git
+# On a re-run, branch protection and the epic/* ruleset from a previous step 03
+# are still active on the remote and will reject this push (force or not).
+# Clear them now; step 03 re-applies them.
+if gh repo view "$GITHUB_USERNAME/ascii-art" >/dev/null 2>&1; then
+  gh api -X DELETE "repos/$GITHUB_USERNAME/ascii-art/branches/main/protection" >/dev/null 2>&1 || true
+  RULESET_ID=$(gh api "repos/$GITHUB_USERNAME/ascii-art/rulesets" -q '.[] | select(.name == "Epic branches require human review") | .id' 2>/dev/null || true)
+  if [[ "$RULESET_ID" =~ ^[0-9]+$ ]]; then
+    gh api -X DELETE "repos/$GITHUB_USERNAME/ascii-art/rulesets/$RULESET_ID" >/dev/null 2>&1 || true
+  fi
+fi
+
 if [ "$ALLOW_ASCII_ART_PUSH_FORCE" == "true" ]; then
   git push -u origin main --force
 else
