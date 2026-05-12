@@ -141,6 +141,23 @@ if ! [[ "$ALLOW_ASCII_ART_PUSH_FORCE" =~ ^(true|false)$ ]]; then
   exit 1
 fi
 
+# Hint printed on script exit. Defined after env validation so it doesn't
+# fire for runs that bailed before beads/dolt setup was relevant.
+print_beads_dolt_hint() {
+  echo ""
+  echo "==> Heads-up: beads/Dolt troubleshooting"
+  echo "    gc's supervisor manages Dolt per rig in SERVER mode. If you hit"
+  echo "    'Dolt server unreachable' or 'failed to open database':"
+  echo ""
+  echo "      1. Use Claude Code (or another agent) to investigate and fix."
+  echo "      2. CAUTION — do NOT accept suggestions to:"
+  echo "           - enable dolt.auto-start  (supervisor may overwrite it)"
+  echo "           - switch to embedded mode (gc requires server mode)"
+  echo "           - run 'bd dolt start' while a city is running (lock conflict)"
+  echo ""
+}
+trap print_beads_dolt_hint EXIT
+
 mkdir -p $SOFTWARE_FACTORY_INTENSIVE_PATH
 cd $SOFTWARE_FACTORY_INTENSIVE_PATH
 
