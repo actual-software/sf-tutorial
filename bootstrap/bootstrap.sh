@@ -204,11 +204,11 @@ else
 fi
 
 # Run 00.1-setup-foundation
+
 gc init factory1 --provider $MODEL_PROVIDER
 cd factory1
 export FACTORY_PATH="$(pwd)"
 sed -i '' '/^\[\[agent\]\]$/,/^$/d' $FACTORY_PATH/pack.toml
-gc start
 if [ $(ps aux | grep "dolt sql-server" | grep factory1 | grep -v grep | wc -l) -gt 1 ]; then
   echo "==> You have more than one Dolt process for factory1"
   echo "==> Please stop the other Dolt processes and try again."
@@ -216,11 +216,13 @@ if [ $(ps aux | grep "dolt sql-server" | grep factory1 | grep -v grep | wc -l) -
 fi
 
 if [ "$TUTORIAL_STEP" == "00.1-setup-foundation" ]; then
+  gc start
   echo "==> Ready to test on 00.1-setup-foundation"
 exit 1
 fi
 
 # Run 00.2-setup-foundation
+
 mkdir ../ascii-art
 gc rig add ../ascii-art ascii-art
 export ASCII_ART_PATH="$(cd ../ascii-art && pwd)"
@@ -248,11 +250,8 @@ fi
 cp -r "$ARTIFACTS_PATH/packs/setup" \
       "$FACTORY_PATH/.gc/system/packs/setup"
 cd $FACTORY_PATH
-gc import add ../sf-tutorial/artifacts/packs/setup
 chmod +x .gc/system/packs/setup/assets/scripts/worktree-setup.sh
 gc import add --rig ascii-art .gc/system/packs/setup
-gc import list --rig ascii-art
-gc restart
 cd $ASCII_ART_PATH
 cp "$ARTIFACTS_PATH/beads/seed-epics.sh" ./seed-epics.sh
 chmod +x ./seed-epics.sh
@@ -279,6 +278,34 @@ for rig_path in "$FACTORY_PATH" "$ASCII_ART_PATH"; do
 done
 
 if [ "$TUTORIAL_STEP" == "00.2-setup-foundation" ]; then
+  gc start
   echo "==> Ready to test on 00.2-setup-foundation"
+exit 1
+fi
+
+# Run 00.3-setup-foundation
+
+if [ "$TUTORIAL_STEP" == "00.3-setup-foundation" ]; then
+  gc start
+  echo "==> Ready to test on 00.3-setup-foundation"
+exit 1
+fi
+
+# Run 01-basic-flow
+
+cp -r "$ARTIFACTS_PATH/packs/pr-gate-city" \
+      "$FACTORY_PATH/.gc/system/packs/pr-gate-city"
+cp -r "$ARTIFACTS_PATH/packs/pr-gate-rig" \
+      "$FACTORY_PATH/.gc/system/packs/pr-gate-rig"
+cd "$FACTORY_PATH"
+gc import add .gc/system/packs/pr-gate-city
+gc import add --rig ascii-art .gc/system/packs/pr-gate-rig
+gc import remove --rig ascii-art setup
+rm -rf "$FACTORY_PATH/agents/mayor"
+sed -i '' '/\[named_session\]/,/\[named_session\]/d' "$FACTORY_PATH/pack.toml"
+
+if [ "$TUTORIAL_STEP" == "01-basic-flow" ]; then
+  gc start
+  echo "==> Ready to test on 01-basic-flow"
 exit 1
 fi
