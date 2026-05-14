@@ -29,7 +29,7 @@ This folder contains the bootstrap scripts for the Software Factory Intensive tu
 For example:
 
 	```bash
-         # This will set up your factory to be ready to use the examples in 01-basic-flow
+  # This will set up your factory to be ready to use the examples in 01-basic-flow
 	./bootstrap.sh 01-basic-flow
 	```
 
@@ -78,4 +78,3 @@ The end state is determined entirely by the argument you pass, not by any prior 
 - Want to get back to end-of-04? Run `./bootstrap.sh 04-adr-reviewer` again — same teardown, rebuild stops at 04.
 
 There's no "incremental" mode — every run is a full reset followed by replaying setup up to the requested step.
-

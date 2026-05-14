@@ -171,6 +171,18 @@ if ! [[ "$ALLOW_ASCII_ART_PUSH_FORCE" =~ ^(true|false)$ ]]; then
   exit 1
 fi
 
+if [ -z "$FACTORY_VERSION_CONTROL" ]; then
+  echo "==> FACTORY_VERSION_CONTROL environment variable not found"
+  echo "==> Please set the FACTORY_VERSION_CONTROL environment variable in the .env file."
+  exit 1
+fi
+
+if ! [[ "$FACTORY_VERSION_CONTROL" =~ ^(true|false)$ ]]; then
+  echo "==> FACTORY_VERSION_CONTROL environment variable is not valid"
+  echo "==> Please set the FACTORY_VERSION_CONTROL environment variable to a valid value (true, false)."
+  exit 1
+fi
+
 # Hint printed on script exit. Defined after env validation so it doesn't
 # fire for runs that bailed before beads/dolt setup was relevant.
 print_beads_dolt_hint() {
@@ -215,36 +227,43 @@ rm -rf ascii-art
 
 gc init factory1 --provider $MODEL_PROVIDER
 cd factory1
+
 export FACTORY_PATH="$(pwd)"
-sed "${SED_I[@]}" '/^\[\[agent\]\]$/,/^$/d' $FACTORY_PATH/pack.toml
+
 if [ $(ps aux | grep "dolt sql-server" | grep factory1 | grep -v grep | wc -l) -gt 1 ]; then
   echo "==> You have more than one Dolt process for factory1"
   echo "==> Please stop the other Dolt processes and try again."
   exit 1
 fi
 
+if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+  git init -b main
+  git add .
+  git add -f .gc/system/
+  git commit -m "00.1-setup-foundation complete"
+fi
+
 if [ "$TUTORIAL_STEP" == "00.1-setup-foundation" ]; then
   gc start
   echo "==> Ready to test on 00.1-setup-foundation"
-exit 1
+  exit 1
 fi
 
 # Run 00.2-setup-foundation
 
 mkdir ../ascii-art
 gc rig add ../ascii-art ascii-art
-export ASCII_ART_PATH="$(cd ../ascii-art && pwd)"
-mkdir -p "$ASCII_ART_PATH/docs/future" \
-         "$ASCII_ART_PATH/docs/current" \
-         "$ASCII_ART_PATH/docs/decision-records"
-cp "$ARTIFACTS_PATH/docs/decision-records/0001.ADR.ASCII.md" \
-   "$ASCII_ART_PATH/docs/decision-records/"
-cp "$ARTIFACTS_PATH/docs/future/0002.ADR.TESTING.md" \
-   "$ASCII_ART_PATH/docs/future/"
-cd "$ASCII_ART_PATH"
+cd ../ascii-art
+export ASCII_ART_PATH="$(pwd)"
 git init -b main
-git commit --allow-empty -m 'first commit'
-git add docs/ .gitignore
+mkdir -p "docs/future" \
+         "docs/current" \
+         "docs/decision-records"
+cp "$ARTIFACTS_PATH/docs/decision-records/0001.ADR.ASCII.md" \
+   "docs/decision-records/"
+cp "$ARTIFACTS_PATH/docs/future/0002.ADR.TESTING.md" \
+   "docs/future/"
+git add docs/
 git commit -m "Add docs describing initial vision for ASCII Art project"
 if [ "$ASCII_ART_REPO_EXISTS" == "true" ]; then
   if gh repo view "$GITHUB_USERNAME/ascii-art" >/dev/null 2>&1; then
@@ -274,10 +293,16 @@ if [ "$ALLOW_ASCII_ART_PUSH_FORCE" == "true" ]; then
 else
   git push -u origin main
 fi
-cp -r "$ARTIFACTS_PATH/packs/setup" \
-      "$FACTORY_PATH/.gc/system/packs/setup"
+
 cd $FACTORY_PATH
+cp -r $ARTIFACTS_PATH/packs/setup/ .gc/system/packs/setup
 chmod +x .gc/system/packs/setup/assets/scripts/worktree-setup.sh
+sed "${SED_I[@]}" '/^\[\[agent\]\]$/,/^$/d' pack.toml
+if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+  git add -f .gc/system/
+  git add .
+  git commit -m "00.2-setup-foundation packs"
+fi
 gc import add --rig ascii-art .gc/system/packs/setup
 cd $ASCII_ART_PATH
 cp "$ARTIFACTS_PATH/beads/seed-epics.sh" ./seed-epics.sh
@@ -301,6 +326,12 @@ for rig_path in "$FACTORY_PATH" "$ASCII_ART_PATH"; do
   fi
 done
 
+if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+  cd $FACTORY_PATH
+  git add .
+  git commit -m "00.2-setup-foundation complete"
+fi
+
 if [ "$TUTORIAL_STEP" == "00.2-setup-foundation" ]; then
   gc start
   echo "==> Ready to test on 00.2-setup-foundation"
@@ -317,16 +348,23 @@ fi
 
 # Run 01-basic-flow
 
-cp -r "$ARTIFACTS_PATH/packs/pr-gate-city" \
-      "$FACTORY_PATH/.gc/system/packs/pr-gate-city"
-cp -r "$ARTIFACTS_PATH/packs/pr-gate-rig" \
-      "$FACTORY_PATH/.gc/system/packs/pr-gate-rig"
 cd "$FACTORY_PATH"
+cp -r $ARTIFACTS_PATH/packs/pr-gate-city/ .gc/system/packs/pr-gate-city
+cp -r $ARTIFACTS_PATH/packs/pr-gate-rig/ .gc/system/packs/pr-gate-rig
+if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+  git add -f .gc/system/
+  git commit -m "01-basic-flow packs"
+fi
 gc import add .gc/system/packs/pr-gate-city
 gc import add --rig ascii-art .gc/system/packs/pr-gate-rig
 gc import remove --rig ascii-art setup
 rm -rf "$FACTORY_PATH/agents/mayor"
 sed "${SED_I[@]}" '/\[named_session\]/,/\[named_session\]/d' "$FACTORY_PATH/pack.toml"
+
+if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+  git add .
+  git commit -m "01-basic-flow complete"
+fi
 
 if [ "$TUTORIAL_STEP" == "01-basic-flow" ]; then
   gc start
@@ -336,11 +374,19 @@ fi
 
 # Run 02-first-review-loop
 
-cp -r "$ARTIFACTS_PATH/packs/review-loop-rig" \
-      "$FACTORY_PATH/.gc/system/packs/review-loop-rig"
-cd "$FACTORY_PATH"
+cd $FACTORY_PATH
+cp -r $ARTIFACTS_PATH/packs/review-loop-rig/ .gc/system/packs/review-loop-rig
+if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+  git add -f .gc/system/
+  git commit -m "02-first-review-loop packs"
+fi
 gc import add --rig ascii-art .gc/system/packs/review-loop-rig
 gc import remove --rig ascii-art pr-gate-rig
+
+if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+  git add .
+  git commit -m "02-first-review-loop complete"
+fi
 
 if [ "$TUTORIAL_STEP" == "02-first-review-loop" ]; then
   gc start
@@ -369,11 +415,19 @@ fi
 
 # Run 04-adr-reviewer
 
-cp -r "$ARTIFACTS_PATH/packs/architect-rig" \
-      "$FACTORY_PATH/.gc/system/packs/architect-rig"
-cd "$FACTORY_PATH"
+cd $FACTORY_PATH
+cp -r $ARTIFACTS_PATH/packs/architect-rig/ .gc/system/packs/architect-rig
+if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+  git add -f .gc/system/
+  git commit -m "04-adr-reviewer packs"
+fi
 gc import add --rig ascii-art .gc/system/packs/architect-rig
 gc import remove --rig ascii-art review-loop-rig
+
+if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+  git add .
+  git commit -m "04-adr-reviewer complete"
+fi
 
 if [ "$TUTORIAL_STEP" == "04-adr-reviewer" ]; then
   gc start
@@ -383,11 +437,19 @@ fi
 
 # Run 05.1-bead-gate-checks
 
-cp -r "$ARTIFACTS_PATH/packs/bead-gate-rig" \
-      "$FACTORY_PATH/.gc/system/packs/bead-gate-rig"
-cd "$FACTORY_PATH"
+cd $FACTORY_PATH
+cp -r $ARTIFACTS_PATH/packs/bead-gate-rig/ .gc/system/packs/bead-gate-rig
+if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+  git add -f .gc/system/
+  git commit -m "05.1-bead-gate-checks packs"
+fi
 gc import add --rig ascii-art .gc/system/packs/bead-gate-rig
 gc import remove --rig ascii-art architect-rig
+
+if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+  git add .
+  git commit -m "05.1-bead-gate-checks complete"
+fi
 
 if [ "$TUTORIAL_STEP" == "05.1-bead-gate-checks" ]; then
   gc start
@@ -397,21 +459,25 @@ fi
 
 # Run 05.2-bead-gate-checks
 
-if [ "$GITHUB_CLONE_METHOD" == "https" ]; then
-  git clone https://github.com/mattpocock/skills.git $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
-elif [ "$GITHUB_CLONE_METHOD" == "ssh" ]; then
-  git clone git@github.com:mattpocock/skills.git $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
-elif [ "$GITHUB_CLONE_METHOD" == "gh" ]; then
-  gh repo clone mattpocock/skills $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
-else
-  echo "==> GITHUB_CLONE_METHOD environment variable is not valid"
-  echo "==> Please set the GITHUB_CLONE_METHOD environment variable to a valid value (https, ssh, gh)."
-  exit 1
+if [ ! -d $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills ]; then
+  if [ "$GITHUB_CLONE_METHOD" == "https" ]; then
+    git clone https://github.com/mattpocock/skills.git $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
+  elif [ "$GITHUB_CLONE_METHOD" == "ssh" ]; then
+    git clone git@github.com:mattpocock/skills.git $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
+  elif [ "$GITHUB_CLONE_METHOD" == "gh" ]; then
+    gh repo clone mattpocock/skills $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
+  else
+    echo "==> GITHUB_CLONE_METHOD environment variable is not valid"
+    echo "==> Please set the GITHUB_CLONE_METHOD environment variable to a valid value (https, ssh, gh)."
+    exit 1
+  fi
 fi
 cd "$ASCII_ART_PATH"
 mkdir -p .claude/skills/grill-me
-cp $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills/skills/productivity/grill-me/SKILL.md \
-   .claude/skills/grill-me/SKILL.md
+if [ ! -f .claude/skills/grill-me/SKILL.md ]; then
+  cp $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills/skills/productivity/grill-me/SKILL.md \
+     .claude/skills/grill-me/SKILL.md
+fi
 
 if [ "$TUTORIAL_STEP" == "05.2-bead-gate-checks" ]; then
   gc start

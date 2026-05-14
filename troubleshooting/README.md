@@ -8,6 +8,7 @@ Topic-scoped guides for issues participants hit while working through the Softwa
 |---|---|
 | [CLI coding agents](cli-coding-agents.md) | Problems interacting with CLI-based coding agents or slash commands. |
 | [tmux](tmux.md) | Terminal usability or session management issues, especially with tmux. |
+| [gc import add](gc-import-add.md) | Problems importing packs with `gc import add`. |
 
 ## Adding a new guide
 
