@@ -7,15 +7,18 @@
 - [Objective](#objective)
 - [Prereqs](#prereqs)
 - [Context](#context)
-- [Walkthrough](#walkthrough)
-  - [1. Install the pr-gate packs into factory1](#1-install-the-pr-gate-packs-into-factory1)
-  - [2. Locate one bead from the first epic](#2-locate-one-bead-from-the-first-epic)
-  - [3. Sling the bead to the polecat (PR mode)](#3-sling-the-bead-to-the-polecat-pr-mode)
-  - [4. Watch the polecat work](#4-watch-the-polecat-work)
-  - [5. Watch the refinery approve and publish a PR](#5-watch-the-refinery-approve-and-publish-a-pr)
-  - [6. Manually merge the PR](#6-manually-merge-the-pr)
-  - [7. Repeat for `b.md` and `c.md`](#7-repeat-for-bmd-and-cmd)
-  - [8. Reflect](#8-reflect)
+- [Setup](#setup)
+  - [Bootstrap Factory1 with Script](#bootstrap-factory1-with-script)
+  - [Build Factory1 by Hand](#build-factory1-by-hand)
+    - [1. Install the pr-gate packs into factory1](#1-install-the-pr-gate-packs-into-factory1)
+- [Try It](#try-it)
+  - [1. Locate one bead from the first epic](#1-locate-one-bead-from-the-first-epic)
+  - [2. Sling the bead to the polecat (PR mode)](#2-sling-the-bead-to-the-polecat-pr-mode)
+  - [3. Watch the polecat work](#3-watch-the-polecat-work)
+  - [4. Watch the refinery approve and publish a PR](#4-watch-the-refinery-approve-and-publish-a-pr)
+  - [5. Manually merge the PR](#5-manually-merge-the-pr)
+  - [6. Repeat for `b.md` and `c.md`](#6-repeat-for-bmd-and-cmd)
+  - [7. Reflect](#7-reflect)
 - [Verification](#verification)
 - [Troubleshooting](#troubleshooting)
 - [What's next](#whats-next)
@@ -67,7 +70,26 @@ Agent workflow:
 1. A **reviewer** agent reviews the PR and corresponding bead. If the work fulfills the requirements of the bead, the reviewer notes their approval in both the bead and the pull request on GitHub. (The agent does not have to repeat themself, one can reference the other to 'See additional details'. But both should indicate approval or rejection.) If the work does not fulfill the requirements, the bead should be routed back to the coder with specific feedback about why the bead is not ready to be closed, and what work needs to be done to complete it.
 1. A **merger** agent reviews beads that have been approved, merges corresponding pull requests, and then closes the corresponding bead.
 
-## Walkthrough
+## Setup
+
+This lesson has two paths to the same end state. Pick one.
+
+### Bootstrap Factory1 with Script
+
+If this is your first run, complete the one-time setup in the [bootstrap README](../bootstrap/README.md) (`.env`, `deps.sh`) before invoking the script.
+
+**Copy and paste**
+
+```bash
+cd path/to/sf-tutorial/bootstrap
+./bootstrap.sh 01-basic-flow
+```
+
+The script reproduces every step up through this lesson — `pr-gate-city` and `pr-gate-rig` are imported, the city's `mayor` agent directory is removed (the new pack patches the mayor), and the city is restarted.
+
+After it finishes, re-export the four env vars per [00.3](./00.3-setup-foundation.md), then jump to [Try It](#try-it).
+
+### Build Factory1 by Hand
 
 ### 1. Install the pr-gate packs into factory1
 
@@ -218,7 +240,9 @@ mol-polecat-pr
 mol-refinery-pr-patrol
 ```
 
-### 2. Locate one bead from the first epic
+## Try It
+
+### 1. Locate one bead from the first epic
 
 List the open `Implement <letter>.md` tasks and grab the first three:
 
@@ -246,7 +270,7 @@ bd show $BEAD_ID
 You should see fields including `metadata.target_file=ascii/a.md`. The polecat
 reads that metadata to know what file it's writing.
 
-### 3. Sling the bead to the polecat (PR mode)
+### 2. Sling the bead to the polecat (PR mode)
 
 Hand the bead to the `ascii-art/pr-gate-rig.polecat` agent using the new
 pr-gate formula:
@@ -280,7 +304,7 @@ the merge-strategy stamp would be missing and the refinery would
 fast-forward the branch into `main` with no PR and no approval gate.
 The pr-gate contract depends on `mol-polecat-pr`.
 
-### 4. Watch the polecat work
+### 3. Watch the polecat work
 
 In another terminal, list the live agent sessions to confirm `polecat` is running:
 
@@ -341,7 +365,7 @@ PARENT
   ↑ ○ aa-52p: sling-aa-985.2 ● P2
 ```
 
-### 5. Watch the refinery approve and publish a PR
+### 4. Watch the refinery approve and publish a PR
 
 When the polecat finishes, it sets `metadata.merge_strategy=pr` and reassigns
  the bead to the refinery.
@@ -410,7 +434,7 @@ path is exercised intentionally later in the progression once the rig
 has misbehaving polecat output to chew on; for `a.md`/`b.md`/`c.md`
 the gate clears.)
 
-### 6. Manually merge the PR
+### 5. Manually merge the PR
 
 Open the PR and look at the diff:
 
@@ -425,7 +449,7 @@ gh pr view $PR --web   # open in browser
 
 Click **Merge pull request** in GitHub (or `gh pr merge "$PR" --merge`).
 
-### 7. Repeat for `b.md` and `c.md`
+### 6. Repeat for `b.md` and `c.md`
 
 Same pattern, two more times — sling with `mol-polecat-pr`, watch the
 gate clear, manually merge the PR:
@@ -450,7 +474,7 @@ Three letters from `letters-a-m` is enough. Resist the urge to chew
 through the whole epic — later pages dispatch in larger batches and
 you want clean state to compare against.
 
-### 8. Reflect
+### 7. Reflect
 
 That worked. Three letters reached `main` — but every commit went
 through a real GitHub pull request, and every PR was approved by the

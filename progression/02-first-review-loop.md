@@ -7,17 +7,20 @@
 - [Objective](#objective)
 - [Prereqs](#prereqs)
 - [Context](#context)
-- [Walkthrough](#walkthrough)
-  - [1. Install the review-loop-rig pack into factory1](#1-install-the-review-loop-rig-pack-into-factory1)
-  - [2. Locate one bead from the first epic](#2-locate-one-bead-from-the-first-epic)
-  - [3. Sling the bead to the polecat (PR mode)](#3-sling-the-bead-to-the-polecat-pr-mode)
-  - [4. Watch the polecat work](#4-watch-the-polecat-work)
-  - [5. Watch the refinery send the bead back with feedback](#5-watch-the-refinery-send-the-bead-back-with-feedback)
-  - [6. Watch the polecat pick the bead back up and address the feedback](#6-watch-the-polecat-pick-the-bead-back-up-and-address-the-feedback)
-  - [7. Watch the refinery approve and publish a PR](#7-watch-the-refinery-approve-and-publish-a-pr)
-  - [8. Manually merge the PR](#8-manually-merge-the-pr)
-  - [9. Repeat for `e.md`](#9-repeat-for-emd)
-  - [10. Reflect](#10-reflect)
+- [Setup](#setup)
+  - [Bootstrap Factory1 with Script](#bootstrap-factory1-with-script)
+  - [Build Factory1 by Hand](#build-factory1-by-hand)
+    - [1. Install the review-loop-rig pack into factory1](#1-install-the-review-loop-rig-pack-into-factory1)
+- [Try It](#try-it)
+  - [1. Locate one bead from the first epic](#1-locate-one-bead-from-the-first-epic)
+  - [2. Sling the bead to the polecat (PR mode)](#2-sling-the-bead-to-the-polecat-pr-mode)
+  - [3. Watch the polecat work](#3-watch-the-polecat-work)
+  - [4. Watch the refinery send the bead back with feedback](#4-watch-the-refinery-send-the-bead-back-with-feedback)
+  - [5. Watch the polecat pick the bead back up and address the feedback](#5-watch-the-polecat-pick-the-bead-back-up-and-address-the-feedback)
+  - [6. Watch the refinery approve and publish a PR](#6-watch-the-refinery-approve-and-publish-a-pr)
+  - [7. Manually merge the PR](#7-manually-merge-the-pr)
+  - [8. Repeat for `e.md`](#8-repeat-for-emd)
+  - [9. Reflect](#9-reflect)
 - [Verification](#verification)
 - [Troubleshooting](#troubleshooting)
 - [What's next](#whats-next)
@@ -68,7 +71,26 @@ The next three pages add deeper gates on top of this loop:
 branch protection on the GitHub side, an ADR-aware reviewer, and a
 bead-level review before any polecat is allowed to claim work.
 
-## Walkthrough
+## Setup
+
+This lesson has two paths to the same end state. Pick one.
+
+### Bootstrap Factory1 with Script
+
+If this is your first run, complete the one-time setup in the [bootstrap README](../bootstrap/README.md) (`.env`, `deps.sh`) before invoking the script.
+
+**Copy and paste**
+
+```bash
+cd path/to/sf-tutorial/bootstrap
+./bootstrap.sh 02-first-review-loop
+```
+
+The script reproduces every step up through this lesson — `review-loop-rig` is added at rig scope, `pr-gate-rig` is removed from the rig's direct imports (still resolved transitively), and the city is restarted.
+
+After it finishes, re-export the four env vars per [00.3](./00.3-setup-foundation.md), then jump to [Try It](#try-it).
+
+### Build Factory1 by Hand
 
 ### 1. Install the review-loop-rig pack into factory1
 
@@ -192,7 +214,9 @@ mol-polecat-pr
 mol-refinery-review-loop-patrol
 ```
 
-### 2. Locate one bead from the first epic
+## Try It
+
+### 1. Locate one bead from the first epic
 
 Three letters merged on page 01. List the remaining open `Implement
 <letter>.md` tasks and grab the next one:
@@ -216,7 +240,7 @@ bd show $BEAD_ID
 You should see `metadata.target_file=ascii/d.md` and no `review_loops`
 field yet — the refinery will write that during the first patrol.
 
-### 3. Sling the bead to the polecat (PR mode)
+### 2. Sling the bead to the polecat (PR mode)
 
 Same dispatch recipe as page 01 — the loop is entirely on the refinery
 side, so the polecat dispatch is unchanged:
@@ -260,7 +284,7 @@ PARENT
   ↑ ○ aa-j6mbu: sling-aa-7ln.11 ● P2
 ```
 
-### 4. Watch the polecat work
+### 3. Watch the polecat work
 
 In another terminal, list the live agent sessions:
 
@@ -312,7 +336,7 @@ PARENT
   ↑ ○ aa-j6mbu: sling-aa-7ln.11 ● P2
 ```
 
-### 5. Watch the refinery send the bead back with feedback
+### 4. Watch the refinery send the bead back with feedback
 
 When the polecat finishes, it reassigns the bead to the refinery. The
 refinery rebases the feature branch onto the latest `main`, runs the
@@ -363,11 +387,11 @@ PARENT
   ↑ ○ aa-j6mbu: sling-aa-7ln.11 ● P2
 ```
 
-### 6. Watch the polecat pick the bead back up and address the feedback
+### 5. Watch the polecat pick the bead back up and address the feedback
 
 Now using `gc session` again, you should be able to watch the polecat to see it pick up the bead and address the feedback. It will finally update the bead and reassign to the refinery.
 
-### 7. Watch the refinery approve and publish a PR
+### 6. Watch the refinery approve and publish a PR
 
 Finally, back to the refinery session, you should be able to watch the refinery to see it clear the second patrol and publish a PR. It should add a few lines to the metadata and open a PR:
 
@@ -387,7 +411,7 @@ behavior would match the pr-gate block path from page 01:
 `refinery_approved: "false"`, `blocked_reason: "<reason>"` populated. The loop runs once
 and is done; an approval block on the second patrol is a separate concern.
 
-### 8. Manually merge the PR
+### 7. Manually merge the PR
 
 **Copy and paste**
 
@@ -400,7 +424,7 @@ gh pr view $PR --web   # open in browser
 
 Click **Merge pull request** in GitHub (or `gh pr merge "$PR" --merge`).
 
-### 9. Repeat for `e.md`
+### 8. Repeat for `e.md`
 
 Same pattern, one more time — sling, watch the loop fire, watch the
 polecat address the feedback, watch the refinery clear the second
@@ -416,7 +440,7 @@ cd $FACTORY_PATH
 gc sling ascii-art/review-loop-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
-### 10. Reflect
+### 9. Reflect
 
 That worked. Another letter reached `main` — but it made two
 trips through the polecat: once to write the file, once to address one

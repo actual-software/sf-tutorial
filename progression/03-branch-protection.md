@@ -7,14 +7,18 @@
 - [Objective](#objective)
 - [Prereqs](#prereqs)
 - [Context](#context)
-- [Walkthrough](#walkthrough)
-  - [1. Copy CODEOWNERS into the rig](#1-copy-codeowners-into-the-rig)
-  - [2. Inspect the protection script](#2-inspect-the-protection-script)
-  - [3. Dry-run the script](#3-dry-run-the-script)
-  - [4. Apply the protection](#4-apply-the-protection)
-  - [5. Prove the gate is on (without review)](#5-prove-the-gate-is-on-without-review)
-  - [6. Approve and merge](#6-approve-and-merge)
-  - [7. Reflect](#7-reflect)
+- [Setup](#setup)
+  - [Bootstrap Factory1 with Script](#bootstrap-factory1-with-script)
+  - [Build Factory1 by Hand](#build-factory1-by-hand)
+    - [1. Copy CODEOWNERS into the rig](#1-copy-codeowners-into-the-rig)
+    - [2. Inspect the protection script](#2-inspect-the-protection-script)
+    - [3. Dry-run the script](#3-dry-run-the-script)
+    - [4. Apply the protection](#4-apply-the-protection)
+- [Try It](#try-it)
+  - [1. Prove the gate is on (without review)](#1-prove-the-gate-is-on-without-review)
+  - [2. Approve and merge](#2-approve-and-merge)
+  - [3. Watch a direct push get rejected](#3-watch-a-direct-push-get-rejected)
+  - [4. Reflect](#4-reflect)
 - [Verification](#verification)
 - [Troubleshooting](#troubleshooting)
 - [What's next](#whats-next)
@@ -43,7 +47,26 @@ The required-CI half needs an actual workflow producing a check, so it
 is forward-referenced to **Hardening 1** and intentionally left out of
 this page.
 
-## Walkthrough
+## Setup
+
+This lesson has two paths to the same end state. Pick one.
+
+### Bootstrap Factory1 with Script
+
+If this is your first run, complete the one-time setup in the [bootstrap README](../bootstrap/README.md) (`.env`, `deps.sh`) before invoking the script.
+
+**Copy and paste**
+
+```bash
+cd path/to/sf-tutorial/bootstrap
+./bootstrap.sh 03-branch-protection
+```
+
+The script reproduces every step up through this lesson — `.github/CODEOWNERS` is copied in, committed, and pushed to `main`, and `branch-protection.sh` runs against the rig's GitHub repo to install the `main` protection rule and the `epic/*` ruleset.
+
+After it finishes, re-export the four env vars per [00.3](./00.3-setup-foundation.md), then jump to [Try It](#try-it).
+
+### Build Factory1 by Hand
 
 ### 1. Copy CODEOWNERS into the rig
 
@@ -168,7 +191,9 @@ You should see `required_approving_review_count: 1`,
 The last one is what stops repo admins (you) from `git push`-ing
 straight to `main`.
 
-### 5. Prove the gate is on (without review)
+## Try It
+
+### 1. Prove the gate is on (without review)
 
 Sling the next letter — `f.md`:
 
@@ -205,7 +230,7 @@ with write access` or `Required review from a code owner has not been
 provided`. Any of those mean the gate is doing its job. Leave the PR
 open — the next step approves it.
 
-### 6. Approve and merge
+### 2. Approve and merge
 
 Open the PR for review:
 
@@ -215,9 +240,9 @@ Open the PR for review:
 gh pr view "$PR" --web
 ```
 
-You must be a CODEOWNER for the approval to count. If you have another user
-that can review and approve, please have them do so. If not, feel free to
-check the override box first, then merge via the GitHub UI.
+You must be a CODEOWNER **other than the PR author** for the approval to count — GitHub refuses to let a PR's author approve their own PR, and the polecat opened this PR using your token. Have a teammate listed in `CODEOWNERS` approve it, then run `gh pr merge "$PR" --merge`.
+
+If you're working solo and your only CODEOWNER is you, none of the merge surfaces will work — `enforce_admins=true` (set in step 4) binds you to the same rule as everyone else, so the UI's override checkbox won't appear either. See the [`can't approve own PR`](#troubleshooting) troubleshooting bullet for the three documented escape hatches (second CODEOWNER, separate bot identity, or temporary `MIN_APPROVALS=0`).
 
 Confirm the merge landed on `main`:
 
@@ -232,7 +257,69 @@ ls ascii/ | grep -i 'f'
 You should see a new merge (or squash) commit on `origin/main` and the
 `f`-letter file present in `ascii/`.
 
-### 7. Reflect
+### 3. Watch a direct push get rejected
+
+The PR path works because branch protection allows it. To see what protection actually blocks, try the obvious shortcut — commit a change to `main` locally and push it.
+
+First, pin the current `main` commit so you can restore it afterward.
+
+**Copy and paste**
+
+```bash
+cd "$ASCII_ART_PATH"
+git checkout main
+git fetch origin && git pull
+export CURRENT_COMMIT=$(git rev-parse HEAD)
+echo "Pinned main at $CURRENT_COMMIT"
+```
+
+Make a trivial change directly on `main` and commit it.
+
+**Copy and paste**
+
+```bash
+echo "bypass attempt $(date +%s)" >> README.md
+git add README.md
+git commit -m "chore: try to bypass branch protection"
+```
+
+Now push.
+
+**Copy and paste**
+
+```bash
+git push origin main
+```
+
+**Expected output**
+
+```text
+remote: error: GH006: Protected branch update failed for refs/heads/main.
+remote: error: At least 1 approving review is required by reviewers with write access.
+ ! [remote rejected] main -> main (protected branch hook declined)
+error: failed to push some refs to '…/ascii-art.git'
+```
+
+GitHub refuses the push. `enforce_admins=true` binds you to the same rule a non-admin would hit. The polecat — running under your token — would get the same rejection if it tried to fast-forward `main` directly, which is why `mol-polecat-pr` opens a PR instead.
+
+Reset `main` back to where it was and discard the local bypass commit.
+
+**Copy and paste**
+
+```bash
+git reset --hard $CURRENT_COMMIT
+git log --oneline -1
+```
+
+**Expected output**
+
+```text
+HEAD is at <CURRENT_COMMIT short> <subject of the last legitimate merge commit>
+```
+
+Your local `main` once again matches `origin/main`. Nothing landed on the remote.
+
+### 4. Reflect
 
 **What changed.** A human — or another agent acting as a CODEOWNER — must
 approve every PR before it can merge to `main`. Direct merges are gone,
@@ -317,7 +404,7 @@ block the merge regardless of approvals.
   to use a separate bot account so author and reviewer differ; (3) as a
   last resort for a solo learner, temporarily set `MIN_APPROVALS=0` and
   re-run the script for this one merge, then re-tighten immediately. The
-  third option defeats the gate — only use it to unblock the walkthrough.
+  third option defeats the gate — only use it to unblock the exercise.
   Page 04's AI reviewer does not solve this either; GitHub also refuses
   reviews from the PR-author identity. Plan for a separate approver
   identity before relying on this gate in real work.

@@ -7,17 +7,20 @@
 - [Objective](#objective)
 - [Prereqs](#prereqs)
 - [Context](#context)
-- [Walkthrough](#walkthrough)
-  - [1. Install the architect-rig pack into factory1](#1-install-the-architect-rig-pack-into-factory1)
-  - [2. Locate one bead from the first epic](#2-locate-one-bead-from-the-first-epic)
-  - [3. Sling the bead to the polecat (PR mode)](#3-sling-the-bead-to-the-polecat-pr-mode)
-  - [4. Watch the polecat work and hand the bead to the refinery](#4-watch-the-polecat-work-and-hand-the-bead-to-the-refinery)
-  - [5. Watch the refinery hand the bead to the architect](#5-watch-the-refinery-hand-the-bead-to-the-architect)
-  - [6. Watch the architect read the docs and post a verdict](#6-watch-the-architect-read-the-docs-and-post-a-verdict)
-  - [7. Watch the refinery clear the gate and publish a PR](#7-watch-the-refinery-clear-the-gate-and-publish-a-pr)
-  - [8. Manually approve and merge the PR](#8-manually-approve-and-merge-the-pr)
-  - [9. (Optional) Sling a bead the architect will reject](#9-optional-sling-a-bead-the-architect-will-reject)
-  - [10. Reflect](#10-reflect)
+- [Setup](#setup)
+  - [Bootstrap Factory1 with Script](#bootstrap-factory1-with-script)
+  - [Build Factory1 by Hand](#build-factory1-by-hand)
+    - [1. Install the architect-rig pack into factory1](#1-install-the-architect-rig-pack-into-factory1)
+- [Try It](#try-it)
+  - [1. Locate one bead from the first epic](#1-locate-one-bead-from-the-first-epic)
+  - [2. Sling the bead to the polecat (PR mode)](#2-sling-the-bead-to-the-polecat-pr-mode)
+  - [3. Watch the polecat work and hand the bead to the refinery](#3-watch-the-polecat-work-and-hand-the-bead-to-the-refinery)
+  - [4. Watch the refinery hand the bead to the architect](#4-watch-the-refinery-hand-the-bead-to-the-architect)
+  - [5. Watch the architect read the docs and post a verdict](#5-watch-the-architect-read-the-docs-and-post-a-verdict)
+  - [6. Watch the refinery clear the gate and publish a PR](#6-watch-the-refinery-clear-the-gate-and-publish-a-pr)
+  - [7. Manually approve and merge the PR](#7-manually-approve-and-merge-the-pr)
+  - [8. (Optional) Sling a bead the architect will reject](#8-optional-sling-a-bead-the-architect-will-reject)
+  - [9. Reflect](#9-reflect)
 - [Verification](#verification)
 - [Troubleshooting](#troubleshooting)
 - [What's next](#whats-next)
@@ -116,7 +119,26 @@ the full ADR + current docs corpus before any merge gate runs.
 The next page closes the last upstream hole — bead malformation that
 gets caught only after the polecat has already done work.
 
-## Walkthrough
+## Setup
+
+This lesson has two paths to the same end state. Pick one.
+
+### Bootstrap Factory1 with Script
+
+If this is your first run, complete the one-time setup in the [bootstrap README](../bootstrap/README.md) (`.env`, `deps.sh`) before invoking the script.
+
+**Copy and paste**
+
+```bash
+cd path/to/sf-tutorial/bootstrap
+./bootstrap.sh 04-adr-reviewer
+```
+
+The script reproduces every step up through this lesson — `architect-rig` is added at rig scope, `review-loop-rig` is removed from the rig's direct imports (still resolved transitively via `architect-rig`), and the city is restarted.
+
+After it finishes, re-export the four env vars per [00.3](./00.3-setup-foundation.md), then jump to [Try It](#try-it).
+
+### Build Factory1 by Hand
 
 ### 1. Install the architect-rig pack into factory1
 
@@ -303,7 +325,9 @@ mol-polecat-pr
 mol-refinery-architect-patrol
 ```
 
-### 2. Locate one bead from the first epic
+## Try It
+
+### 1. Locate one bead from the first epic
 
 Letters a–f have merged through pages 01–03. List the remaining open
 `Implement <letter>.md` tasks and grab the next one:
@@ -329,7 +353,7 @@ You should see `metadata.target_file=ascii/g.md` and no
 write `architect_approved` during its first review pass; the refinery
 writes `review_loops` only on rejection-bounce.
 
-### 3. Sling the bead to the polecat (PR mode)
+### 2. Sling the bead to the polecat (PR mode)
 
 Same dispatch recipe as pages 01–03. The architect is reached by
 reassignment from the refinery, not by a new dispatch verb:
@@ -352,7 +376,7 @@ with the formula:
     Slung aa-nel.1 (with formula "mol-polecat-pr") → ascii-art/architect-rig.polecat
 ```
 
-### 4. Watch the polecat work and hand the bead to the refinery
+### 3. Watch the polecat work and hand the bead to the refinery
 
 In another terminal, list the live agent sessions:
 
@@ -391,7 +415,7 @@ METADATA
   work_dir: ...
 ```
 
-### 5. Watch the refinery hand the bead to the architect
+### 4. Watch the refinery hand the bead to the architect
 
 When the refinery picks the bead up, its first step
 (`verify-architect`) sees `architect_approved` is unset and reassigns
@@ -419,7 +443,7 @@ METADATA
 The bead's notes will pick up a line like
 `verify-architect: routing to architect for review (loop 0).`
 
-### 6. Watch the architect read the docs and post a verdict
+### 5. Watch the architect read the docs and post a verdict
 
 The architect picks the bead up next. Its `mol-architect-review`
 formula walks `docs/decision-records/` and `docs/current/`, reads the
@@ -462,7 +486,7 @@ without any `review_loops` change yet. On the next refinery patrol,
 later rejection), unset `architect_approved`, and bounce the bead to
 the polecat pool with the feedback.
 
-### 7. Watch the refinery clear the gate and publish a PR
+### 6. Watch the refinery clear the gate and publish a PR
 
 The refinery picks the bead up a second time. `verify-architect`
 sees `architect_approved=true` and falls through to the inherited
@@ -491,7 +515,7 @@ while true; do clear; gc bd show $BEAD_ID; sleep 5; done
 You should see `refinery_approved: true`, `refinery_approval_at`, and
 `pr_url` / `pr_number` populated, in that order.
 
-### 8. Manually approve and merge the PR
+### 7. Manually approve and merge the PR
 
 The architect has done its job. Now do what page 03 already taught
 you — approve as the CODEOWNER (or have a teammate approve), then
@@ -523,7 +547,7 @@ git log --oneline origin/main -1
 ls ascii/g.md
 ```
 
-### 9. (Optional) Sling a bead the architect will reject
+### 8. (Optional) Sling a bead the architect will reject
 
 To exercise the rejection path, briefly add a strict ADR clause that
 the polecat is likely to violate, then sling another letter. For
@@ -566,7 +590,7 @@ skip the merge gate.
 Roll the strict ADR clause back when you're done so future letters
 aren't blocked.
 
-### 10. Reflect
+### 9. Reflect
 
 That worked. Another letter reached `main`, but the path was
 substantively different from pages 01–03: every bead passed through
