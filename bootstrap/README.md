@@ -29,7 +29,7 @@ This folder contains the bootstrap scripts for the Software Factory Intensive tu
 For example:
 
 	```bash
-  # This will set up your factory to be ready to use the examples in 01-basic-flow
+    # This will set up your factory to be ready to use the examples in 01-basic-flow
 	./bootstrap.sh 01-basic-flow
 	```
 
