@@ -141,6 +141,5 @@ Verify in the GitHub UI:
   https://github.com/$OWNER/$REPO/settings/branches   (main protection)
   https://github.com/$OWNER/$REPO/rules               (epic/* ruleset)
 
-Reminder: CODEOWNERS must already be committed to the rig (page 2.11)
-for require_code_owner_reviews=true to actually gate merges.
+Reminder: CODEOWNERS must already be committed to the rig for require_code_owner_reviews=true to actually gate merges.
 MSG
