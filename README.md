@@ -23,9 +23,7 @@ You'll start with out-of-the-box examples that ships with Gas City and two refer
 
 ## Community & Support
 
-Stuck on a step, want to share what you've built, or looking to collaborate with other participants? Join the **Actual AI User Community** Slack:
-
-- Join the [Actual AI User Community Slack](https://join.slack.com/t/actualaiusercommunity/shared_invite/zt-3vibgzapf-ywx0Db29mZ4lhtQJGzZfGQ), then join [#sfi-nyc-2026](https://join.slack.com/share/enQtMTExMDQwMjA3MjM2MTctZjk4ZDE2MGVjN2ZmZGY0MmEzMjcxYWQxNTQ3NzM5YjEyMTIwNDhjYmNkYzcyMTZmZmM0MjEzZmNhOWVhODhlNw). Here you can share what you've built, ask questions, and get help from other participants.
+Stuck on a step, want to share what you've built, or looking to collaborate with other participants? Join the [Actual AI User Community Slack](https://join.slack.com/t/actualaiusercommunity/shared_invite/zt-3vibgzapf-ywx0Db29mZ4lhtQJGzZfGQ)! Here you can share what you've built, ask questions, and get help from other members of the community.
 
 ## What you'll build
 
@@ -60,10 +58,6 @@ Tools and versions:
 GitHub:
 
 - One **fresh GitHub repo** for the rig — your own org or a sandbox account. The rig will push to this repo and branch protection will be applied to it.
-
-API budget:
-
-- Plan to start with roughly **$10–$20** in API credit. Exact cost depends on which providers you wire in and how many epics you push through. Calibration is part of the tutorial — re-check your spend after step 0 and before raising concurrency.
 
 ## Tutorial structure
 
@@ -101,12 +95,6 @@ These are independent follow-ons. Pick the ones that interest you; they don't ha
 5. After the **Basic Progression**, browse the **Hardening Exercises** and pick what's useful.
 
 Every page is designed to be copy-paste-runnable. Commands are exact. When a page introduces a new artifact (a formula, an agent definition, a script), the artifact lives under [`artifacts/`](./artifacts/) and the page tells you exactly where to put it.
-
-## Concurrency and cost
-
-Pool concurrency defaults to `max = 3` per pool in `city.toml`. You can raise it up to `max = 6` if your machine and API budget allow. **Start low.** It's much easier to raise concurrency after step 1 than to explain a surprise API bill.
-
-Cost grows roughly linearly with: (epics in flight) x (reviewers wired in) x (iterate-loop attempts). Step 0 seeds 12 epics with one bead per file — you don't have to push them all to complete the tutorial.
 
 ---
 
