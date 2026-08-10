@@ -139,10 +139,11 @@ sfbox get-box --box "$SFI_BOX"
 **Expected output**
 
 ```text
-gas-city.service  active
+=== service ===
+active
 ```
 
-`active` is the whole test. Your factory is running, and you can start the tutorial from [`progression/00.0-preflight.md`](./progression/00.0-preflight.md).
+`active` is the whole test. `get-box` prints your box details, your sessions and a tail of the log around that section, so scroll to `=== service ===` and read the line under it. Your factory is running, and you can start the tutorial from [`progression/00.0-preflight.md`](./progression/00.0-preflight.md).
 
 ## When something looks wrong
 
