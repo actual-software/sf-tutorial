@@ -56,10 +56,12 @@ The fix is shrinking the *rendered* prompt, not just the template. Much of the s
 
 ```
 sfbox start-session
-cd <city> && gc prime <agent> --strict --json
+cd <city> && gc prime <agent> --strict --json | head -c 512 | sed 's/"content":.*//' | grep -o '"bytes":[0-9]*'
 ```
 
-Read the `bytes` field. That's the exact length of the string Gas City puts on the command line, so it's the number the kernel is actually comparing against the limit.
+That leaves the `bytes` field on its own. It's the exact length of the string Gas City puts on the command line, so it's the number the kernel is actually comparing against the limit.
+
+Keep the pipe. Run bare, `--json` prints the whole rendered prompt as well, which on an oversized pack is several hundred kilobytes pulled into your context to read one number.
 
 Without `--strict`, `gc prime` quietly falls back to a short default prompt for any agent it can't resolve, and an oversized pack then measures small. Always pass it.
 

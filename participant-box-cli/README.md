@@ -105,10 +105,12 @@ Fixing an oversized pack means shrinking the prompt as *rendered*, not as writte
 
 ```bash
 sfbox start-session
-cd <your-city> && gc prime <agent> --strict --json
+cd <your-city> && gc prime <agent> --strict --json | head -c 512 | sed 's/"content":.*//' | grep -o '"bytes":[0-9]*'
 ```
 
-The `bytes` field in that output is the number to watch. It's the exact length of the string Gas City puts on the command line, which is the same thing the kernel measures when it refuses.
+That prints the `bytes` field on its own, which is the number to watch. It's the exact length of the string Gas City puts on the command line, the same thing the kernel measures when it refuses.
+
+Keep the trimming. `--json` prints the whole rendered prompt alongside the size, so running it bare buries the number under a few hundred kilobytes of output, and it does that worst on exactly the oversized packs you'd be here to debug.
 
 Do pass `--strict` as well. Without it, `gc prime` quietly falls back to a short default prompt for any agent it can't resolve, so an oversized pack measures small and looks perfectly healthy.
 
