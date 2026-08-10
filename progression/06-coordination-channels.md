@@ -1,8 +1,4 @@
-# W-6 · Intro to Software Factories: Coordination Channels
-
-« [previous: H1 Bead-creation formula extensions](../hardening/01-bead-creation-formula-extensions.md) | [next: L-1 Plan Your Factory](./07-plan-your-factory.md) »
-
-**Workshop · Wednesday 3:00–3:45 · 45 minutes · one shared example**
+# Coordination Channels
 
 ## Contents
 

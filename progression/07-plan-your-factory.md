@@ -1,8 +1,4 @@
-# L-1 · Plan Your Factory
-
-« [previous: W-6 Coordination Channels](./06-coordination-channels.md) | [next: W-7 The Mayor and Workflows](./08-mayor-and-workflows.md) »
-
-**Lab · Wednesday 4:00–5:00 · 60 minutes · your own project**
+# Plan Your Factory
 
 ## Contents
 

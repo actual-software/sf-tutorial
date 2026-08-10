@@ -1,8 +1,4 @@
-# W-8 · Sharing Your Factory
-
-« [previous: L-5 Implement a Feature](./09-implement-a-feature.md) | [next: the two-day schedule](../README.md#two-day-intensive-start-here-if-you-are-at-the-event) »
-
-**Workshop · Thursday 4:30–5:00 · 30 minutes · closing block**
+# Sharing Your Factory
 
 ## Contents
 

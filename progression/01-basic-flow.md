@@ -1,6 +1,4 @@
-# Basic flow
-
-« [previous: 00.3 Env vars for fresh shells](./00.3-setup-foundation.md) | [next: W-4 Review Loops](./02-first-review-loop.md) »
+# Basic Flow
 
 ## Contents
 

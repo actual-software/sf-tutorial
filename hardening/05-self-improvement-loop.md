@@ -1,8 +1,4 @@
-# L-4 · Work on Your Factory: Self-improvement Loop
-
-« [previous: L-3 Hardening — Track B, multi-vendor](./04-strengthen-review-system.md) | [next: L-5 Implement a Feature](../progression/09-implement-a-feature.md) »
-
-**Lab · Thursday 2:00–2:45 · 45 minutes · your own project**
+# Self-Improvement Loop
 
 ## Contents
 

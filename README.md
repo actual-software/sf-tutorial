@@ -9,11 +9,12 @@
 ## Table of Contents
 
 - [Overview](#overview)
-- [Before You Arrive](#before-you-arrive)
-- [Directory Structure](#directory-structure)
-- [Installation](#installation)
-- [Day-to-day usage](#day-to-day-usage)
-- [Going deeper](#going-deeper)
+- [About Gas City](#about-gas-city)
+- [Community & Support](#community--support)
+- [Prerequisites](#prerequisites)
+- [Curriculum Structure](#curriculum-structure)
+  - [Day 1: Run and Explore Standard Software Factory](#day-1-run-and-explore-standard-software-factory)
+  - [Day 2: Build Your Own Software Factory](#day-2-build-your-own-software-factory)
 
 ## Overview
 
@@ -69,39 +70,30 @@ Doing the intensive on instructor-provided cloud boxes instead of your own lapto
 
 The CLI it drives, plus an optional agent skill, is documented in [`participant-box-cli/`](./participant-box-cli/README.md): deploy a factory pack, restart the service, read box state, and tunnel the dashboard to your browser.
 
-## Tutorial structure
+## Curriculum Structure
 
-### Basic Progression (sequential, do these in order)
+### Day 1: Run and Explore Standard Software Factory
 
-Each step unlocks the next. Every page is self-contained: prereqs, walkthrough with copy-pasteable commands, verification block, and troubleshooting. Work from the list below rather than the « previous | next » footer at the bottom of each page, which runs the two-day event order instead.
+| Session | Type | Duration | Title | Session Pages |
+|----|------|----------|-------|-------------|
+| W1 | Workshop | 60 min | Preflight Setup | [`Preflight Setup`](./progression/00.0-preflight.md) |
+| W2 | Workshop | 60 min | Run a Software Factory | [`Create a Factory`](./progression/00.1-setup-foundation.md), [`Add ASCII Art Rig`](./progression/00.2-setup-foundation.md), [`Env Vars for Fresh Shells`](./progression/00.3-setup-foundation.md), [`Basic Flow`](./progression/01-basic-flow.md) |
+| W3 | Workshop | 60 min | Review Loops | [`First Review Loop`](./progression/02-first-review-loop.md), [`Branch Protection`](./progression/03-branch-protection.md), [`Architect Agent`](./progression/04-adr-reviewer.md) |
+| W4 | Workshop | 60 min | Requirement Gates | [`Bead Gate Checks`](./progression/05.1-bead-gate-checks.md), [`Bead Gate Checks — Grill Me`](./progression/05.2-bead-gate-checks.md), [`Bead Creation Formula Extensions`](./hardening/01-bead-creation-formula-extensions.md) |
+| W5 | Workshop | 30 min | Coordination Channels | [`Coordination Channels`](./progression/06-coordination-channels.md) |
+| L1 | Lab | 60 min | Plan Your Factory | [`Plan Your Factory`](./progression/07-plan-your-factory.md) |
 
-1. [Preflight: check your toolchain](./progression/00.0-preflight.md) — `deps.sh` plus a single pass-or-fail line before you build anything, on your laptop or a cloud box
-2. [What is a software factory?](./progression/00.05-what-is-a-software-factory.md) — the vocabulary, and how it maps onto the demo repo; prose only, nothing to install
-3. [Setup: Create a Gas City named factory1](./progression/00.1-setup-foundation.md) — `gc init`, import a setup pack (based on the `gastown` reference pack), configure `city.toml`
-4. [Setup: Add ASCII Art rig](./progression/00.2-setup-foundation.md) — `gc rig add`, push to GitHub, create 138 beads
-5. [Setup: env vars](./progression/00.3-setup-foundation.md) — handy variables for easier copy-and-paste-ing
-6. [Basic flow (OOTB)](./progression/01-basic-flow.md) — one agent claims a bead and implements (`mol-polecat-work`) + another reviews (`mol-refinery-patrol`) with no extras
-7. [First review loop](./progression/02-first-review-loop.md) — extend the refinery patrol with a required round of feedback before any bead becomes a PR
-8. [Branch protection](./progression/03-branch-protection.md) — only approved humans merge to `main`
-9. [Architect agent](./progression/04-adr-reviewer.md) — add an architecture-aware reviewer between the polecat and the refinery
-10. [Bead gate checks](./progression/05.1-bead-gate-checks.md) — add a project-manager agent at the front of the factory
-11. [Bead gate checks — Grill Me](./progression/05.2-bead-gate-checks.md) — refine beads at the source with a local Grill-Me skill
-12. [Coordination channels](./progression/06-coordination-channels.md) — mail, wakes, nudges and attach, plus a fallback for every handoff
-13. [Plan your factory](./progression/07-plan-your-factory.md) — register your own rig, write a project manifest, and produce a capability map
-14. [The mayor and workflows](./progression/08-mayor-and-workflows.md) — formulas and orders, and one workflow walked end to end
-15. [Implement a feature](./progression/09-implement-a-feature.md) — a directed build against the capability map from the planning page
-16. [Sharing your factory](./progression/10-sharing-your-factory.md) — what you publish, what stays private, and what gets scrubbed first
+#### Day 2: Build Your Own Software Factory
 
-### Hardening Exercises (optional, layer on as you like)
-
-These are independent follow-ons. Pick the ones that interest you; they don't have to be done in order. Open them from this list rather than by footer, which sends you from the first exercise back into the progression, where the two-day schedule teaches it.
-
-1. [Bead-creation formula extensions](./hardening/01-bead-creation-formula-extensions.md) — auto-link/create design, testing, and documentation references
-2. [Specialize reviewers per domain](./hardening/02-specialize-reviewers-per-domain.md) — split the single reviewer into ADR, design, testing, and docs reviewers
-3. [Architecture best practices loop](./hardening/03-architecture-best-practices-loop.md) — per-principle scoring with an append-only audit trail
-4. [Strengthen review system](./hardening/04-strengthen-review-system.md) — multi-vendor reviewers, a synthesizer, and an iterate loop
-5. [Self-improvement loop](./hardening/05-self-improvement-loop.md) — the factory proposes a change to its own configuration, behind a gate
+| Session | Type | Duration | Title | Session Pages |
+|----|------|----------|-------|-------------|
+| W6 | Workshop | 45 min | The Mayor and Workflows | [`The Mayor and Workflows`](./progression/08-mayor-and-workflows.md) |
+| L2 | Lab | 45 min | Retargeting the Rig | [`Specialized Domain Reviewers`](./hardening/02-specialize-reviewers-per-domain.md) |
+| L3 | Lab | 90 min | Hardening | [`Architecture Best-Practices Loop`](./hardening/03-architecture-best-practices-loop.md), [`Strengthen the Review System`](./hardening/04-strengthen-review-system.md) |
+| L4 | Lab | 45 min | Self-Improvement Loop | [`Self-Improvement Loop`](./hardening/05-self-improvement-loop.md) |
+| L5 | Lab | 90 min | Implement a Feature | [`Implement a Feature`](./progression/09-implement-a-feature.md) |
+| W7 | Workshop | 30 min | Sharing Your Factory | [`Sharing Your Factory`](./progression/10-sharing-your-factory.md) |
 
 ---
 
-Ready? Head to [progression/00.0-preflight.md](./progression/00.0-preflight.md).
+Ready? Head to [Preflight Setup](./progression/00.0-preflight.md).

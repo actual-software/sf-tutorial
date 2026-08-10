@@ -1,6 +1,4 @@
-# Branch protection
-
-« [previous: W-4 Review Loops](./02-first-review-loop.md) | [next: 04 Architect agent](./04-adr-reviewer.md) »
+# Branch Protection
 
 ## Contents
 
