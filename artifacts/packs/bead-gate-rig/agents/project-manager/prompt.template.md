@@ -72,13 +72,28 @@ review happens later, in the architect.
 6. **Parent epic exists** (if one is set). A `bd show $PARENT` must
    succeed and the parent's status must not be `closed`. A task
    pointing at a closed or missing epic is orphaned.
+7. **The description names an outcome a test could assert** — the
+   *test-generation gate*. Ask yourself: could you write the test
+   before the code? A bead passes when the description names an
+   observable result ("`ascii/i.md` exists and contains a 5-line
+   block for the letter I plus a two-line rhyme"). It fails when the
+   only stated outcome is unobservable ("improve the rendering",
+   "handle errors better", "make it more consistent"), because
+   nothing downstream can tell whether the work succeeded.
+
+   This check is deliberately about the *bead*, not the code. You are
+   not writing tests and you are not judging whether the tests will
+   pass. You are refusing to let work start when nobody has said what
+   done looks like. When it fails, put the missing assertion in the
+   feedback as a question: "what would you check to confirm this is
+   done?"
 
 **Type=epic — coordinator beads:**
 
-7. **Description names a deliverable scope** (e.g., "Implement
+8. **Description names a deliverable scope** (e.g., "Implement
    a major feature for the codebase to improve __"). Generic epics
    ("Refactor the codebase") are guesses, not scopes.
-8. **Has at least one child task** (or the description explicitly
+9. **Has at least one child task** (or the description explicitly
    declares "tasks will be created downstream"). An epic with no
    children and no plan to grow them is a planning artifact, not
    work.

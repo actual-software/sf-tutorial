@@ -61,12 +61,19 @@ GitHub:
 
 ## Tutorial structure
 
-There are two paths through this repo.
+Three ways through this repo. The pages are the same; what differs is the order and the pacing.
+
+### Two-day intensive (start here if you are at the event)
+
+[**modules/**](./modules/README.md) is the taught path: thirteen blocks across two days, each one owning a time window and ending in a deliverable. Wednesday runs on one shared factory and one shared example; Thursday runs on your own project. The module pages sequence the progression and hardening pages below, and add the six sessions those pages never covered.
+
+Start at [W-1 Preflight Setup](./progression/00.0-preflight.md), then follow the [module index](./modules/README.md).
 
 ### Basic Progression (sequential, do these in order)
 
 Each step unlocks the next. Every page is self-contained: prereqs, walkthrough with copy-pasteable commands, verification block, troubleshooting, and a "what's next" link.
 
+1. [Preflight: check your toolchain](./progression/00.0-preflight.md) — `deps.sh` plus a single pass-or-fail line before you build anything
 1. [Setup: Create a Gas City named factory1](./progression/00.1-setup-foundation.md) — `gc init`, import a setup pack (based on the `gastown` reference pack), configure `city.toml`
 2. [Setup: Add ASCII Art rig](./progression/00.2-setup-foundation.md) — `gc rig add`, push to GitHub, create 138 beads
 3. [Setup: env vars](./progression/00.3-setup-foundation.md) — handy variables for easier copy-and-paste-ing
@@ -90,12 +97,15 @@ These are independent follow-ons. Pick the ones that interest you; they don't ha
 
 1. Clone this repo and `cd` into it.
 2. Read this README end to end (you're nearly done).
-3. Open [`progression/00.1-setup-foundation.md`](./progression/00.1-setup-foundation.md) and work through it.
-4. Each page ends with a "what's next" link. Follow it.
-5. After the **Basic Progression**, browse the **Hardening Exercises** and pick what's useful.
+3. Run [`progression/00.0-preflight.md`](./progression/00.0-preflight.md) and get a `PREFLIGHT: PASS`.
+4. Open [`progression/00.1-setup-foundation.md`](./progression/00.1-setup-foundation.md) and work through it.
+5. Each page ends with a "what's next" link. Follow it.
+6. After the **Basic Progression**, browse the **Hardening Exercises** and pick what's useful.
+
+At the two-day intensive, follow the [module index](./modules/README.md) instead — it routes through these same pages in the order the schedule uses.
 
 Every page is designed to be copy-paste-runnable. Commands are exact. When a page introduces a new artifact (a formula, an agent definition, a script), the artifact lives under [`artifacts/`](./artifacts/) and the page tells you exactly where to put it.
 
 ---
 
-Ready? Head to [progression/00.1-setup-foundation.md](./progression/00.1-setup-foundation.md).
+Ready? Head to [progression/00.0-preflight.md](./progression/00.0-preflight.md).
