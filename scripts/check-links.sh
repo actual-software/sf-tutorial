@@ -19,11 +19,9 @@ link_re='\[[^]]*\]\(([^)#[:space:]]+)(#[^)]*)?\)'
 broken=0
 checked=0
 
-# Collect markdown files: README.md plus progression/ and hardening/.
-files=$(find . -type f \( -path './README.md' \
-                      -o -path './progression/*.md' \
-                      -o -path './hardening/*.md' \) \
-        | sort)
+# Collect markdown files: every top-level .md plus progression/ and hardening/.
+files=$( { find . -maxdepth 1 -type f -name '*.md'
+           find ./progression ./hardening -type f -name '*.md' ; } | sort)
 
 while IFS= read -r file; do
   [ -f "$file" ] || continue

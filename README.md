@@ -65,7 +65,9 @@ To prepare for the workshop, please install the [Actual Factory Demo](https://gi
 
 ### Running on a cloud box (optional)
 
-Doing the intensive on instructor-provided cloud boxes instead of your own laptop? [`participant-box-cli/`](./participant-box-cli/README.md) is the CLI and agent skill for driving them over SSH. You save a box credential once, then deploy a factory pack, restart the service, read box state, and tunnel the dashboard to your browser. No AWS account needed.
+Doing the intensive on instructor-provided cloud boxes instead of your own laptop? Start at [`CLOUD_BOX_GUIDE.md`](./CLOUD_BOX_GUIDE.md). It takes the four values your instructor sends you through to a running factory, and it ends with the commands you'll use across the two days. No AWS account needed.
+
+The CLI it drives, plus an optional agent skill, is documented in [`participant-box-cli/`](./participant-box-cli/README.md): deploy a factory pack, restart the service, read box state, and tunnel the dashboard to your browser.
 
 ## Tutorial structure
 
