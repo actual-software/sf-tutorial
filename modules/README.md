@@ -4,7 +4,7 @@ This is the taught path. Thirteen blocks across two days, each owning one discre
 
 This page is an index, not a layer of extra reading. Every block's content lives on the [progression](../README.md#basic-progression-sequential-do-these-in-order) and [hardening](../README.md#hardening-exercises-optional-layer-on-as-you-like) pages themselves, so a block is one page to open rather than an intermediary that points at another. What this page adds is the order, the time windows, and the answer to "which page do I open at 10:00 on Wednesday".
 
-Those pages still work on their own, in their own numbered order, for anyone reading the tutorial outside the two days.
+Those pages still work on their own. Each one is self-contained, and the [root README](../README.md) lists both tracks in their own numbered order. What changed for a reader outside the two days is the « previous | next » footer at the bottom of every page: it now runs this taught order, so it threads [`hardening/01`](../hardening/01-bead-creation-formula-extensions.md) into the middle of the progression and routes around [`05.2`](../progression/05.2-bead-gate-checks.md). Read from the root README's lists instead, and treat the footers as the event's running order.
 
 ## How a block is written
 

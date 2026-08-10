@@ -71,7 +71,7 @@ Start at [W-1 Preflight Setup](./progression/00.0-preflight.md), then follow the
 
 ### Basic Progression (sequential, do these in order)
 
-Each step unlocks the next. Every page is self-contained: prereqs, walkthrough with copy-pasteable commands, verification block, troubleshooting, and a "what's next" link.
+Each step unlocks the next. Every page is self-contained: prereqs, walkthrough with copy-pasteable commands, verification block, and troubleshooting. Work from the list below rather than the « previous | next » footer at the bottom of each page, which runs the two-day event order instead.
 
 1. [Preflight: check your toolchain](./progression/00.0-preflight.md) — `deps.sh` plus a single pass-or-fail line before you build anything, on your laptop or a cloud box
 2. [What is a software factory?](./progression/00.05-what-is-a-software-factory.md) — the vocabulary, and how it maps onto the demo repo; prose only, nothing to install
@@ -92,7 +92,7 @@ Each step unlocks the next. Every page is self-contained: prereqs, walkthrough w
 
 ### Hardening Exercises (optional, layer on as you like)
 
-These are independent follow-ons. Pick the ones that interest you; they don't have to be done in order.
+These are independent follow-ons. Pick the ones that interest you; they don't have to be done in order. Open them from this list rather than by footer, which sends you from the first exercise back into the progression, where the two-day schedule teaches it.
 
 1. [Bead-creation formula extensions](./hardening/01-bead-creation-formula-extensions.md) — auto-link/create design, testing, and documentation references
 2. [Specialize reviewers per domain](./hardening/02-specialize-reviewers-per-domain.md) — split the single reviewer into ADR, design, testing, and docs reviewers
@@ -110,7 +110,7 @@ Doing the intensive on instructor-provided cloud boxes instead of your own lapto
 2. Read this README end to end (you're nearly done).
 3. Run [`progression/00.0-preflight.md`](./progression/00.0-preflight.md) and get a `PREFLIGHT: PASS`.
 4. Open [`progression/00.1-setup-foundation.md`](./progression/00.1-setup-foundation.md) and work through it.
-5. Each page ends with a "what's next" link. Follow it.
+5. Come back to this README for the next step. Pages also end with a « previous | next » footer, but that one runs the two-day event order.
 6. After the **Basic Progression**, browse the **Hardening Exercises** and pick what's useful.
 
 At the two-day intensive, follow the [module index](./modules/README.md) instead — it routes through these same pages in the order the schedule uses.
