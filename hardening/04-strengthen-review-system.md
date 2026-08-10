@@ -1,6 +1,12 @@
 # Strengthen the review system
 
-« [previous: H3 Architecture best-practices loop](./03-architecture-best-practices-loop.md) | next: (end of progression) »
+« [previous: L-3 Hardening — Track A, scoring](./03-architecture-best-practices-loop.md) | [next: L-4 Self-improvement Loop](./05-self-improvement-loop.md) »
+
+**Lab L-3 · Hardening, Track B · Thursday 10:45–12:00 · 75 minutes · your own project**
+
+> This page is Track B of block L-3. The block framing, the comparison table that helps you pick a track, and the timings all live on [Track A](./03-architecture-best-practices-loop.md#block-l-3-hardening). Read the choice there first if you have not already; come back here if multi-vendor review is the one you want.
+>
+> Check your provider auth before the block starts. Step 1 verifies all three, and an unauthenticated provider fails late and confusingly.
 
 ## Contents
 
@@ -462,4 +468,4 @@ ls ascii/n.md
 
 Return to the [tutorial index](../README.md). The Hardening track is complete. Beyond this, the direction is yours.
 
-« [previous: H3 Architecture best-practices loop](./03-architecture-best-practices-loop.md) | next: (end of progression) »
+« [previous: L-3 Hardening — Track A, scoring](./03-architecture-best-practices-loop.md) | [next: L-4 Self-improvement Loop](./05-self-improvement-loop.md) »

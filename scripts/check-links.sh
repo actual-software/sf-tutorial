@@ -19,8 +19,9 @@ link_re='\[[^]]*\]\(([^)#[:space:]]+)(#[^)]*)?\)'
 broken=0
 checked=0
 
-# Collect markdown files: README.md plus progression/ and hardening/.
+# Collect markdown files: README.md plus modules/, progression/ and hardening/.
 files=$(find . -type f \( -path './README.md' \
+                      -o -path './modules/*.md' \
                       -o -path './progression/*.md' \
                       -o -path './hardening/*.md' \) \
         | sort)

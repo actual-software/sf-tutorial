@@ -1,6 +1,6 @@
 # Architect agent
 
-« [previous: 03 Branch protection](./03-branch-protection.md) | [next: 05.1 Bead gate checks](./05.1-bead-gate-checks.md) »
+« [previous: 03 Branch protection](./03-branch-protection.md) | [next: W-5 Requirement Gates](./05.1-bead-gate-checks.md) »
 
 ## Contents
 
@@ -734,4 +734,4 @@ a polecat pass before getting caught. Page 05.1 introduces a pre-
 implementation `bead-reviewer` that checks each bead is well-formed
 before any polecat is allowed to claim it.
 
-« [previous: 03 Branch protection](./03-branch-protection.md) | [next: 05.1 Bead gate checks](./05.1-bead-gate-checks.md) »
+« [previous: 03 Branch protection](./03-branch-protection.md) | [next: W-5 Requirement Gates](./05.1-bead-gate-checks.md) »

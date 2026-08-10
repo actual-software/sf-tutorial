@@ -1,6 +1,6 @@
 # Basic flow
 
-« [previous: 00.3 env vars for fresh shells](./00.3-setup-foundation.md) | [next: 02 First review loop](./02-first-review-loop.md) »
+« [previous: 00.3 Env vars for fresh shells](./00.3-setup-foundation.md) | [next: W-4 Review Loops](./02-first-review-loop.md) »
 
 ## Contents
 
@@ -628,4 +628,4 @@ extends `mol-refinery-pr-patrol` with a `feedback-loop` step and
 patches the refinery to use it, so every bead now makes two trips
 through the polecat before reaching `main`.
 
-« [previous: 00.3 env vars for fresh shells](./00.3-setup-foundation.md) | [next: 02 First review loop](./02-first-review-loop.md) »
+« [previous: 00.3 Env vars for fresh shells](./00.3-setup-foundation.md) | [next: W-4 Review Loops](./02-first-review-loop.md) »

@@ -1,6 +1,6 @@
 # Branch protection
 
-« [previous: 02 First review loop](./02-first-review-loop.md) | [next: 04 Architect agent](./04-adr-reviewer.md) »
+« [previous: W-4 Review Loops](./02-first-review-loop.md) | [next: 04 Architect agent](./04-adr-reviewer.md) »
 
 ## Contents
 
@@ -424,4 +424,4 @@ block the merge regardless of approvals.
 
 Continue to [ADR reviewer](./04-adr-reviewer.md).
 
-« [previous: 02 First review loop](./02-first-review-loop.md) | [next: 04 Architect agent](./04-adr-reviewer.md) »
+« [previous: W-4 Review Loops](./02-first-review-loop.md) | [next: 04 Architect agent](./04-adr-reviewer.md) »
