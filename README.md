@@ -86,6 +86,10 @@ These are independent follow-ons. Pick the ones that interest you; they don't ha
 3. [Architecture best practices loop](./hardening/03-architecture-best-practices-loop.md) — per-principle scoring with an append-only audit trail
 4. [Strengthen review system](./hardening/04-strengthen-review-system.md) — multi-vendor reviewers, a synthesizer, and an iterate loop
 
+### Running on a cloud box
+
+Doing the intensive on instructor-provided cloud boxes instead of your own laptop? [`participant-box-cli/`](./participant-box-cli/README.md) is the CLI and agent skill for driving them over SSH. You save a box credential once, then deploy a factory pack, restart the service, read box state, and tunnel the dashboard to your browser. No AWS account needed.
+
 ## How to use this repo
 
 1. Clone this repo and `cd` into it.
