@@ -884,7 +884,479 @@ rollback_imports() { # box city snapshot new_pack_name
   fi
 }
 
+# ------------------------------------------------------------ instructor ----
+#
+# These three are for the instructor, who holds the AWS account. Participants
+# deliberately have none, so every one of them stops on a clear message rather
+# than an SDK stack trace when credentials are missing.
+#
+# provision and remove drive Terraform rather than the EC2 API directly. That
+# keeps state truthful and takes the whole dependent graph with it on remove:
+# a raw terminate-instances is faster but leaks elastic IPs and volumes that
+# bill quietly across a cohort.
+
+SFBOX_DEFAULT_TAG_KEY="Workshop"
+SFBOX_DEFAULT_TAG_VALUE="sfi"
+
+# Set by the instructor commands from --region / --profile.
+SFBOX_AWS_REGION="${SFBOX_AWS_REGION:-}"
+SFBOX_AWS_PROFILE="${SFBOX_AWS_PROFILE:-}"
+
+# External-command seams. The test suite replaces these so it can exercise the
+# plumbing without touching live AWS — no apply, no destroy, no billing.
+aws_available() { command -v aws >/dev/null 2>&1; }
+tf_available()  { command -v terraform >/dev/null 2>&1; }
+
+aws_cli() {
+  local extra=()
+  [ -n "$SFBOX_AWS_REGION" ]  && extra+=(--region "$SFBOX_AWS_REGION")
+  [ -n "$SFBOX_AWS_PROFILE" ] && extra+=(--profile "$SFBOX_AWS_PROFILE")
+  command aws ${extra[@]+"${extra[@]}"} "$@"
+}
+
+tf_cli()      { command terraform "$@"; }
+keyscan_cli() { command ssh-keyscan "$@"; }
+keygen_cli()  { command ssh-keygen "$@"; }
+
+# A boxId becomes the Terraform factory_name, which in turn names AWS resources
+# and the Terraform workspace. Reject anything that would land somewhere odd
+# rather than letting it fail three layers down inside an apply.
+instructor_validate_box_id() { # boxId
+  local box="${1:-}"
+  if [ -z "$box" ]; then
+    err "this command needs a boxId, for example: alice-prod"
+    return 2
+  fi
+  case "$box" in
+    *[!a-zA-Z0-9-]*)
+      err "invalid boxId '$box' — use letters, digits and hyphens only."
+      err "It becomes the Terraform factory_name and names AWS resources, so it"
+      err "cannot carry spaces, slashes or dots."
+      return 2 ;;
+  esac
+  case "$box" in
+    -*|*-) err "invalid boxId '$box' — it cannot start or end with a hyphen."; return 2 ;;
+  esac
+  if [ "${#box}" -gt 60 ]; then
+    err "invalid boxId '$box' — keep it to 60 characters or fewer."
+    return 2
+  fi
+  return 0
+}
+
+# The guard that keeps a participant from meeting a raw SDK error. Participants
+# have no AWS credentials by design, so "you ran an instructor command" is the
+# useful thing to say, not "Unable to locate credentials".
+instructor_require_aws() {
+  if ! aws_available; then
+    err "the AWS CLI is not installed, so this instructor command cannot run."
+    err ""
+    err "'sfbox instructor ...' is for whoever runs the workshop and holds the AWS"
+    err "account. If you are a participant, you are not missing anything: you drive"
+    err "your boxes with the other sfbox commands and you never need AWS access."
+    err "Run 'sfbox --help' to see the ones meant for you."
+    return 5
+  fi
+  if ! aws_cli sts get-caller-identity >/dev/null 2>&1; then
+    err "no working AWS credentials, so this instructor command cannot run."
+    err ""
+    err "'sfbox instructor ...' is for whoever runs the workshop and holds the AWS"
+    err "account. If you are a participant, you are not missing anything: you drive"
+    err "your boxes with the other sfbox commands and you never need AWS access."
+    err "Run 'sfbox --help' to see the ones meant for you."
+    err ""
+    err "If you ARE the instructor, your session has probably expired. Check with:"
+    err "  aws sts get-caller-identity${SFBOX_AWS_PROFILE:+ --profile $SFBOX_AWS_PROFILE}"
+    err "Nothing was changed."
+    return 5
+  fi
+  return 0
+}
+
+instructor_require_tf() { # tf_root
+  local root="${1:-}"
+  if ! tf_available; then
+    err "terraform is not installed, and provision/remove drive Terraform rather"
+    err "than the EC2 API so that state stays truthful and nothing billable orphans."
+    return 5
+  fi
+  if [ -z "$root" ]; then
+    err "no Terraform root given."
+    err "Pass --tf-root <dir>, or set SFBOX_TF_ROOT in your environment."
+    err "It is the workspace you copied from actualclaw's"
+    err "modules/gas-city-instance/example/ and filled in for this cohort."
+    return 2
+  fi
+  if [ ! -d "$root" ]; then
+    err "no such Terraform root: $root"
+    return 2
+  fi
+  if ! ls "$root"/*.tf >/dev/null 2>&1; then
+    err "'$root' has no .tf files in it, so it is not a Terraform root."
+    err "Point --tf-root at the workspace you copied from actualclaw's"
+    err "modules/gas-city-instance/example/."
+    return 2
+  fi
+  return 0
+}
+
+# One row per instance: name, id, state, type, public ip, private ip, launched.
+# Kept as its own function so the formatter below can be tested against fixture
+# rows without an AWS call in sight.
+instructor_describe_rows() { # tag_key tag_value [name_filter]
+  local tag_key="$1" tag_value="$2" name="${3:-}"
+  local filters=("Name=tag:$tag_key,Values=$tag_value")
+  [ -n "$name" ] && filters+=("Name=tag:Name,Values=$name")
+  aws_cli ec2 describe-instances \
+    --filters ${filters[@]+"${filters[@]}"} \
+    --query 'Reservations[].Instances[].[Tags[?Key==`Name`]|[0].Value,InstanceId,State.Name,InstanceType,PublicIpAddress,PrivateIpAddress,LaunchTime]' \
+    --output text 2>/dev/null
+}
+
+# Drop rows AWS still reports but that no longer hold a boxId: a terminated
+# instance keeps its tags for a while, and counting one as live would refuse a
+# boxId the instructor is entitled to reuse.
+instructor_live_rows() {
+  awk -F'\t' 'NF >= 3 && $3 != "terminated" && $3 != "shutting-down"'
+}
+
+# Rows on stdin -> the table the instructor reads. Pure formatting, no AWS.
+instructor_format_rows() {
+  awk -F'\t' '
+    BEGIN { n = 0 }
+    NF >= 3 {
+      n++
+      name = ($1 == "" || $1 == "None") ? "(untagged)" : $1
+      pub  = ($5 == "" || $5 == "None") ? "-" : $5
+      priv = ($6 == "" || $6 == "None") ? "-" : $6
+      if (n == 1) printf "%-22s %-20s %-12s %-12s %-16s %s\n", "BOX", "INSTANCE", "STATE", "TYPE", "PUBLIC IP", "PRIVATE IP"
+      printf "%-22s %-20s %-12s %-12s %-16s %s\n", name, $2, $3, $4, pub, priv
+    }
+    END { if (n == 0) print "__SFBOX_NO_ROWS__" }
+  '
+}
+
+# 0 when a live instance already carries this boxId. The instructor allocates
+# ids by hand, so a collision has to be an error rather than a silent overwrite
+# of somebody else's box.
+instructor_box_exists() { # boxId tag_key tag_value
+  local box="$1" tag_key="$2" tag_value="$3" rows
+  rows="$(instructor_describe_rows "$tag_key" "$tag_value" "$box" | instructor_live_rows)"
+  [ -n "$rows" ]
+}
+
+# Select the per-box Terraform workspace, creating it on first use. Without
+# this every box would share one state file and provisioning the second box
+# would destroy the first.
+instructor_tf_workspace() { # tf_root boxId
+  local root="$1" box="$2"
+  tf_cli -chdir="$root" workspace select "$box" >/dev/null 2>&1 && return 0
+  tf_cli -chdir="$root" workspace new "$box" >/dev/null 2>&1 && return 0
+  err "could not select or create the Terraform workspace '$box' in $root"
+  return 1
+}
+
+# Read one output from the applied root. Returns empty when it is not declared,
+# which the caller treats as "not available" rather than as an error.
+instructor_tf_output() { # tf_root name
+  tf_cli -chdir="$1" output -raw "$2" 2>/dev/null
+}
+
+cmd_instructor_provision() {
+  local box="" tf_root="${SFBOX_TF_ROOT:-}" packs_ref="" keypair="" key_out=""
+  local tag_key="$SFBOX_DEFAULT_TAG_KEY" tag_value="$SFBOX_DEFAULT_TAG_VALUE"
+  local assume_yes=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --tf-root)            tf_root="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --factory-packs-ref)  packs_ref="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --keypair)            keypair="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --key-out)            key_out="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --region)             SFBOX_AWS_REGION="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --profile)            SFBOX_AWS_PROFILE="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --tag-key)            tag_key="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --tag-value)          tag_value="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      -y|--yes)             assume_yes=1; shift ;;
+      -h|--help)            usage_instructor; return 0 ;;
+      -*)                   err "instructor provision: unknown argument '$1'"; return 2 ;;
+      *)                    if [ -z "$box" ]; then box="$1"; shift
+                            else err "instructor provision: unexpected argument '$1'"; return 2; fi ;;
+    esac
+  done
+
+  instructor_validate_box_id "$box" || return $?
+  instructor_require_aws || return $?
+  instructor_require_tf "$tf_root" || return $?
+
+  say "Checking whether '$box' is already taken ..."
+  if instructor_box_exists "$box" "$tag_key" "$tag_value"; then
+    err "boxId '$box' is already in use — a live instance carries that tag."
+    err "Pick a different id, or remove the existing box first:"
+    err "  sfbox instructor list"
+    err "  sfbox instructor remove $box"
+    err "Nothing was changed."
+    return 6
+  fi
+
+  [ -n "$keypair" ] || keypair="$box-keypair"
+  [ -n "$key_out" ] || key_out="$tf_root/$box-keypair.pem"
+
+  # Mint the key pair if it does not exist yet. The private half is returned
+  # once and never again, so it is written straight to a 0600 file — this is
+  # the key the participant will be given.
+  if aws_cli ec2 describe-key-pairs --key-names "$keypair" >/dev/null 2>&1; then
+    say "Reusing the existing EC2 key pair '$keypair'."
+    if [ ! -f "$key_out" ]; then
+      warn "but its private half is not at $key_out."
+      warn "AWS returns a private key once, at creation, and never again. If you"
+      warn "cannot find it, delete the key pair and re-run so a fresh one is minted."
+    fi
+  else
+    say "Creating the EC2 key pair '$keypair' ..."
+    local material
+    material="$(aws_cli ec2 create-key-pair --key-name "$keypair" \
+                  --query KeyMaterial --output text 2>/dev/null)"
+    if [ -z "$material" ]; then
+      err "could not create the EC2 key pair '$keypair'."
+      err "Nothing was changed."
+      return 1
+    fi
+    ( umask 077; printf '%s\n' "$material" >"$key_out" ) || {
+      err "could not write the private key to $key_out"
+      return 1
+    }
+    chmod 600 "$key_out" 2>/dev/null || true
+    say "Private key written to $key_out (0600)."
+  fi
+
+  echo
+  say "Plan for '$box':"
+  say "  root      $tf_root"
+  say "  workspace $box"
+  say "  key pair  $keypair"
+  [ -n "$packs_ref" ] && say "  packs ref $packs_ref (overriding the module default)"
+  say "  apply     modules/gas-city-instance"
+  echo
+  if [ "$assume_yes" = 0 ]; then
+    printf '==> Continue? [y/N] '
+    local reply; read -r reply
+    case "$reply" in y|Y|yes|YES) ;; *) say "Nothing changed."; return 0 ;; esac
+  fi
+
+  say "Initialising Terraform ..."
+  tf_cli -chdir="$tf_root" init -input=false >/dev/null || {
+    err "terraform init failed in $tf_root"; return 1; }
+  instructor_tf_workspace "$tf_root" "$box" || return 1
+
+  local tf_args=(apply -auto-approve -input=false -var "factory_name=$box" -var "keypair_name=$keypair")
+  # Exposed as a flag on purpose. The module default pins the toolchain, and a
+  # ref whose gc init lacks the flags userdata passes aborts the boot part-way,
+  # so the workaround has to be reachable without editing Terraform.
+  [ -n "$packs_ref" ] && tf_args+=(-var "factory_packs_ref=$packs_ref")
+
+  say "Applying. First boot builds the toolchain from source, so this is slow."
+  if ! tf_cli -chdir="$tf_root" "${tf_args[@]}"; then
+    err "terraform apply failed for '$box'."
+    err "The workspace is left as Terraform found it — inspect it with:"
+    err "  terraform -chdir=$tf_root workspace select $box && terraform -chdir=$tf_root show"
+    return 1
+  fi
+
+  # The three things a participant needs, in the order save-credential wants.
+  local host fingerprint instance_id
+  instance_id="$(instructor_tf_output "$tf_root" instance_id)"
+  host="$(instructor_tf_output "$tf_root" public_ip)"
+  [ -n "$host" ] || host="$(instructor_tf_output "$tf_root" public_dns)"
+  [ -n "$host" ] || host="$(instructor_tf_output "$tf_root" host)"
+  if [ -z "$host" ] && [ -n "$instance_id" ]; then
+    host="$(aws_cli ec2 describe-instances --instance-ids "$instance_id" \
+              --query 'Reservations[].Instances[].PublicIpAddress' --output text 2>/dev/null \
+            | grep -v '^None$' | head -1)"
+  fi
+
+  if [ -z "$host" ]; then
+    err "'$box' applied, but it has no address a participant can reach."
+    err ""
+    err "As merged, modules/gas-city-instance puts the instance in a private subnet"
+    err "with associate_public_ip_address = false, and exposes neither a public IP"
+    err "nor a host-key fingerprint as an output. Its documented way in is SSM,"
+    err "which participants cannot use because they hold no AWS credentials."
+    err ""
+    err "The box itself is up and Terraform state is correct — this is a gap in the"
+    err "module, not a failed apply. Give the instance a public address and expose"
+    err "it as a 'public_ip' output on your root, then re-run to get the handoff."
+    err ""
+    err "Nothing was destroyed. Remove it with: sfbox instructor remove $box"
+    return 7
+  fi
+
+  say "Reading the host key from $host ..."
+  local scan
+  scan="$(keyscan_cli -T 20 "$host" 2>/dev/null | grep -v '^#' || true)"
+  if [ -n "$scan" ]; then
+    fingerprint="$(printf '%s\n' "$scan" | keygen_cli -lf - 2>/dev/null | awk '{print $2}' | head -1)"
+  fi
+  if [ -z "${fingerprint:-}" ]; then
+    warn "the box is not answering on :22 yet, so its fingerprint is not readable."
+    warn "First boot takes a while. Re-read it once it is up with:"
+    warn "  ssh-keyscan -T 20 $host | ssh-keygen -lf -"
+    fingerprint="<run ssh-keyscan once the box answers>"
+  fi
+
+  echo
+  say "Provisioned '$box'."
+  echo
+  printf 'key          %s\n' "$key_out"
+  printf 'host         %s\n' "$host"
+  printf 'fingerprint  %s\n' "$fingerprint"
+  echo
+  say "Send the participant the key file and this line:"
+  echo
+  printf '  sfbox save-credential --box %s --host %s --key %s --fingerprint %s\n' \
+    "$box" "$host" "$(basename "$key_out")" "$fingerprint"
+  echo
+  say "Those are the three inputs save-credential takes, in its own order."
+  return 0
+}
+
+cmd_instructor_remove() {
+  local box="" tf_root="${SFBOX_TF_ROOT:-}" assume_yes=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --tf-root) tf_root="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --region)  SFBOX_AWS_REGION="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --profile) SFBOX_AWS_PROFILE="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      -y|--yes)  assume_yes=1; shift ;;
+      -h|--help) usage_instructor; return 0 ;;
+      -*)        err "instructor remove: unknown argument '$1'"; return 2 ;;
+      *)         if [ -z "$box" ]; then box="$1"; shift
+                 else err "instructor remove: unexpected argument '$1'"; return 2; fi ;;
+    esac
+  done
+
+  instructor_validate_box_id "$box" || return $?
+  instructor_require_aws || return $?
+  instructor_require_tf "$tf_root" || return $?
+
+  echo
+  say "About to DESTROY '$box' and everything the module created for it:"
+  say "  the instance, its home volume, its log group and its security group."
+  say "The home volume holds that participant's city, its Dolt databases and"
+  say "their Claude credentials. Destroying it is not reversible."
+  echo
+  if [ "$assume_yes" = 0 ]; then
+    printf "==> Type the boxId to confirm: "
+    local reply; read -r reply
+    if [ "$reply" != "$box" ]; then
+      say "That did not match. Nothing was destroyed."
+      return 0
+    fi
+  fi
+
+  say "Initialising Terraform ..."
+  tf_cli -chdir="$tf_root" init -input=false >/dev/null || {
+    err "terraform init failed in $tf_root"; return 1; }
+  instructor_tf_workspace "$tf_root" "$box" || return 1
+
+  # Destroy rather than terminate-instances on purpose: it takes the dependent
+  # graph with it and leaves state truthful, so no elastic IP or volume is left
+  # billing quietly after the cohort ends.
+  say "Destroying '$box' ..."
+  if ! tf_cli -chdir="$tf_root" destroy -auto-approve -input=false -var "factory_name=$box"; then
+    err "terraform destroy failed for '$box'."
+    err "Some resources may still exist. Check with:"
+    err "  terraform -chdir=$tf_root workspace select $box && terraform -chdir=$tf_root state list"
+    err "Do not fall back to terminating the instance by hand — that leaves the"
+    err "volume and its elastic IP behind, still billing, with state now wrong."
+    return 1
+  fi
+
+  say "Destroyed '$box'. Its Terraform workspace is kept, holding empty state."
+  say "The participant can drop their local copy with: sfbox box forget $box"
+  return 0
+}
+
+cmd_instructor_list() {
+  local tag_key="$SFBOX_DEFAULT_TAG_KEY" tag_value="$SFBOX_DEFAULT_TAG_VALUE"
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --region)    SFBOX_AWS_REGION="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --profile)   SFBOX_AWS_PROFILE="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --tag-key)   tag_key="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --tag-value) tag_value="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      -h|--help)   usage_instructor; return 0 ;;
+      *)           err "instructor list: unknown argument '$1'"; return 2 ;;
+    esac
+  done
+
+  instructor_require_aws || return $?
+
+  local table
+  table="$(instructor_describe_rows "$tag_key" "$tag_value" | instructor_live_rows | instructor_format_rows)"
+  if [ "$table" = "__SFBOX_NO_ROWS__" ]; then
+    say "No workshop boxes tagged $tag_key=$tag_value in ${SFBOX_AWS_REGION:-your default region}."
+    echo
+    say "If you expected some, the tag is the likely reason. The gas-city-instance"
+    say "module tags an instance with its Name only, so the workshop tag comes from"
+    say "your own root — add it once to the AWS provider and it lands on everything:"
+    echo
+    say "  provider \"aws\" { default_tags { tags = { $tag_key = \"$tag_value\" } } }"
+    echo
+    say "Or point this at whatever you already use: --tag-key K --tag-value V"
+    return 0
+  fi
+  printf '%s\n' "$table"
+  echo
+  say "boxId is the Name tag. An id listed here is taken — provision refuses it."
+  return 0
+}
+
+cmd_instructor() {
+  local sub="${1:-}"; shift || true
+  case "$sub" in
+    provision) cmd_instructor_provision "$@" ;;
+    remove)    cmd_instructor_remove "$@" ;;
+    list)      cmd_instructor_list "$@" ;;
+    ""|-h|--help) usage_instructor ;;
+    *) err "instructor: unknown subcommand '$sub' (want: provision, remove, list)"; return 2 ;;
+  esac
+}
+
 # ----------------------------------------------------------------- usage ----
+
+usage_instructor() {
+  cat <<'EOF'
+usage: sfbox instructor provision <boxId> [--tf-root <dir>] [--factory-packs-ref <ref>]
+                                          [--keypair <name>] [--key-out <path>]
+                                          [--region <r>] [--profile <p>] [--yes]
+       sfbox instructor remove <boxId> [--tf-root <dir>] [--region <r>] [--profile <p>] [--yes]
+       sfbox instructor list [--tag-key <k>] [--tag-value <v>] [--region <r>] [--profile <p>]
+
+For whoever runs the workshop. These need AWS credentials; participants have
+none by design and never need these commands.
+
+provision  Applies actualclaw's modules/gas-city-instance for one box, then
+           prints the three things save-credential takes: the private key, the
+           host, and the host-key fingerprint. Refuses a boxId that is already
+           taken. Each box gets its own Terraform workspace, so provisioning a
+           second box cannot disturb the first.
+
+           --factory-packs-ref  Override the module's pinned packs ref. Needed
+                                while a ref whose gc init lacks the flags the
+                                boot script passes would abort the build.
+
+remove     Terraform destroy, not terminate-instances. It takes the dependent
+           graph with it and leaves state truthful, so no volume or elastic IP
+           is left billing after the cohort ends.
+
+list       Every live box carrying the workshop tag, with its boxId and stats.
+           This is how you find out an id is already allocated.
+
+--tf-root  The workspace you copied from actualclaw's
+           modules/gas-city-instance/example/ and filled in. Defaults to
+           $SFBOX_TF_ROOT.
+EOF
+}
 
 usage_save_credential() {
   cat <<'EOF'
@@ -943,6 +1415,11 @@ Working
 
 Every command takes --box <boxId> to override the current box.
 State lives in $SFBOX_HOME, which sfbox owns.
+
+Running the workshop (needs AWS credentials; participants have none)
+  instructor provision <id>   Build a box and print its key, host and fingerprint
+  instructor remove <id>      Destroy a box and everything it created
+  instructor list             Live boxes and which ids are taken
 EOF
 }
 
@@ -960,6 +1437,7 @@ main() {
     restart-factory) cmd_restart_factory "$@" ;;
     dashboard)       cmd_dashboard "$@" ;;
     get-box)         cmd_get_box "$@" ;;
+    instructor)      cmd_instructor "$@" ;;
     version|--version) printf 'sfbox %s\n' "$SFBOX_VERSION" ;;
     ""|-h|--help|help) usage ;;
     *) err "unknown command '$cmd'"; echo; usage; exit 2 ;;

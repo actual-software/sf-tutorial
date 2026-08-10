@@ -241,6 +241,237 @@ fresh_state
 state_put alice-prod host 203.0.113.10
 rc_is 2 "fails when nothing is selected" resolve_box ''
 
+# ------------------------------------------------------------ instructor ---
+#
+# The instructor commands reach AWS and Terraform through a handful of one-line
+# seam functions, which these tests replace. Nothing below runs an apply, a
+# destroy or any other billable call — the seams are the whole point of the
+# split, and stubbing them is how the plumbing gets exercised at all.
+
+echo "instructor: boxId validation"
+rc_is 0 "accepts a plain boxId"              instructor_validate_box_id alice-prod
+rc_is 0 "accepts digits"                     instructor_validate_box_id box2
+rc_is 2 "rejects an empty boxId"             instructor_validate_box_id ""
+rc_is 2 "rejects a slash"                    instructor_validate_box_id "alice/prod"
+rc_is 2 "rejects a space"                    instructor_validate_box_id "alice prod"
+rc_is 2 "rejects a dot"                      instructor_validate_box_id "alice.prod"
+rc_is 2 "rejects a leading hyphen"           instructor_validate_box_id "-alice"
+rc_is 2 "rejects a trailing hyphen"          instructor_validate_box_id "alice-"
+rc_is 2 "rejects an over-long boxId"         instructor_validate_box_id "$(printf 'a%.0s' $(seq 61))"
+
+rc_is 2 "provision needs a boxId" cmd_instructor_provision
+rc_is 2 "remove needs a boxId"    cmd_instructor_remove
+rc_is 2 "rejects an unknown subcommand" cmd_instructor bogus
+rc_is 2 "provision rejects an unknown flag" cmd_instructor_provision alice-prod --nope
+rc_is 2 "list rejects an unknown flag"      cmd_instructor_list --nope
+
+echo "instructor: flags that are missing their value"
+rc_is 1 "provision --tf-root with no value"  cmd_instructor_provision alice-prod --tf-root
+rc_is 1 "provision --keypair with no value"  cmd_instructor_provision alice-prod --keypair
+rc_is 1 "remove --tf-root with no value"     cmd_instructor_remove alice-prod --tf-root
+rc_is 1 "list --tag-key with no value"       cmd_instructor_list --tag-key
+
+# ---- credentials absent -----------------------------------------------------
+#
+# A participant has no AWS credentials by design and will run one of these by
+# accident. What they get has to say so, not print an SDK stack trace.
+
+echo "instructor: no AWS credentials"
+aws_available() { return 1; }
+tf_available()  { return 0; }
+
+rc_is 5 "provision stops when the AWS CLI is absent" cmd_instructor_provision alice-prod
+rc_is 5 "remove stops when the AWS CLI is absent"    cmd_instructor_remove alice-prod
+rc_is 5 "list stops when the AWS CLI is absent"      cmd_instructor_list
+
+msg="$(cmd_instructor_list 2>&1)"
+contains "$msg" "you are not missing anything"  "tells a participant they are not blocked"
+contains "$msg" "sfbox --help"                  "points them at the commands that are theirs"
+case "$msg" in
+  *Traceback*|*"Unable to locate credentials"*) bad "no raw SDK error" "leaked an SDK message" ;;
+  *)                                            ok  "no raw SDK error" ;;
+esac
+
+echo "instructor: AWS CLI present but credentials do not resolve"
+aws_available() { return 0; }
+aws_cli() { return 255; }
+rc_is 5 "stops when sts get-caller-identity fails" cmd_instructor_list
+msg="$(cmd_instructor_list 2>&1)"
+contains "$msg" "Nothing was changed"    "says it changed nothing"
+contains "$msg" "session has probably expired" "gives the instructor the real cause too"
+
+# ---- shared stubs for the plumbing tests ------------------------------------
+
+TFROOT="$SFBOX_TEST_ROOT/tfroot"
+mkdir -p "$TFROOT"
+: >"$TFROOT/main.tf"
+TF_LOG="$SFBOX_TEST_ROOT/tf.log"
+
+aws_available() { return 0; }
+tf_available()  { return 0; }
+aws_cli() {
+  case "$*" in
+    "sts get-caller-identity")  return 0 ;;
+    *describe-key-pairs*)       return 1 ;;   # absent, so provision mints one
+    *create-key-pair*)          printf -- '-----BEGIN RSA PRIVATE KEY-----\nx\n' ;;
+    *describe-instances*)       printf 'None\n' ;;
+  esac
+  return 0
+}
+keyscan_cli() { printf '203.0.113.9 ssh-ed25519 AAAAC3Nz\n'; }
+keygen_cli()  { printf '256 SHA256:TESTFINGERPRINT host (ED25519)\n'; }
+
+echo "instructor: Terraform root validation"
+rc_is 2 "refuses a missing --tf-root"      instructor_require_tf ""
+rc_is 2 "refuses a tf-root that is absent" instructor_require_tf "$SFBOX_TEST_ROOT/nope"
+rc_is 2 "refuses a directory with no .tf"  instructor_require_tf "$SFBOX_TEST_ROOT"
+rc_is 0 "accepts a real Terraform root"    instructor_require_tf "$TFROOT"
+
+# ---- collision detection ----------------------------------------------------
+#
+# The instructor allocates boxIds by hand, so an id already in use has to be an
+# error. Silently applying over it would take somebody else's box.
+
+echo "instructor: boxId collision"
+instructor_describe_rows() {
+  printf 'alice-prod\ti-0abc\trunning\tm6i.xlarge\t203.0.113.5\t10.0.0.5\t2026-08-10T00:00:00Z\n'
+}
+rc_is 0 "sees a live box holding the id"  instructor_box_exists alice-prod Workshop sfi
+rc_is 6 "provision refuses a taken boxId" cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes
+msg="$(cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes 2>&1)"
+contains "$msg" "already in use"     "names the collision"
+contains "$msg" "Nothing was changed" "says it changed nothing"
+
+echo "instructor: a terminated instance does not hold its id"
+instructor_describe_rows() {
+  printf 'alice-prod\ti-0abc\tterminated\tm6i.xlarge\tNone\t10.0.0.5\t2026-08-10T00:00:00Z\n'
+}
+rc_is 1 "terminated does not count as live" instructor_box_exists alice-prod Workshop sfi
+instructor_describe_rows() {
+  printf 'alice-prod\ti-0abc\tshutting-down\tm6i.xlarge\tNone\t10.0.0.5\t2026-08-10T00:00:00Z\n'
+}
+rc_is 1 "shutting-down does not count as live" instructor_box_exists alice-prod Workshop sfi
+
+# ---- list formatting --------------------------------------------------------
+
+echo "instructor: list formatting"
+rows="$(printf 'alice-prod\ti-0abc\trunning\tm6i.xlarge\t203.0.113.5\t10.0.0.5\tt\nbob-test\ti-0def\trunning\tm6i.xlarge\tNone\t10.0.0.6\tt\n')"
+out="$(printf '%s\n' "$rows" | instructor_format_rows)"
+contains "$out" "BOX"        "prints a header"
+contains "$out" "alice-prod" "lists the first box"
+contains "$out" "bob-test"   "lists the second box"
+contains "$out" "i-0abc"     "shows the instance id"
+case "$out" in
+  *None*) bad "renders a missing public IP as a dash" "left the literal None in the table" ;;
+  *)      ok  "renders a missing public IP as a dash" ;;
+esac
+is "$(printf '' | instructor_format_rows)" "__SFBOX_NO_ROWS__" "signals an empty result"
+
+echo "instructor: list with nothing tagged"
+instructor_describe_rows() { : ; }
+msg="$(cmd_instructor_list --tag-key Workshop --tag-value sfi 2>&1)"
+contains "$msg" "No workshop boxes"  "says the list is empty"
+contains "$msg" "default_tags"       "explains the likely tag reason"
+rc_is 0 "an empty list is not an error" cmd_instructor_list
+
+# ---- remove is a destroy ----------------------------------------------------
+#
+# The whole point of the Terraform route: it takes the dependent graph with it.
+# A terminate-instances would leave the volume and its address billing.
+
+echo "instructor: remove runs a Terraform destroy"
+: >"$TF_LOG"
+tf_cli() { printf '%s\n' "$*" >>"$TF_LOG"; return 0; }
+cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes >/dev/null 2>&1
+log="$(cat "$TF_LOG")"
+contains "$log" "destroy"                   "runs terraform destroy"
+contains "$log" "factory_name=alice-prod"   "passes the boxId as factory_name"
+contains "$log" "workspace"                 "selects the per-box workspace"
+contains "$log" "-chdir=$TFROOT"            "runs against the given root"
+case "$log" in
+  *"apply "*) bad "never applies during a remove" "remove issued an apply" ;;
+  *)          ok  "never applies during a remove" ;;
+esac
+
+echo "instructor: remove asks for the boxId before destroying"
+: >"$TF_LOG"
+printf 'not-the-box\n' | cmd_instructor_remove alice-prod --tf-root "$TFROOT" >/dev/null 2>&1
+is "$(cat "$TF_LOG" | grep -c destroy | tr -d ' ')" "0" "a mistyped confirmation destroys nothing"
+
+# ---- provision plumbing -----------------------------------------------------
+
+echo "instructor: provision plumbing"
+instructor_describe_rows() { : ; }
+: >"$TF_LOG"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  case "$*" in
+    *"output -raw public_ip")   printf '203.0.113.9\n' ;;
+    *"output -raw instance_id") printf 'i-0abc\n' ;;
+  esac
+  return 0
+}
+out="$(cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes \
+        --factory-packs-ref deps-gc-v1.3.5-bd-1.1.0-pins 2>&1)"
+prc=$?
+log="$(cat "$TF_LOG")"
+is "$prc" "0" "provision succeeds when the box comes up"
+contains "$log" "apply"                     "runs terraform apply"
+contains "$log" "factory_name=alice-prod"   "passes the boxId as factory_name"
+contains "$log" "keypair_name=alice-prod-keypair" "defaults the key pair to the boxId"
+contains "$log" "factory_packs_ref=deps-gc-v1.3.5-bd-1.1.0-pins" \
+                                            "passes the packs-ref override through"
+contains "$out" "203.0.113.9"               "emits the host"
+contains "$out" "SHA256:TESTFINGERPRINT"    "emits the host-key fingerprint"
+contains "$out" "alice-prod-keypair.pem"    "emits the private key path"
+contains "$out" "sfbox save-credential"     "hands over a line the participant can paste"
+rc_is 0 "wrote the private key at 0600" test -f "$TFROOT/alice-prod-keypair.pem"
+is "$(ls -l "$TFROOT/alice-prod-keypair.pem" | cut -c1-10)" "-rw-------" "key file is 0600"
+
+echo "instructor: the packs-ref flag is optional"
+: >"$TF_LOG"
+rm -f "$TFROOT/alice-prod-keypair.pem"
+cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes >/dev/null 2>&1
+case "$(cat "$TF_LOG")" in
+  *factory_packs_ref*) bad "omits factory_packs_ref when not asked for" "passed it anyway" ;;
+  *)                   ok  "omits factory_packs_ref when not asked for" ;;
+esac
+
+# ---- the module gap ---------------------------------------------------------
+#
+# As merged, modules/gas-city-instance sits in a private subnet with no public
+# address and exposes neither an IP nor a fingerprint. Provision has to say so
+# rather than hand back a private IP no participant can reach.
+
+echo "instructor: provision refuses to hand back an unreachable box"
+: >"$TF_LOG"
+rm -f "$TFROOT/alice-prod-keypair.pem"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  case "$*" in
+    *"output -raw instance_id") printf 'i-0abc\n' ;;
+  esac
+  return 0
+}
+rc_is 7 "refuses when the box has no reachable address" \
+  cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes
+msg="$(cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes 2>&1)"
+contains "$msg" "no address a participant can reach" "names the real problem"
+contains "$msg" "associate_public_ip_address"        "names the module setting behind it"
+contains "$msg" "Nothing was destroyed"              "leaves the box alone"
+
+echo "instructor: a failed apply is not reported as a provision"
+: >"$TF_LOG"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  case "$*" in
+    *apply*) return 1 ;;
+  esac
+  return 0
+}
+rc_is 1 "surfaces a failed terraform apply" \
+  cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes
+
 # ------------------------------------------------------------------ done ---
 
 echo
