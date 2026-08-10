@@ -335,7 +335,10 @@ TF_LOG="$SFBOX_TEST_ROOT/tf.log"
 ORDER_LOG="$SFBOX_TEST_ROOT/order.log"
 
 # What describe-volumes reports after a delete. Deletion is asynchronous, so
-# this is what tells remove whether the volume actually went.
+# this is what tells remove whether the volume actually went. "gone" is not a
+# state AWS returns — it is the stub's way of asking for the other shape, an
+# InvalidVolume.NotFound error on a non-zero exit, which is what a volume that
+# has finished deleting actually looks like.
 VOL_STATE="deleted"
 
 # No sleeping in the suite. The give-up path still needs more than one attempt
@@ -350,7 +353,15 @@ aws_cli() {
   case "$*" in
     "sts get-caller-identity")  return 0 ;;
     *delete-volume*)            return 0 ;;
-    *describe-volumes*)         printf '%s\n' "$VOL_STATE" ;;
+    *describe-volumes*)
+      # A volume that has finished deleting has no state to report: the lookup
+      # fails instead. Emitting that on stderr and exiting non-zero is the only
+      # way the stub reaches the branch that reads the error text.
+      if [ "$VOL_STATE" = "gone" ]; then
+        printf 'An error occurred (InvalidVolume.NotFound) when calling the DescribeVolumes operation: The volume does not exist.\n' >&2
+        return 254
+      fi
+      printf '%s\n' "$VOL_STATE" ;;
     *describe-instances*)       printf 'None\n' ;;
   esac
   return 0
@@ -590,6 +601,21 @@ msg="$(cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes 2>&1)"
 contains "$msg" "home volume vol-0home is still there" "says which volume survived"
 contains "$msg" "aws ec2 delete-volume --volume-id vol-0home" \
                                             "hands over a command that finishes the job"
+VOL_STATE="deleted"
+
+# The usual real-world ending, and the one the README tells the instructor to
+# look for. A volume that has finished deleting does not report a state — the
+# describe fails with InvalidVolume.NotFound. Reading that as anything but
+# success would make every healthy remove exit 9 and send the instructor after
+# a volume that is already gone, and the state-string cases above would all
+# still pass while it did.
+echo "instructor: a volume that has finished deleting counts as gone, not as a failure"
+: >"$TF_LOG"; : >"$ORDER_LOG"; VOL_STATE="gone"
+stub_tf_ok
+rc_is 0 "reads InvalidVolume.NotFound as deleted" \
+  cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
+msg="$(cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes 2>&1)"
+contains "$msg" "Home volume vol-0home deleted" "reports the delete it confirmed"
 VOL_STATE="deleted"
 
 echo "instructor: a destroy that fails still names the volume it dropped from state"
