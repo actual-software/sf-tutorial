@@ -65,7 +65,7 @@ Three ways through this repo. The pages are the same; what differs is the order 
 
 ### Two-day intensive (start here if you are at the event)
 
-[**modules/**](./modules/README.md) is the taught path: thirteen blocks across two days, each one owning a time window and ending in a deliverable. Wednesday runs on one shared factory and one shared example; Thursday runs on your own project. The module pages sequence the progression and hardening pages below, and add the six sessions those pages never covered.
+[**modules/**](./modules/README.md) is the taught path: thirteen blocks across two days, each one owning a time window and ending in a deliverable. Wednesday runs on one shared factory and one shared example; Thursday runs on your own project. It is an index rather than a second set of pages. Every block's content lives on the progression and hardening pages below, so following the schedule means opening one page per block.
 
 Start at [W-1 Preflight Setup](./progression/00.0-preflight.md), then follow the [module index](./modules/README.md).
 
@@ -73,16 +73,22 @@ Start at [W-1 Preflight Setup](./progression/00.0-preflight.md), then follow the
 
 Each step unlocks the next. Every page is self-contained: prereqs, walkthrough with copy-pasteable commands, verification block, troubleshooting, and a "what's next" link.
 
-1. [Preflight: check your toolchain](./progression/00.0-preflight.md) — `deps.sh` plus a single pass-or-fail line before you build anything
-1. [Setup: Create a Gas City named factory1](./progression/00.1-setup-foundation.md) — `gc init`, import a setup pack (based on the `gastown` reference pack), configure `city.toml`
-2. [Setup: Add ASCII Art rig](./progression/00.2-setup-foundation.md) — `gc rig add`, push to GitHub, create 138 beads
-3. [Setup: env vars](./progression/00.3-setup-foundation.md) — handy variables for easier copy-and-paste-ing
-4. [Basic flow (OOTB)](./progression/01-basic-flow.md) — one agent claims a bead and implements (`mol-polecat-work`) + another reviews (`mol-refinery-patrol`) with no extras
-5. [First review loop](./progression/02-first-review-loop.md) — extend the refinery patrol with a required round of feedback before any bead becomes a PR
-6. [Branch protection](./progression/03-branch-protection.md) — only approved humans merge to `main`
-7. [Architect agent](./progression/04-adr-reviewer.md) — add an architecture-aware reviewer between the polecat and the refinery
-8. [Bead gate checks](./progression/05.1-bead-gate-checks.md) — add a project-manager agent at the front of the factory
-9. [Bead gate checks — Grill Me](./progression/05.2-bead-gate-checks.md) — refine beads at the source with a local Grill-Me skill
+1. [Preflight: check your toolchain](./progression/00.0-preflight.md) — `deps.sh` plus a single pass-or-fail line before you build anything, on your laptop or a cloud box
+2. [What is a software factory?](./progression/00.05-what-is-a-software-factory.md) — the vocabulary, and how it maps onto the demo repo; prose only, nothing to install
+3. [Setup: Create a Gas City named factory1](./progression/00.1-setup-foundation.md) — `gc init`, import a setup pack (based on the `gastown` reference pack), configure `city.toml`
+4. [Setup: Add ASCII Art rig](./progression/00.2-setup-foundation.md) — `gc rig add`, push to GitHub, create 138 beads
+5. [Setup: env vars](./progression/00.3-setup-foundation.md) — handy variables for easier copy-and-paste-ing
+6. [Basic flow (OOTB)](./progression/01-basic-flow.md) — one agent claims a bead and implements (`mol-polecat-work`) + another reviews (`mol-refinery-patrol`) with no extras
+7. [First review loop](./progression/02-first-review-loop.md) — extend the refinery patrol with a required round of feedback before any bead becomes a PR
+8. [Branch protection](./progression/03-branch-protection.md) — only approved humans merge to `main`
+9. [Architect agent](./progression/04-adr-reviewer.md) — add an architecture-aware reviewer between the polecat and the refinery
+10. [Bead gate checks](./progression/05.1-bead-gate-checks.md) — add a project-manager agent at the front of the factory
+11. [Bead gate checks — Grill Me](./progression/05.2-bead-gate-checks.md) — refine beads at the source with a local Grill-Me skill
+12. [Coordination channels](./progression/06-coordination-channels.md) — mail, wakes, nudges and attach, plus a fallback for every handoff
+13. [Plan your factory](./progression/07-plan-your-factory.md) — register your own rig, write a project manifest, and produce a capability map
+14. [The mayor and workflows](./progression/08-mayor-and-workflows.md) — formulas and orders, and one workflow walked end to end
+15. [Implement a feature](./progression/09-implement-a-feature.md) — a directed build against the capability map from the planning page
+16. [Sharing your factory](./progression/10-sharing-your-factory.md) — what you publish, what stays private, and what gets scrubbed first
 
 ### Hardening Exercises (optional, layer on as you like)
 
@@ -92,6 +98,7 @@ These are independent follow-ons. Pick the ones that interest you; they don't ha
 2. [Specialize reviewers per domain](./hardening/02-specialize-reviewers-per-domain.md) — split the single reviewer into ADR, design, testing, and docs reviewers
 3. [Architecture best practices loop](./hardening/03-architecture-best-practices-loop.md) — per-principle scoring with an append-only audit trail
 4. [Strengthen review system](./hardening/04-strengthen-review-system.md) — multi-vendor reviewers, a synthesizer, and an iterate loop
+5. [Self-improvement loop](./hardening/05-self-improvement-loop.md) — the factory proposes a change to its own configuration, behind a gate
 
 ### Running on a cloud box
 

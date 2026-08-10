@@ -1,6 +1,6 @@
 # Bead-creation formula extensions
 
-« [previous: 05.2 Bead gate checks — Grill Me](../progression/05.2-bead-gate-checks.md) | [next: H2 Specialize reviewers per domain](./02-specialize-reviewers-per-domain.md) »
+« [previous: W-5 Requirement Gates](../progression/05.1-bead-gate-checks.md) | [next: W-6 Coordination Channels](../progression/06-coordination-channels.md) »
 
 ## Contents
 
@@ -452,4 +452,4 @@ ls ascii/j.md
 
 Continue to [Specialize reviewers per domain](./02-specialize-reviewers-per-domain.md). H2 builds on the three spec files this page produces: the architect (currently a single agent) splits into four parallel domain reviewers, each citing the doc family the matching Lead authored.
 
-« [previous: 05.2 Bead gate checks — Grill Me](../progression/05.2-bead-gate-checks.md) | [next: H2 Specialize reviewers per domain](./02-specialize-reviewers-per-domain.md) »
+« [previous: W-5 Requirement Gates](../progression/05.1-bead-gate-checks.md) | [next: W-6 Coordination Channels](../progression/06-coordination-channels.md) »

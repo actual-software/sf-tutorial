@@ -149,15 +149,42 @@ if [ -w "$HOME" ]; then ok "home directory is writable"; else fail "home directo
 # --------------------------------------------------------------------------
 if [ "$MODE_CLOUD" -eq 1 ]; then
   head2 "Cloud path"
-  # NOT YET IMPLEMENTED. The cloud branch checks that a participant box
-  # credential is configured and that the box actually answers. That depends
-  # on the participant box CLI, which ships separately; until it lands there
-  # is nothing here to check and a fabricated check would be worse than none.
-  echo "  [ -- ] cloud checks are not available yet."
-  echo "         The cloud path needs the participant box CLI, which is not part of this repo."
-  echo "         Run the local path today. When the box CLI ships, this section will verify"
-  echo "         that a box credential is configured and that the box connects."
-  echo "         Nothing about the local path is blocked by this."
+
+  # sfbox ships in this repo. Prefer a copy on PATH, so a participant who put it
+  # somewhere of their own is not second-guessed, and fall back to the one that
+  # sits next to this script.
+  SFBOX=""
+  if command -v sfbox >/dev/null 2>&1; then
+    SFBOX="$(command -v sfbox)"
+  elif [ -x "${HERE}/../participant-box-cli/sfbox" ]; then
+    SFBOX="${HERE}/../participant-box-cli/sfbox"
+  fi
+
+  if [ -z "$SFBOX" ]; then
+    fail "sfbox: not found — expected it on PATH, or at participant-box-cli/sfbox in this repo"
+  else
+    ok "sfbox: $SFBOX"
+
+    # `sfbox box current` prints its human-facing lines with a '==> ' prefix and
+    # still exits 0 when nothing is selected, so the box id is whatever survives
+    # dropping those lines.
+    current_box="$("$SFBOX" box current 2>/dev/null | grep -v '^==>' | tr -d '[:space:]')"
+    if [ -z "$current_box" ]; then
+      fail "box credential: none saved — run 'sfbox save-credential' with the box id, host, key and fingerprint your instructor gave you"
+    else
+      ok "box credential: $current_box"
+
+      # sfbox preflight is the authority on whether the box answers: it checks
+      # ssh, then gc, then the service, and names the layer that broke. Mirror
+      # its verdict rather than deriving a second opinion here.
+      if box_out="$("$SFBOX" preflight 2>&1)"; then
+        ok "box reachable: ssh, gc and the Gas City service all answered"
+      else
+        fail "box unreachable — sfbox preflight says which layer broke:"
+        printf '%s\n' "$box_out" | sed 's/^/         /'
+      fi
+    fi
+  fi
 fi
 
 # --------------------------------------------------------------------------

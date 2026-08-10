@@ -1,6 +1,6 @@
 # W-8 · Sharing Your Factory
 
-« [previous: L-5 Implement a Feature](./L-5-implement-a-feature.md) | [next: modules index](./README.md) »
+« [previous: L-5 Implement a Feature](./09-implement-a-feature.md) | [next: modules index](../modules/README.md) »
 
 **Workshop · Thursday 4:30–5:00 · 30 minutes · closing block**
 
@@ -48,7 +48,7 @@ The corollary matters just as much. If your factory only works because of someth
 
 **Your team.** Now reproducibility is the whole job. Pin your toolchain the way [`deps.sh`](../bootstrap/deps.sh) does, write down the prerequisites, and have exactly one person other than you run it from scratch on a clean machine before you tell everyone it works. That last step is not optional, and this curriculum learned it the hard way: an earlier version was authored against an older `gc` and a newer one rejected config that used to be accepted, which broke the setup chain partway through a live session.
 
-**Your organisation, as a proposal.** The audience is people deciding whether to allow this, and they are not asking whether it works. They are asking which decisions a model is allowed to make. Everything from [W-4](./W-4-review-loops.md) is the answer, in their language: an unresolved blocking check prevents work from being marked ready, consequential decisions have a deterministic gate or a named human, and the system fails visibly when evidence is missing. Show the gate that rejected something, not the pull request that merged.
+**Your organisation, as a proposal.** The audience is people deciding whether to allow this, and they are not asking whether it works. They are asking which decisions a model is allowed to make. Everything from [W-4](./02-first-review-loop.md) is the answer, in their language: an unresolved blocking check prevents work from being marked ready, consequential decisions have a deterministic gate or a named human, and the system fails visibly when evidence is missing. Show the gate that rejected something, not the pull request that merged.
 
 **Publicly.** Highest scrub cost, and the one where a mistake is permanent. See below.
 
@@ -87,8 +87,8 @@ If you have five spare minutes, write the `README.md` for the "yourself, later" 
 
 That is the two days. You have a factory pointed at your own project, with gates you can defend, channels you chose deliberately, and a written list of what to build next.
 
-The capability map from [L-1](./L-1-plan-your-factory.md) is the thing to keep. It has rows on it you did not get to, and it is the only artifact here that knows what your factory cannot do yet.
+The capability map from [L-1](./07-plan-your-factory.md) is the thing to keep. It has rows on it you did not get to, and it is the only artifact here that knows what your factory cannot do yet.
 
-The [`hardening/`](../README.md#hardening-exercises-optional-layer-on-as-you-like) exercises you did not pick in [L-3](./L-3-hardening.md) are the obvious next session, and both run fine on your own rig now.
+The [`hardening/`](../README.md#hardening-exercises-optional-layer-on-as-you-like) exercises you did not pick in [L-3](../hardening/03-architecture-best-practices-loop.md) are the obvious next session, and both run fine on your own rig now.
 
-« [previous: L-5 Implement a Feature](./L-5-implement-a-feature.md) | [next: modules index](./README.md) »
+« [previous: L-5 Implement a Feature](./09-implement-a-feature.md) | [next: modules index](../modules/README.md) »

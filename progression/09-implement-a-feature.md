@@ -1,6 +1,6 @@
 # L-5 · Work on Your Factory: Implement a Feature
 
-« [previous: L-4 Self-improvement Loop](./L-4-self-improvement-loop.md) | [next: W-8 Sharing Your Factory](./W-8-sharing-your-factory.md) »
+« [previous: L-4 Self-improvement Loop](../hardening/05-self-improvement-loop.md) | [next: W-8 Sharing Your Factory](./10-sharing-your-factory.md) »
 
 **Lab · Thursday 3:00–4:30 · 90 minutes · your own project**
 
@@ -29,9 +29,9 @@ Take the capability map you wrote yesterday, build the change at the top of it, 
 
 ## Prereqs
 
-- [L-1](./L-1-plan-your-factory.md) complete, with `docs/current/capability-map.md` committed to your rig.
-- [W-7](./W-7-mayor-and-workflows.md) complete, so the agent / formula / order split is familiar.
-- [L-2](./L-2-retargeting-the-rig.md) complete: your gates run on your rig.
+- [L-1](./07-plan-your-factory.md) complete, with `docs/current/capability-map.md` committed to your rig.
+- [W-7](./08-mayor-and-workflows.md) complete, so the agent / formula / order split is familiar.
+- [L-2](../hardening/02-specialize-reviewers-per-domain.md) complete: your gates run on your rig.
 
 ## Context: this block reads yesterday's output
 
@@ -112,7 +112,7 @@ If both cases behave, the row is done. Mark it in the map and move on.
 
 A capability that can be skipped is a suggestion. If your change is a check, make it block; if it is a step, make something depend on it.
 
-This is the same posture as the three governance requirements from [W-4](./W-4-review-loops.md): an unresolved blocking check has to prevent work from being marked ready, and the system has to fail visibly rather than proceeding quietly. Applied here it means one concrete thing — after your change, there is an input for which the factory stops and says why.
+This is the same posture as the three governance requirements from [W-4](./02-first-review-loop.md): an unresolved blocking check has to prevent work from being marked ready, and the system has to fail visibly rather than proceeding quietly. Applied here it means one concrete thing — after your change, there is an input for which the factory stops and says why.
 
 Confirm the failure is legible, not just present:
 
@@ -128,7 +128,7 @@ With time left, you have a real choice, and the second option is usually worth m
 
 Take rank 2 and repeat, if it is genuinely independent of what you just built.
 
-Or make what you just built survive someone else. Write the three sentences that explain it in your rig's docs, so tomorrow's version of you knows why the file exists. This is also most of the work for [W-8](./W-8-sharing-your-factory.md) in half an hour, which is about what travels when you hand a factory to a colleague.
+Or make what you just built survive someone else. Write the three sentences that explain it in your rig's docs, so tomorrow's version of you knows why the file exists. This is also most of the work for [W-8](./10-sharing-your-factory.md) in half an hour, which is about what travels when you hand a factory to a colleague.
 
 ### 6. Reflect
 
@@ -172,6 +172,6 @@ Feed it the input you least expected: an empty bead, a bead in a language your p
 
 ## What's next
 
-[W-8 Sharing Your Factory](./W-8-sharing-your-factory.md) closes the two days: what travels when you hand this to someone else, and what has to be scrubbed first.
+[W-8 Sharing Your Factory](./10-sharing-your-factory.md) closes the two days: what travels when you hand this to someone else, and what has to be scrubbed first.
 
-« [previous: L-4 Self-improvement Loop](./L-4-self-improvement-loop.md) | [next: W-8 Sharing Your Factory](./W-8-sharing-your-factory.md) »
+« [previous: L-4 Self-improvement Loop](../hardening/05-self-improvement-loop.md) | [next: W-8 Sharing Your Factory](./10-sharing-your-factory.md) »

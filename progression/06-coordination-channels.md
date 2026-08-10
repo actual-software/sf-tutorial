@@ -1,6 +1,6 @@
 # W-6 · Intro to Software Factories: Coordination Channels
 
-« [previous: W-5 Requirement Gates](./W-5-requirement-gates.md) | [next: L-1 Plan Your Factory](./L-1-plan-your-factory.md) »
+« [previous: H1 Bead-creation formula extensions](../hardening/01-bead-creation-formula-extensions.md) | [next: L-1 Plan Your Factory](./07-plan-your-factory.md) »
 
 **Workshop · Wednesday 3:00–3:45 · 45 minutes · one shared example**
 
@@ -32,7 +32,7 @@ By the end of this exercise you will have exercised all five coordination channe
 
 ## Prereqs
 
-- [W-5](./W-5-requirement-gates.md) complete: `factory1` running with the bead gate at the front, the review loop, branch protection and the architect reviewer all in place.
+- [W-5](./05.1-bead-gate-checks.md) complete: `factory1` running with the bead gate at the front, the review loop, branch protection and the architect reviewer all in place.
 - The four env vars from [`00.3`](../progression/00.3-setup-foundation.md) exported in your current shell.
 - `jq` installed.
 
@@ -263,7 +263,7 @@ git commit -m "Record coordination channel preferences"
 
 Five channels, one page, and a rule for each handoff. The rule is worth more than the exercise.
 
-The reason to write it down is diagnostic rather than bureaucratic. When the factory goes quiet at 2am, "which channel was supposed to carry this?" is the first question, and a factory with no answer is one where you read every log. The document is also an input to tomorrow: [L-2](./L-2-retargeting-the-rig.md) moves your gates onto your own rig, and the handoffs move with them.
+The reason to write it down is diagnostic rather than bureaucratic. When the factory goes quiet at 2am, "which channel was supposed to carry this?" is the first question, and a factory with no answer is one where you read every log. The document is also an input to tomorrow: [L-2](../hardening/02-specialize-reviewers-per-domain.md) moves your gates onto your own rig, and the handoffs move with them.
 
 ## Verification
 
@@ -295,6 +295,6 @@ at least the message you sent in step 2
 
 ## What's next
 
-You have the channels and a written rule for each handoff. [L-1 Plan Your Factory](./L-1-plan-your-factory.md) is where you point a factory at your own repo and write down what you want it to do.
+You have the channels and a written rule for each handoff. [L-1 Plan Your Factory](./07-plan-your-factory.md) is where you point a factory at your own repo and write down what you want it to do.
 
-« [previous: W-5 Requirement Gates](./W-5-requirement-gates.md) | [next: L-1 Plan Your Factory](./L-1-plan-your-factory.md) »
+« [previous: H1 Bead-creation formula extensions](../hardening/01-bead-creation-formula-extensions.md) | [next: L-1 Plan Your Factory](./07-plan-your-factory.md) »

@@ -1,6 +1,6 @@
 # W-7 · What GasCity Does Best: The Mayor and Workflows
 
-« [previous: L-1 Plan Your Factory](./L-1-plan-your-factory.md) | [next: L-2 Retargeting the Rig](./L-2-retargeting-the-rig.md) »
+« [previous: L-1 Plan Your Factory](./07-plan-your-factory.md) | [next: L-2 Retargeting the Rig](../hardening/02-specialize-reviewers-per-domain.md) »
 
 **Workshop · Thursday 9:00–9:45 · 45 minutes · one shared example**
 
@@ -31,7 +31,7 @@ By the end of this exercise you will be able to say what the mayor is for, read 
 
 - Wednesday complete, or `factory1` at the end of W-5 via the [catch-up script](#setup).
 - The four env vars from [`00.3`](../progression/00.3-setup-foundation.md) exported.
-- Yesterday's [coordination-channels document](./W-6-coordination-channels.md) to hand. This block is largely about the orders channel.
+- Yesterday's [coordination-channels document](./06-coordination-channels.md) to hand. This block is largely about the orders channel.
 
 ## Context
 
@@ -189,7 +189,7 @@ Now find the seam. Pick any handoff you just watched and answer two questions: w
 
 The mayor holds intent, formulas hold method, orders hold timing. Almost every change you will want to make to a factory is a change to exactly one of those three, and naming which one first is most of the work.
 
-Write one sentence in your capability map from [L-1](./L-1-plan-your-factory.md): the thing your factory should do on a schedule that it does not do today. That is an order, and [L-5](./L-5-implement-a-feature.md) this afternoon is where you can build it.
+Write one sentence in your capability map from [L-1](./07-plan-your-factory.md): the thing your factory should do on a schedule that it does not do today. That is an order, and [L-5](./09-implement-a-feature.md) this afternoon is where you can build it.
 
 ## Verification
 
@@ -220,6 +220,6 @@ a status past open — the bead moved without you dispatching it
 
 ## What's next
 
-You have seen the coordination layer and the machinery under it. The rest of Thursday is your factory: [L-2 Retargeting the Rig](./L-2-retargeting-the-rig.md) moves yesterday's gates onto your own repo.
+You have seen the coordination layer and the machinery under it. The rest of Thursday is your factory: [L-2 Retargeting the Rig](../hardening/02-specialize-reviewers-per-domain.md) moves yesterday's gates onto your own repo.
 
-« [previous: L-1 Plan Your Factory](./L-1-plan-your-factory.md) | [next: L-2 Retargeting the Rig](./L-2-retargeting-the-rig.md) »
+« [previous: L-1 Plan Your Factory](./07-plan-your-factory.md) | [next: L-2 Retargeting the Rig](../hardening/02-specialize-reviewers-per-domain.md) »

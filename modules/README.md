@@ -2,7 +2,9 @@
 
 This is the taught path. Thirteen blocks across two days, each owning one discrete time window, each ending in something you can point at.
 
-The [Basic Progression](../README.md#basic-progression-sequential-do-these-in-order) and the [Hardening Exercises](../README.md#hardening-exercises-optional-layer-on-as-you-like) are still there and still work on their own. This directory does not replace them. It sequences them, adds the sessions they never covered, and tells you which page to open at 10:00 on Wednesday.
+This page is an index, not a layer of extra reading. Every block's content lives on the [progression](../README.md#basic-progression-sequential-do-these-in-order) and [hardening](../README.md#hardening-exercises-optional-layer-on-as-you-like) pages themselves, so a block is one page to open rather than an intermediary that points at another. What this page adds is the order, the time windows, and the answer to "which page do I open at 10:00 on Wednesday".
+
+Those pages still work on their own, in their own numbered order, for anyone reading the tutorial outside the two days.
 
 ## How a block is written
 
@@ -13,7 +15,7 @@ Every block is typed, and the type tells you what the room looks like.
 
 Wednesday is workshop-heavy and runs on one shared factory. Thursday is lab-heavy and runs on yours. That split is deliberate: the concepts are new on day one, so the commands stay identical, and by day two the interesting part is your repo rather than ours.
 
-Each block page carries an objective, its time window, the deliverable you leave with, and either the full walkthrough or a framed route through the progression pages that already cover it.
+Open a block and the first thing on the page is its framing: the objective, the time window, what you leave with, how the minutes are meant to run, and what to do if you fall behind. The walkthrough follows directly underneath. A block that spans several pages carries that framing on its first page and names the others, so you still only open one link to start.
 
 ```mermaid
 flowchart LR
@@ -42,28 +44,28 @@ The dotted line is the one thread that crosses the two days. L-1 on Wednesday af
 
 One shared factory, one shared example. Six workshops and one lab, 330 minutes of teaching. W-1 runs over breakfast and is staffed rather than taught, which is why it sits outside that total.
 
-| Block | Type | Time | Title | You leave with | Where the mechanics live |
+| Block | Type | Time | Title | You leave with | Pages in the block |
 | --- | --- | --- | --- | --- | --- |
-| W-1 | Workshop | 8:00–9:00 | [Preflight Setup](../progression/00.0-preflight.md) | One pass-or-fail line, and a paired partner if it read fail | New page wrapping [`bootstrap/deps.sh`](../bootstrap/deps.sh) |
-| W-2 | Workshop | 9:00–9:45 | [What is a Software Factory?](./W-2-what-is-a-software-factory.md) | The vocabulary, and the mapping from the demo repo you ran in pre-work | New page, prose only |
-| W-3 | Workshop | 10:00–11:00 | [Run a Software Factory](./W-3-run-a-software-factory.md) | `factory1` up, the `ascii-art` rig registered, one bead merged | [`00.1`](../progression/00.1-setup-foundation.md), [`00.2`](../progression/00.2-setup-foundation.md), [`00.3`](../progression/00.3-setup-foundation.md), [`01`](../progression/01-basic-flow.md) |
-| W-4 | Workshop | 11:00–12:00 | [Review Loops](./W-4-review-loops.md) | A required review round, human-only merge, an architecture reviewer | [`02`](../progression/02-first-review-loop.md), [`03`](../progression/03-branch-protection.md), [`04`](../progression/04-adr-reviewer.md) |
-| W-5 | Workshop | 2:00–3:00 | [Requirement Gates](./W-5-requirement-gates.md) | A front gate that rejects underspecified work, plus a test-generation check | [`05.1`](../progression/05.1-bead-gate-checks.md), [`hardening/01`](../hardening/01-bead-creation-formula-extensions.md) |
-| W-6 | Workshop | 3:00–3:45 | [Coordination Channels](./W-6-coordination-channels.md) | A channel inventory, with a fallback named for every handoff | New page |
-| L-1 | Lab | 4:00–5:00 | [Plan Your Factory](./L-1-plan-your-factory.md) | Your own rig registered, a project manifest, and a **capability map** | New page, generalised off [`00.2`](../progression/00.2-setup-foundation.md) |
+| W-1 | Workshop | 8:00–9:00 | [Preflight Setup](../progression/00.0-preflight.md) | One pass-or-fail line, and a paired partner if it read fail | [`00.0`](../progression/00.0-preflight.md), wrapping [`bootstrap/deps.sh`](../bootstrap/deps.sh) |
+| W-2 | Workshop | 9:00–9:45 | [What is a Software Factory?](../progression/00.05-what-is-a-software-factory.md) | The vocabulary, and the mapping from the demo repo you ran in pre-work | [`00.05`](../progression/00.05-what-is-a-software-factory.md), prose only |
+| W-3 | Workshop | 10:00–11:00 | [Run a Software Factory](../progression/00.1-setup-foundation.md) | `factory1` up, the `ascii-art` rig registered, one bead merged | [`00.1`](../progression/00.1-setup-foundation.md), [`00.2`](../progression/00.2-setup-foundation.md), [`00.3`](../progression/00.3-setup-foundation.md), [`01`](../progression/01-basic-flow.md) |
+| W-4 | Workshop | 11:00–12:00 | [Review Loops](../progression/02-first-review-loop.md) | A required review round, human-only merge, an architecture reviewer | [`02`](../progression/02-first-review-loop.md), [`03`](../progression/03-branch-protection.md), [`04`](../progression/04-adr-reviewer.md) |
+| W-5 | Workshop | 2:00–3:00 | [Requirement Gates](../progression/05.1-bead-gate-checks.md) | A front gate that rejects underspecified work, plus a test-generation check | [`05.1`](../progression/05.1-bead-gate-checks.md), [`hardening/01`](../hardening/01-bead-creation-formula-extensions.md) |
+| W-6 | Workshop | 3:00–3:45 | [Coordination Channels](../progression/06-coordination-channels.md) | A channel inventory, with a fallback named for every handoff | [`06`](../progression/06-coordination-channels.md) |
+| L-1 | Lab | 4:00–5:00 | [Plan Your Factory](../progression/07-plan-your-factory.md) | Your own rig registered, a project manifest, and a **capability map** | [`07`](../progression/07-plan-your-factory.md), generalised off [`00.2`](../progression/00.2-setup-foundation.md) |
 
 ## Thursday: go deep
 
 Your factory, your project. Two workshops and four labs, 330 minutes of teaching, 255 of them hands-on.
 
-| Block | Type | Time | Title | You leave with | Where the mechanics live |
+| Block | Type | Time | Title | You leave with | Pages in the block |
 | --- | --- | --- | --- | --- | --- |
-| W-7 | Workshop | 9:00–9:45 | [The Mayor and Workflows](./W-7-mayor-and-workflows.md) | One workflow walked end to end, and the vocabulary for the rest | New page |
-| L-2 | Lab | 10:00–10:45 | [Retargeting the Rig](./L-2-retargeting-the-rig.md) | Yesterday's gates running on your rig, reviewers split by domain | [`hardening/02`](../hardening/02-specialize-reviewers-per-domain.md), retargeted |
-| L-3 | Lab | 10:45–12:00 | [Hardening](./L-3-hardening.md) | One of two: per-principle scoring, or multi-vendor review | [`hardening/03`](../hardening/03-architecture-best-practices-loop.md) or [`hardening/04`](../hardening/04-strengthen-review-system.md) |
-| L-4 | Lab | 2:00–2:45 | [Self-improvement Loop](./L-4-self-improvement-loop.md) | Your factory proposing its own config change, behind a gate | New framing over [`hardening/03`](../hardening/03-architecture-best-practices-loop.md)'s scoring |
-| L-5 | Lab | 3:00–4:30 | [Implement a Feature](./L-5-implement-a-feature.md) | The changes from your capability map, actually built | New page |
-| W-8 | Workshop | 4:30–5:00 | [Sharing Your Factory](./W-8-sharing-your-factory.md) | A decision about what you publish and what gets scrubbed first | New page, prose only |
+| W-7 | Workshop | 9:00–9:45 | [The Mayor and Workflows](../progression/08-mayor-and-workflows.md) | One workflow walked end to end, and the vocabulary for the rest | [`08`](../progression/08-mayor-and-workflows.md) |
+| L-2 | Lab | 10:00–10:45 | [Retargeting the Rig](../hardening/02-specialize-reviewers-per-domain.md) | Yesterday's gates running on your rig, reviewers split by domain | [`hardening/02`](../hardening/02-specialize-reviewers-per-domain.md), retargeted |
+| L-3 | Lab | 10:45–12:00 | [Hardening](../hardening/03-architecture-best-practices-loop.md) | One of two: per-principle scoring, or multi-vendor review | [`hardening/03`](../hardening/03-architecture-best-practices-loop.md) or [`hardening/04`](../hardening/04-strengthen-review-system.md) |
+| L-4 | Lab | 2:00–2:45 | [Self-improvement Loop](../hardening/05-self-improvement-loop.md) | Your factory proposing its own config change, behind a gate | [`hardening/05`](../hardening/05-self-improvement-loop.md), reusing [`hardening/03`](../hardening/03-architecture-best-practices-loop.md)'s scoring |
+| L-5 | Lab | 3:00–4:30 | [Implement a Feature](../progression/09-implement-a-feature.md) | The changes from your capability map, actually built | [`09`](../progression/09-implement-a-feature.md) |
+| W-8 | Workshop | 4:30–5:00 | [Sharing Your Factory](../progression/10-sharing-your-factory.md) | A decision about what you publish and what gets scrubbed first | [`10`](../progression/10-sharing-your-factory.md), prose only |
 
 Three published windows carry no block, and nothing above is scheduled into them: lunch on both days, the GasCity team's keynote on Wednesday afternoon, and the Thursday early-afternoon demo window.
 

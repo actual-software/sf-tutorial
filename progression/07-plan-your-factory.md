@@ -1,6 +1,6 @@
 # L-1 · Plan Your Factory
 
-« [previous: W-6 Coordination Channels](./W-6-coordination-channels.md) | [next: W-7 The Mayor and Workflows](./W-7-mayor-and-workflows.md) »
+« [previous: W-6 Coordination Channels](./06-coordination-channels.md) | [next: W-7 The Mayor and Workflows](./08-mayor-and-workflows.md) »
 
 **Lab · Wednesday 4:00–5:00 · 60 minutes · your own project**
 
@@ -28,7 +28,7 @@ By the end of this hour your factory points at your own repository rather than a
 
 ## Prereqs
 
-- Wednesday morning complete: `factory1` running with the gates from [W-4](./W-4-review-loops.md) and [W-5](./W-5-requirement-gates.md).
+- Wednesday morning complete: `factory1` running with the gates from [W-4](./02-first-review-loop.md) and [W-5](./05.1-bead-gate-checks.md).
 - A repository you can push to and are willing to let a factory open pull requests against. A personal project or a fork is ideal. A repository you do not control is not.
 - The four env vars from [`00.3`](../progression/00.3-setup-foundation.md) exported.
 
@@ -141,7 +141,7 @@ $EDITOR "$MY_RIG_PATH/docs/current/capability-map.md"
 
 The map has one row per change you want to make to your factory. Each row names the change, which of the three layers it touches, what it costs, and how you will know it worked.
 
-The three layers come from [W-7](./W-7-mayor-and-workflows.md) tomorrow morning, and naming the layer is most of the thinking:
+The three layers come from [W-7](./08-mayor-and-workflows.md) tomorrow morning, and naming the layer is most of the thinking:
 
 | Layer | You are changing | Shape of the change |
 | --- | --- | --- |
@@ -165,7 +165,7 @@ git commit -m "Add capability map for factory changes"
 
 You now have a factory pointed at real work and a written list of what it cannot yet do. That list came from an hour of contact with your own repo, which is why it is better than a list you would have written yesterday from first principles.
 
-Tomorrow morning is machinery: [W-7](./W-7-mayor-and-workflows.md) covers the three layers your map is written in. Tomorrow afternoon, [L-5](./L-5-implement-a-feature.md) is where you build the top of the list.
+Tomorrow morning is machinery: [W-7](./08-mayor-and-workflows.md) covers the three layers your map is written in. Tomorrow afternoon, [L-5](./09-implement-a-feature.md) is where you build the top of the list.
 
 ## Deliverable
 
@@ -197,6 +197,6 @@ Whatever the answer is, it belongs on the capability map as a row. "The implemen
 
 ## What's next
 
-[W-7 The Mayor and Workflows](./W-7-mayor-and-workflows.md) opens Thursday with the machinery your capability map is written against.
+[W-7 The Mayor and Workflows](./08-mayor-and-workflows.md) opens Thursday with the machinery your capability map is written against.
 
-« [previous: W-6 Coordination Channels](./W-6-coordination-channels.md) | [next: W-7 The Mayor and Workflows](./W-7-mayor-and-workflows.md) »
+« [previous: W-6 Coordination Channels](./06-coordination-channels.md) | [next: W-7 The Mayor and Workflows](./08-mayor-and-workflows.md) »

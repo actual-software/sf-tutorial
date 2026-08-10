@@ -1,6 +1,6 @@
 # L-4 · Work on Your Factory: Self-improvement Loop
 
-« [previous: L-3 Hardening](./L-3-hardening.md) | [next: L-5 Implement a Feature](./L-5-implement-a-feature.md) »
+« [previous: L-3 Hardening — Track B, multi-vendor](./04-strengthen-review-system.md) | [next: L-5 Implement a Feature](../progression/09-implement-a-feature.md) »
 
 **Lab · Thursday 2:00–2:45 · 45 minutes · your own project**
 
@@ -28,13 +28,13 @@ Close the loop: your factory reads a signal it already produces, proposes a chan
 
 ## Prereqs
 
-- [L-3](./L-3-hardening.md) complete, on either track. Track A's audit trail makes the best signal, but any of them work.
-- [W-7](./W-7-mayor-and-workflows.md) complete, because the proposal will land in one of the three layers and you need to be able to name which.
-- Your capability map from [L-1](./L-1-plan-your-factory.md) open.
+- [L-3](./03-architecture-best-practices-loop.md) complete, on either track. Track A's audit trail makes the best signal, but any of them work.
+- [W-7](../progression/08-mayor-and-workflows.md) complete, because the proposal will land in one of the three layers and you need to be able to name which.
+- Your capability map from [L-1](../progression/07-plan-your-factory.md) open.
 
 ## Context: improving the config, not the artifact
 
-Every loop you have built so far improves an **artifact**. The review loop in [W-4](./W-4-review-loops.md) improves a diff. The scoring loop in [`hardening/03`](../hardening/03-architecture-best-practices-loop.md) iterates until the diff scores well. Both are loops, both are useful, and both leave the factory exactly as they found it. Run the same bad prompt through them a hundred times and it stays a bad prompt.
+Every loop you have built so far improves an **artifact**. The review loop in [W-4](../progression/02-first-review-loop.md) improves a diff. The scoring loop in [`hardening/03`](../hardening/03-architecture-best-practices-loop.md) iterates until the diff scores well. Both are loops, both are useful, and both leave the factory exactly as they found it. Run the same bad prompt through them a hundred times and it stays a bad prompt.
 
 This block changes the target. The thing being improved is the **configuration** — an agent's prompt, a formula's steps, an order's trigger — and the evidence is what the factory already wrote down about its own behaviour.
 
@@ -104,7 +104,7 @@ Risk: <what this makes worse>." \
   --type task --priority 3
 ```
 
-**What to notice.** Writing the proposal as a bead is not bookkeeping. It puts the proposal into the same system every other piece of work goes through, which means the gate you built in [W-5](./W-5-requirement-gates.md) will now judge it. A proposal that cannot survive your own front gate is not ready to change your factory.
+**What to notice.** Writing the proposal as a bead is not bookkeeping. It puts the proposal into the same system every other piece of work goes through, which means the gate you built in [W-5](../progression/05.1-bead-gate-checks.md) will now judge it. A proposal that cannot survive your own front gate is not ready to change your factory.
 
 ### 4. Put a gate in front of the proposal
 
@@ -124,15 +124,15 @@ Say the rule out loud and write it into your capability map:
 
 > A proposal my factory generates may become a pull request automatically. It may not become a merge automatically.
 
-**What to notice.** That sentence is the whole safety model, and it is the same one from [W-4](./W-4-review-loops.md) applied to a new target. A consequential decision needs either a deterministic gate or a named human. "The factory changed its own prompt because it decided to" has neither.
+**What to notice.** That sentence is the whole safety model, and it is the same one from [W-4](../progression/02-first-review-loop.md) applied to a new target. A consequential decision needs either a deterministic gate or a named human. "The factory changed its own prompt because it decided to" has neither.
 
 ### 5. Reflect
 
 You now have a loop where the factory's own output is an input to its configuration, with a human at the point of effect.
 
-The honest caveat is worth stating: this loop is only as good as the signal. A factory that emits nothing but pass verdicts has nothing to learn from, which is a decent argument for keeping the failure paths noisy. Everything you built in [W-5](./W-5-requirement-gates.md) and [L-3](./L-3-hardening.md) is what makes this block possible, because those are the blocks that made the factory write down when it was unhappy.
+The honest caveat is worth stating: this loop is only as good as the signal. A factory that emits nothing but pass verdicts has nothing to learn from, which is a decent argument for keeping the failure paths noisy. Everything you built in [W-5](../progression/05.1-bead-gate-checks.md) and [L-3](./03-architecture-best-practices-loop.md) is what makes this block possible, because those are the blocks that made the factory write down when it was unhappy.
 
-Add one row to your capability map: the signal you wish your factory emitted and does not. That is usually an order-layer change, and [L-5](./L-5-implement-a-feature.md) is right after this.
+Add one row to your capability map: the signal you wish your factory emitted and does not. That is usually an order-layer change, and [L-5](../progression/09-implement-a-feature.md) is right after this.
 
 ## Deliverable
 
@@ -159,13 +159,13 @@ Stop before automating step 3. A factory that observes itself on a schedule is u
 
 ## Troubleshooting
 
-- **The mayor has no useful pattern to report.** Your factory has not run enough work to have a signal yet. Use `ascii-art`'s history instead — the mechanism is the lesson, and the blocked beads from [W-5](./W-5-requirement-gates.md) are real evidence about a real gate.
+- **The mayor has no useful pattern to report.** Your factory has not run enough work to have a signal yet. Use `ascii-art`'s history instead — the mechanism is the lesson, and the blocked beads from [W-5](../progression/05.1-bead-gate-checks.md) are real evidence about a real gate.
 - **The proposal bead fails your own front gate.** That is the system working. Read the feedback and rewrite the proposal; a proposal with no observable outcome is exactly what the test-generation check exists to catch.
 - **`gc costs` returns nothing.** Cost reporting depends on the provider and may not be populated for this city. Pick another signal rather than chasing it.
 - **You want the factory to apply the change directly.** Do not, today. Get the loop working with a human at the point of effect first, and note the automation as a capability-map row with its risk column filled in.
 
 ## What's next
 
-[L-5 Implement a Feature](./L-5-implement-a-feature.md) is where the capability map stops being a document.
+[L-5 Implement a Feature](../progression/09-implement-a-feature.md) is where the capability map stops being a document.
 
-« [previous: L-3 Hardening](./L-3-hardening.md) | [next: L-5 Implement a Feature](./L-5-implement-a-feature.md) »
+« [previous: L-3 Hardening — Track B, multi-vendor](./04-strengthen-review-system.md) | [next: L-5 Implement a Feature](../progression/09-implement-a-feature.md) »
