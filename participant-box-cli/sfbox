@@ -902,6 +902,12 @@ SFBOX_DEFAULT_TAG_VALUE="sfi"
 SFBOX_AWS_REGION="${SFBOX_AWS_REGION:-}"
 SFBOX_AWS_PROFILE="${SFBOX_AWS_PROFILE:-}"
 
+# How long remove waits for a deleted volume to actually disappear. Deletion is
+# asynchronous, so the confirming describe has to be a poll. Overridable so the
+# test suite can drive the give-up path without a real wait in it.
+SFBOX_VOLUME_DELETE_ATTEMPTS="${SFBOX_VOLUME_DELETE_ATTEMPTS:-10}"
+SFBOX_VOLUME_DELETE_SLEEP="${SFBOX_VOLUME_DELETE_SLEEP:-3}"
+
 # External-command seams. The test suite replaces these so it can exercise the
 # plumbing without touching live AWS — no apply, no destroy, no billing.
 aws_available() { command -v aws >/dev/null 2>&1; }
@@ -1090,15 +1096,78 @@ instructor_tf_output() { # tf_root name
   tf_cli -chdir="$1" output -raw "$2" 2>/dev/null
 }
 
+# Where the home volume sits in this workspace's state. Searched rather than
+# hard-coded: the module's own comment and its README both name
+# module.gas_city.aws_ebs_volume.home, and that is what a root copied from the
+# example gives you, but the module block is the root's to name. One state list
+# survives the rename and costs nothing.
+instructor_home_volume_addr() { # tf_root
+  tf_cli -chdir="$1" state list 2>/dev/null \
+    | grep -E '(^|\.)aws_ebs_volume\.home$' \
+    | head -1
+}
+
+# The volume's id. Preferred from the root's own home_volume_id output, which is
+# what that output exists for, and read out of state when the root does not
+# re-export it. The example root does not, so the fallback is the usual path
+# rather than the exotic one.
+instructor_home_volume_id() { # tf_root addr
+  local root="$1" addr="$2" id
+  id="$(instructor_tf_output "$root" home_volume_id)"
+  if [ -z "$id" ] && [ -n "$addr" ]; then
+    id="$(tf_cli -chdir="$root" state show "$addr" 2>/dev/null \
+          | awk '$1 == "id" && $2 == "=" { gsub(/"/, "", $3); print $3; exit }')"
+  fi
+  printf '%s' "$id"
+}
+
+# Delete the volume and confirm it actually went. delete-volume returns as soon
+# as AWS accepts the request, so its exit status says the call was taken, not
+# that the volume is gone; and by the time this runs the volume has left
+# Terraform state, so nothing else is watching it. An unverified delete would be
+# indistinguishable from the orphan this whole sequence exists to prevent.
+#
+# Fails closed on purpose. Only "not found", "deleted" and "deleting" count. A
+# describe that errored for some other reason keeps polling and then gives up,
+# because a lookup that could not be completed is not evidence of a deletion.
+instructor_delete_volume() { # volume_id
+  local vol="$1" attempt=0 out rc
+  aws_cli ec2 delete-volume --volume-id "$vol" || return 1
+  while [ "$attempt" -lt "$SFBOX_VOLUME_DELETE_ATTEMPTS" ]; do
+    out="$(aws_cli ec2 describe-volumes --volume-ids "$vol" \
+             --query 'Volumes[0].State' --output text 2>&1)"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+      case "$out" in
+        *InvalidVolume.NotFound*) return 0 ;;
+      esac
+    else
+      case "$out" in
+        deleted|deleting) return 0 ;;
+      esac
+    fi
+    attempt=$((attempt + 1))
+    [ "$SFBOX_VOLUME_DELETE_SLEEP" -gt 0 ] && sleep "$SFBOX_VOLUME_DELETE_SLEEP"
+  done
+  return 1
+}
+
+# How the aws CLI would have to be spelled by hand, so an error message can hand
+# back a command the instructor can paste rather than one they have to adapt.
+instructor_aws_flags() {
+  printf '%s%s' \
+    "${SFBOX_AWS_REGION:+ --region $SFBOX_AWS_REGION}" \
+    "${SFBOX_AWS_PROFILE:+ --profile $SFBOX_AWS_PROFILE}"
+}
+
 cmd_instructor_provision() {
-  local box="" tf_root="${SFBOX_TF_ROOT:-}" packs_ref="" keypair="" key_out=""
+  local box="" tf_root="${SFBOX_TF_ROOT:-}" packs_ref="" key_out=""
   local tag_key="$SFBOX_DEFAULT_TAG_KEY" tag_value="$SFBOX_DEFAULT_TAG_VALUE"
   local assume_yes=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --tf-root)            tf_root="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       --factory-packs-ref)  packs_ref="${2:-}"; shift 2 || die "'$1' needs a value" ;;
-      --keypair)            keypair="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       --key-out)            key_out="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       --region)             SFBOX_AWS_REGION="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       --profile)            SFBOX_AWS_PROFILE="${2:-}"; shift 2 || die "'$1' needs a value" ;;
@@ -1136,42 +1205,13 @@ cmd_instructor_provision() {
     return 6
   fi
 
-  [ -n "$keypair" ] || keypair="$box-keypair"
   [ -n "$key_out" ] || key_out="$tf_root/$box-keypair.pem"
-
-  # Mint the key pair if it does not exist yet. The private half is returned
-  # once and never again, so it is written straight to a 0600 file — this is
-  # the key the participant will be given.
-  if aws_cli ec2 describe-key-pairs --key-names "$keypair" >/dev/null 2>&1; then
-    say "Reusing the existing EC2 key pair '$keypair'."
-    if [ ! -f "$key_out" ]; then
-      warn "but its private half is not at $key_out."
-      warn "AWS returns a private key once, at creation, and never again. If you"
-      warn "cannot find it, delete the key pair and re-run so a fresh one is minted."
-    fi
-  else
-    say "Creating the EC2 key pair '$keypair' ..."
-    local material
-    material="$(aws_cli ec2 create-key-pair --key-name "$keypair" \
-                  --query KeyMaterial --output text 2>/dev/null)"
-    if [ -z "$material" ]; then
-      err "could not create the EC2 key pair '$keypair'."
-      err "Nothing was changed."
-      return 1
-    fi
-    ( umask 077; printf '%s\n' "$material" >"$key_out" ) || {
-      err "could not write the private key to $key_out"
-      return 1
-    }
-    chmod 600 "$key_out" 2>/dev/null || true
-    say "Private key written to $key_out (0600)."
-  fi
 
   echo
   say "Plan for '$box':"
   say "  root      $tf_root"
   say "  workspace $box"
-  say "  key pair  $keypair"
+  say "  key pair  minted by Terraform, private half saved to $key_out"
   [ -n "$packs_ref" ] && say "  packs ref $packs_ref (overriding the module default)"
   say "  apply     modules/gas-city-instance"
   echo
@@ -1186,7 +1226,16 @@ cmd_instructor_provision() {
     err "terraform init failed in $tf_root"; return 1; }
   instructor_tf_workspace "$tf_root" "$box" || return 1
 
-  local tf_args=(apply -auto-approve -input=false -var "factory_name=$box" -var "keypair_name=$keypair")
+  # participant_access is what this command is for. It puts the box in a public
+  # subnet with an address a participant can reach, opens :22, mints the key
+  # pair, and publishes the box's host keys. Passed here rather than left to the
+  # root's tfvars so the CLI's contract does not depend on a file the instructor
+  # has to remember to edit. keypair_name is deliberately absent: the module
+  # mints the pair in this mode and rejects a caller-supplied name, and having
+  # provision mint its own with aws ec2 create-key-pair made two owners of one
+  # concept, with only the module's half ever destroyed on remove.
+  local tf_args=(apply -auto-approve -input=false
+                 -var "factory_name=$box" -var "participant_access=true")
   # Exposed as a flag on purpose. The module default pins the toolchain, and a
   # ref whose gc init lacks the flags userdata passes aborts the boot part-way,
   # so the workaround has to be reachable without editing Terraform.
@@ -1199,6 +1248,30 @@ cmd_instructor_provision() {
     err "  terraform -chdir=$tf_root workspace select $box && terraform -chdir=$tf_root show"
     return 1
   fi
+
+  # The private key comes out of the apply. Terraform owns the pair now, which
+  # is what makes remove able to take it with the rest of the graph, and it is
+  # returned as an output rather than read back from AWS because a private half
+  # never leaves the API twice.
+  local material
+  material="$(instructor_tf_output "$tf_root" participant_private_key)"
+  if [ -z "$material" ]; then
+    err "'$box' applied, but it handed back no private key for the participant."
+    err ""
+    err "participant_private_key is null unless the root ran in participant access mode,"
+    err "and that key is the only way in for somebody who holds no AWS credentials."
+    err "Check that your root declares a participant_access variable, passes it to the"
+    err "module, and re-exports participant_private_key, then re-run."
+    err ""
+    err "Nothing was destroyed. Remove it with: sfbox instructor remove $box"
+    return 7
+  fi
+  ( umask 077; printf '%s\n' "$material" >"$key_out" ) || {
+    err "could not write the private key to $key_out"
+    return 1
+  }
+  chmod 600 "$key_out" 2>/dev/null || true
+  say "Private key written to $key_out (0600)."
 
   # The three things a participant needs, in the order save-credential wants.
   local host fingerprint instance_id
@@ -1215,14 +1288,15 @@ cmd_instructor_provision() {
   if [ -z "$host" ]; then
     err "'$box' applied, but it has no address a participant can reach."
     err ""
-    err "As merged, modules/gas-city-instance puts the instance in a private subnet"
-    err "with associate_public_ip_address = false, and exposes neither a public IP"
-    err "nor a host-key fingerprint as an output. Its documented way in is SSM,"
-    err "which participants cannot use because they hold no AWS credentials."
+    err "public_ip is null unless the root ran in participant access mode, which is"
+    err "what moves the box into the public subnet and gives it an address. Without"
+    err "it the box sits in a private subnet whose only way in is SSM, and that is"
+    err "the one route a participant cannot take. Check that your root declares a"
+    err "participant_access variable, passes it to the module, and re-exports"
+    err "public_ip, then re-run to get the handoff."
     err ""
-    err "The box itself is up and Terraform state is correct — this is a gap in the"
-    err "module, not a failed apply. Give the instance a public address and expose"
-    err "it as a 'public_ip' output on your root, then re-run to get the handoff."
+    err "The box itself is up and Terraform state is correct, so this is a gap in"
+    err "the root rather than a failed apply."
     err ""
     err "Nothing was destroyed. Remove it with: sfbox instructor remove $box"
     return 7
@@ -1258,11 +1332,10 @@ cmd_instructor_provision() {
 }
 
 cmd_instructor_remove() {
-  local box="" tf_root="${SFBOX_TF_ROOT:-}" keypair="" assume_yes=0
+  local box="" tf_root="${SFBOX_TF_ROOT:-}" assume_yes=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --tf-root) tf_root="${2:-}"; shift 2 || die "'$1' needs a value" ;;
-      --keypair) keypair="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       --region)  SFBOX_AWS_REGION="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       --profile) SFBOX_AWS_PROFILE="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       -y|--yes)  assume_yes=1; shift ;;
@@ -1276,11 +1349,6 @@ cmd_instructor_remove() {
   instructor_validate_box_id "$box" || return $?
   instructor_require_aws || return $?
   instructor_require_tf "$tf_root" || return $?
-
-  # Mirrors provision's default. Terraform still evaluates the whole root on a
-  # destroy, so every required variable needs a value even though the resources
-  # are on their way out — and keypair_name has no default in the example root.
-  [ -n "$keypair" ] || keypair="$box-keypair"
 
   echo
   say "About to DESTROY '$box' and everything the module created for it:"
@@ -1302,18 +1370,85 @@ cmd_instructor_remove() {
     err "terraform init failed in $tf_root"; return 1; }
   instructor_tf_workspace "$tf_root" "$box" || return 1
 
+  # The home volume carries prevent_destroy = true. Terraform takes only a
+  # literal there, so no variable can turn the guard off for a box that is meant
+  # to be disposable, and a plain destroy of a participant box refuses outright.
+  # The volume therefore leaves state first, is destroyed around, and is deleted
+  # by hand afterwards. That is the sequence the module's own README prescribes
+  # and the one the openclaw decommission runbook already uses.
+  #
+  # Read the id before dropping anything. Once the volume is out of state
+  # Terraform has forgotten it, so an id not learned here is an id no tooling
+  # can recover, and a 128 GB gp3 volume nobody can name goes on billing.
+  local aws_flags home_addr home_vol=""
+  aws_flags="$(instructor_aws_flags)"
+  home_addr="$(instructor_home_volume_addr "$tf_root")"
+
+  if [ -n "$home_addr" ]; then
+    home_vol="$(instructor_home_volume_id "$tf_root" "$home_addr")"
+    if [ -z "$home_vol" ]; then
+      err "'$home_addr' is in this workspace's state, but its volume id could not be read."
+      err ""
+      err "Dropping it from state without that id would strand a volume that neither"
+      err "Terraform nor you can name afterwards, still billing. So this stops here"
+      err "and nothing was destroyed. Read the id yourself with:"
+      err "  terraform -chdir=$tf_root workspace select $box"
+      err "  terraform -chdir=$tf_root state show $home_addr"
+      return 9
+    fi
+    say "Dropping the home volume out of state so the destroy is not refused ..."
+    say "  $home_addr ($home_vol)"
+    if ! tf_cli -chdir="$tf_root" state rm "$home_addr" >/dev/null; then
+      err "could not drop $home_addr from Terraform state."
+      err "The volume carries prevent_destroy = true, which takes a literal and"
+      err "cannot be turned off per box, so the destroy would refuse while it is"
+      err "still in state. Nothing was destroyed."
+      return 1
+    fi
+  else
+    warn "this workspace's state holds no aws_ebs_volume.home."
+    warn "Either it was dropped already, or this root does not use"
+    warn "modules/gas-city-instance. Carrying on with the destroy, but check"
+    warn "afterwards that '$box' left no home volume behind."
+  fi
+
   # Destroy rather than terminate-instances on purpose: it takes the dependent
-  # graph with it and leaves state truthful, so no elastic IP or volume is left
-  # billing quietly after the cohort ends.
+  # graph with it and leaves state truthful, so no elastic IP or security group
+  # is left behind after the cohort ends.
   say "Destroying '$box' ..."
   if ! tf_cli -chdir="$tf_root" destroy -auto-approve -input=false \
-       -var "factory_name=$box" -var "keypair_name=$keypair"; then
+       -var "factory_name=$box" -var "participant_access=true"; then
     err "terraform destroy failed for '$box'."
     err "Some resources may still exist. Check with:"
     err "  terraform -chdir=$tf_root workspace select $box && terraform -chdir=$tf_root state list"
-    err "Do not fall back to terminating the instance by hand — that leaves the"
-    err "volume and its elastic IP behind, still billing, with state now wrong."
+    err "Do not fall back to terminating the instance by hand, which leaves the"
+    err "address behind, still billing, with state now wrong."
+    if [ -n "$home_vol" ]; then
+      err ""
+      err "The home volume $home_vol is already out of state, so a retry will not"
+      err "collect it either. Delete it yourself once the box is gone:"
+      err "  aws ec2 delete-volume --volume-id $home_vol$aws_flags"
+    fi
     return 1
+  fi
+
+  # Last, and last for a reason: this is the step that actually stops the
+  # billing. A remove that drops the volume from state and destroys around it
+  # but never deletes it leaves an orphan that is now invisible to Terraform too.
+  if [ -n "$home_vol" ]; then
+    say "Deleting the home volume $home_vol ..."
+    if ! instructor_delete_volume "$home_vol"; then
+      err "'$box' was destroyed, but its home volume $home_vol is still there."
+      err ""
+      err "That volume is out of Terraform state, so nothing will retry this for"
+      err "you, and it goes on billing until somebody deletes it. Do that now, and"
+      err "check it went rather than trusting the first command's exit status:"
+      err "  aws ec2 delete-volume --volume-id $home_vol$aws_flags"
+      err "  aws ec2 describe-volumes --volume-ids $home_vol$aws_flags"
+      err "The second command reporting InvalidVolume.NotFound is the answer you want."
+      return 9
+    fi
+    say "Home volume $home_vol deleted."
   fi
 
   say "Destroyed '$box'. Its Terraform workspace is kept, holding empty state."
@@ -1382,28 +1517,44 @@ cmd_instructor() {
 usage_instructor() {
   cat <<'EOF'
 usage: sfbox instructor provision <boxId> [--tf-root <dir>] [--factory-packs-ref <ref>]
-                                          [--keypair <name>] [--key-out <path>]
+                                          [--key-out <path>]
                                           [--region <r>] [--profile <p>] [--yes]
-       sfbox instructor remove <boxId> [--tf-root <dir>] [--keypair <name>]
+       sfbox instructor remove <boxId> [--tf-root <dir>]
                                        [--region <r>] [--profile <p>] [--yes]
        sfbox instructor list [--tag-key <k>] [--tag-value <v>] [--region <r>] [--profile <p>]
 
 For whoever runs the workshop. These need AWS credentials; participants have
 none by design and never need these commands.
 
-provision  Applies actualclaw's modules/gas-city-instance for one box, then
-           prints the three things save-credential takes: the private key, the
-           host, and the host-key fingerprint. Refuses a boxId that is already
-           taken. Each box gets its own Terraform workspace, so provisioning a
-           second box cannot disturb the first.
+provision  Applies actualclaw's modules/gas-city-instance for one box in
+           participant access mode, then prints the three things
+           save-credential takes: the private key, the host, and the host-key
+           fingerprint. Refuses a boxId that is already taken. Each box gets its
+           own Terraform workspace, so provisioning a second box cannot disturb
+           the first.
+
+           The key pair is Terraform's. The module mints it and hands the
+           private half back as an output, which provision writes to --key-out
+           at 0600. That is why there is no --keypair flag: a caller-supplied
+           name is rejected in this mode, and a pair minted outside Terraform
+           would survive the destroy that remove runs.
 
            --factory-packs-ref  Override the module's pinned packs ref. Needed
                                 while a ref whose gc init lacks the flags the
                                 boot script passes would abort the build.
 
 remove     Terraform destroy, not terminate-instances. It takes the dependent
-           graph with it and leaves state truthful, so no volume or elastic IP
-           is left billing after the cohort ends.
+           graph with it and leaves state truthful, so no address or security
+           group is left behind after the cohort ends.
+
+           The home volume needs three steps rather than one. It carries
+           prevent_destroy = true, which Terraform accepts only as a literal, so
+           no variable turns the guard off for a box meant to be disposable and
+           a plain destroy refuses. remove drops the volume out of state,
+           destroys around it, and then deletes the volume itself, in that
+           order. The delete is last because it is the step that stops the
+           billing, and it is verified rather than assumed: a volume that
+           outlives the destroy exits 9 and names the command to finish it.
 
 list       Every live box carrying the workshop tag, with its boxId and stats.
            This is how you find out an id is already allocated. If the lookup

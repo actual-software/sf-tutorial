@@ -267,8 +267,10 @@ rc_is 2 "list rejects an unknown flag"      cmd_instructor_list --nope
 
 echo "instructor: flags that are missing their value"
 rc_is 1 "provision --tf-root with no value"  cmd_instructor_provision alice-prod --tf-root
-rc_is 1 "provision --keypair with no value"  cmd_instructor_provision alice-prod --keypair
+rc_is 1 "provision --key-out with no value"  cmd_instructor_provision alice-prod --key-out
 rc_is 1 "remove --tf-root with no value"     cmd_instructor_remove alice-prod --tf-root
+rc_is 2 "remove rejects --keypair, which the module now owns" \
+                                             cmd_instructor_remove alice-prod --keypair mine
 rc_is 1 "list --tag-key with no value"       cmd_instructor_list --tag-key
 
 # ---- credentials absent -----------------------------------------------------
@@ -327,19 +329,70 @@ mkdir -p "$TFROOT"
 : >"$TFROOT/main.tf"
 TF_LOG="$SFBOX_TEST_ROOT/tf.log"
 
+# remove's three steps span both seams — two Terraform calls and one AWS call —
+# and the order between them is the thing worth asserting, so both stubs also
+# append to one shared log that a single awk can read the sequence out of.
+ORDER_LOG="$SFBOX_TEST_ROOT/order.log"
+
+# What describe-volumes reports after a delete. Deletion is asynchronous, so
+# this is what tells remove whether the volume actually went. "gone" is not a
+# state AWS returns — it is the stub's way of asking for the other shape, an
+# InvalidVolume.NotFound error on a non-zero exit, which is what a volume that
+# has finished deleting actually looks like.
+VOL_STATE="deleted"
+
+# No sleeping in the suite. The give-up path still needs more than one attempt
+# to be worth exercising, so it polls twice and waits none.
+export SFBOX_VOLUME_DELETE_ATTEMPTS=2
+export SFBOX_VOLUME_DELETE_SLEEP=0
+
 aws_available() { return 0; }
 tf_available()  { return 0; }
 aws_cli() {
+  printf 'aws %s\n' "$*" >>"$ORDER_LOG"
   case "$*" in
     "sts get-caller-identity")  return 0 ;;
-    *describe-key-pairs*)       return 1 ;;   # absent, so provision mints one
-    *create-key-pair*)          printf -- '-----BEGIN RSA PRIVATE KEY-----\nx\n' ;;
+    *delete-volume*)            return 0 ;;
+    *describe-volumes*)
+      # A volume that has finished deleting has no state to report: the lookup
+      # fails instead. Emitting that on stderr and exiting non-zero is the only
+      # way the stub reaches the branch that reads the error text.
+      if [ "$VOL_STATE" = "gone" ]; then
+        printf 'An error occurred (InvalidVolume.NotFound) when calling the DescribeVolumes operation: The volume does not exist.\n' >&2
+        return 254
+      fi
+      printf '%s\n' "$VOL_STATE" ;;
     *describe-instances*)       printf 'None\n' ;;
   esac
   return 0
 }
 keyscan_cli() { printf '203.0.113.9 ssh-ed25519 AAAAC3Nz\n'; }
 keygen_cli()  { printf '256 SHA256:TESTFINGERPRINT host (ED25519)\n'; }
+
+# The Terraform side of a healthy participant box: the home volume is in state,
+# the root does not re-export home_volume_id (the example root does not), so the
+# id has to come back out of `state show`.
+stub_tf_ok() {
+  tf_cli() {
+    printf '%s\n' "$*" >>"$TF_LOG"
+    printf 'tf %s\n' "$*" >>"$ORDER_LOG"
+    case "$*" in
+      *"state list")
+        printf 'module.gas_city.aws_instance.main\nmodule.gas_city.aws_ebs_volume.home\n' ;;
+      *"output -raw home_volume_id")
+        return 1 ;;
+      *"state show"*)
+        printf 'resource "aws_ebs_volume" "home" {\n    arn = "arn:aws:ec2:us-east-1:1:volume/vol-0home"\n    id  = "vol-0home"\n}\n' ;;
+      *"output -raw participant_private_key")
+        printf -- '-----BEGIN OPENSSH PRIVATE KEY-----\nx\n' ;;
+      *"output -raw public_ip")
+        printf '203.0.113.9\n' ;;
+      *"output -raw instance_id")
+        printf 'i-0abc\n' ;;
+    esac
+    return 0
+  }
+}
 
 echo "instructor: Terraform root validation"
 rc_is 2 "refuses a missing --tf-root"      instructor_require_tf ""
@@ -435,47 +488,190 @@ rc_is 0 "an empty list is not an error" cmd_instructor_list
 # A terminate-instances would leave the volume and its address billing.
 
 echo "instructor: remove runs a Terraform destroy"
-: >"$TF_LOG"
-tf_cli() { printf '%s\n' "$*" >>"$TF_LOG"; return 0; }
-cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes >/dev/null 2>&1
+: >"$TF_LOG"; : >"$ORDER_LOG"; VOL_STATE="deleted"
+stub_tf_ok
+rc_is 0 "removes a box cleanly" \
+  cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
 log="$(cat "$TF_LOG")"
 contains "$log" "destroy"                   "runs terraform destroy"
 contains "$log" "factory_name=alice-prod"   "passes the boxId as factory_name"
+contains "$log" "participant_access=true"   "destroys in the same access mode it was applied in"
 contains "$log" "workspace"                 "selects the per-box workspace"
 contains "$log" "-chdir=$TFROOT"            "runs against the given root"
-# keypair_name has no default in the example root, and Terraform evaluates the
-# whole root on a destroy. Omitting it fails the destroy outright under
-# -input=false, which is the one command that stops a cohort from billing on.
-contains "$log" "keypair_name=alice-prod-keypair" \
-                                            "passes every required root variable, not just factory_name"
-
-: >"$TF_LOG"
-cmd_instructor_remove alice-prod --tf-root "$TFROOT" --keypair shared-cohort-key --yes >/dev/null 2>&1
-contains "$(cat "$TF_LOG")" "keypair_name=shared-cohort-key" \
-                                            "honours a --keypair override on remove"
 case "$log" in
   *"apply "*) bad "never applies during a remove" "remove issued an apply" ;;
   *)          ok  "never applies during a remove" ;;
 esac
+# The module rejects a caller-supplied keypair_name in participant mode, because
+# it mints the pair itself. Passing one is now a plan-time error rather than the
+# required variable it used to be.
+case "$log" in
+  *keypair_name*) bad "leaves keypair_name to the module" "passed keypair_name anyway" ;;
+  *)              ok  "leaves keypair_name to the module" ;;
+esac
+
+# ---- the home volume ---------------------------------------------------------
+#
+# prevent_destroy = true takes a literal, so no variable turns it off for a box
+# meant to be disposable, and a plain destroy of a participant box refuses. The
+# volume has to leave state first and be deleted by hand afterwards. Getting the
+# order wrong is not a cosmetic failure: a delete that runs before the destroy
+# hits a volume still attached, and a destroy with no delete after it leaves a
+# 128 GB volume billing that Terraform can no longer see.
+
+echo "instructor: remove takes the home volume out of state, then deletes it"
+: >"$TF_LOG"; : >"$ORDER_LOG"; VOL_STATE="deleted"
+stub_tf_ok
+out="$(cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes 2>&1)"
+log="$(cat "$TF_LOG")"
+contains "$log" "state rm module.gas_city.aws_ebs_volume.home" \
+                                            "drops the home volume from state"
+contains "$(cat "$ORDER_LOG")" "delete-volume --volume-id vol-0home" \
+                                            "deletes the volume it read out of state"
+contains "$(cat "$ORDER_LOG")" "describe-volumes --volume-ids vol-0home" \
+                                            "confirms the delete rather than trusting it"
+contains "$out" "vol-0home"                 "names the volume it acted on"
+
+seq="$(awk '
+  /^tf .*state rm/         { print "state-rm" }
+  /^tf .*destroy /         { print "destroy" }
+  /^aws ec2 delete-volume/ { print "delete-volume" }
+' "$ORDER_LOG" | paste -sd, -)"
+is "$seq" "state-rm,destroy,delete-volume" \
+                                            "runs the three steps in the order that stops the billing"
+
+echo "instructor: remove finds the volume even when the module block is renamed"
+: >"$TF_LOG"; : >"$ORDER_LOG"; VOL_STATE="deleted"
+stub_tf_ok
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  printf 'tf %s\n' "$*" >>"$ORDER_LOG"
+  case "$*" in
+    *"state list")   printf 'module.workshop_box.aws_ebs_volume.home\n' ;;
+    *"state show"*)  printf '    id  = "vol-0renamed"\n' ;;
+  esac
+  return 0
+}
+cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes >/dev/null 2>&1
+contains "$(cat "$TF_LOG")" "state rm module.workshop_box.aws_ebs_volume.home" \
+                                            "searches state instead of assuming module.gas_city"
+
+echo "instructor: remove prefers the root's home_volume_id output when it has one"
+: >"$TF_LOG"; : >"$ORDER_LOG"; VOL_STATE="deleted"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  printf 'tf %s\n' "$*" >>"$ORDER_LOG"
+  case "$*" in
+    *"state list")                  printf 'module.gas_city.aws_ebs_volume.home\n' ;;
+    *"output -raw home_volume_id")  printf 'vol-0fromoutput\n' ;;
+    *"state show"*)                 printf '    id  = "vol-0fromstate"\n' ;;
+  esac
+  return 0
+}
+cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes >/dev/null 2>&1
+contains "$(cat "$ORDER_LOG")" "delete-volume --volume-id vol-0fromoutput" \
+                                            "uses the output the module exposes for exactly this"
+
+echo "instructor: remove stops rather than stranding a volume it cannot name"
+: >"$TF_LOG"; : >"$ORDER_LOG"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  case "$*" in
+    *"state list")  printf 'module.gas_city.aws_ebs_volume.home\n' ;;
+    *"state show"*) : ;;
+  esac
+  return 0
+}
+rc_is 9 "refuses when the volume id is unreadable" \
+  cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
+msg="$(cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes 2>&1)"
+contains "$msg" "volume id could not be read" "names what it could not read"
+contains "$msg" "nothing was destroyed"      "stops before it can strand anything"
+case "$(cat "$TF_LOG")" in
+  *"state rm"*) bad "does not drop state it cannot name" "ran state rm anyway" ;;
+  *)            ok  "does not drop state it cannot name" ;;
+esac
+
+echo "instructor: a volume that outlives the destroy is reported, not swallowed"
+: >"$TF_LOG"; : >"$ORDER_LOG"; VOL_STATE="available"
+stub_tf_ok
+rc_is 9 "reports a volume that is still there" \
+  cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
+msg="$(cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes 2>&1)"
+contains "$msg" "home volume vol-0home is still there" "says which volume survived"
+contains "$msg" "aws ec2 delete-volume --volume-id vol-0home" \
+                                            "hands over a command that finishes the job"
+VOL_STATE="deleted"
+
+# The usual real-world ending, and the one the README tells the instructor to
+# look for. A volume that has finished deleting does not report a state — the
+# describe fails with InvalidVolume.NotFound. Reading that as anything but
+# success would make every healthy remove exit 9 and send the instructor after
+# a volume that is already gone, and the state-string cases above would all
+# still pass while it did.
+echo "instructor: a volume that has finished deleting counts as gone, not as a failure"
+: >"$TF_LOG"; : >"$ORDER_LOG"; VOL_STATE="gone"
+stub_tf_ok
+rc_is 0 "reads InvalidVolume.NotFound as deleted" \
+  cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
+msg="$(cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes 2>&1)"
+contains "$msg" "Home volume vol-0home deleted" "reports the delete it confirmed"
+VOL_STATE="deleted"
+
+echo "instructor: a destroy that fails still names the volume it dropped from state"
+: >"$TF_LOG"; : >"$ORDER_LOG"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  case "$*" in
+    *"state list")   printf 'module.gas_city.aws_ebs_volume.home\n' ;;
+    *"state show"*)  printf '    id  = "vol-0home"\n' ;;
+    *destroy*)       return 1 ;;
+  esac
+  return 0
+}
+rc_is 1 "surfaces a failed terraform destroy" \
+  cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
+msg="$(cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes 2>&1)"
+contains "$msg" "vol-0home is already out of state" \
+                                            "warns that a retry will not collect the volume"
+
+echo "instructor: remove carries on when the state holds no home volume"
+: >"$TF_LOG"; : >"$ORDER_LOG"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  printf 'tf %s\n' "$*" >>"$ORDER_LOG"
+  case "$*" in
+    *"state list") printf 'module.gas_city.aws_instance.main\n' ;;
+  esac
+  return 0
+}
+rc_is 0 "destroys a workspace with no home volume in it" \
+  cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
+contains "$(cat "$TF_LOG")" "destroy"        "still runs the destroy"
+case "$(cat "$ORDER_LOG")" in
+  *delete-volume*) bad "deletes no volume it never found" "issued a delete-volume" ;;
+  *)               ok  "deletes no volume it never found" ;;
+esac
+msg="$(cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes 2>&1)"
+contains "$msg" "no aws_ebs_volume.home"     "says the volume was not there to drop"
 
 echo "instructor: remove asks for the boxId before destroying"
-: >"$TF_LOG"
+: >"$TF_LOG"; : >"$ORDER_LOG"
+stub_tf_ok
 printf 'not-the-box\n' | cmd_instructor_remove alice-prod --tf-root "$TFROOT" >/dev/null 2>&1
-is "$(cat "$TF_LOG" | grep -c destroy | tr -d ' ')" "0" "a mistyped confirmation destroys nothing"
+is "$(grep -c destroy "$TF_LOG" | tr -d ' ')" "0" "a mistyped confirmation destroys nothing"
+case "$(cat "$ORDER_LOG")" in
+  *delete-volume*) bad "a mistyped confirmation deletes no volume" "issued a delete-volume" ;;
+  *)               ok  "a mistyped confirmation deletes no volume" ;;
+esac
 
 # ---- provision plumbing -----------------------------------------------------
 
 echo "instructor: provision plumbing"
 instructor_describe_rows() { : ; }
-: >"$TF_LOG"
-tf_cli() {
-  printf '%s\n' "$*" >>"$TF_LOG"
-  case "$*" in
-    *"output -raw public_ip")   printf '203.0.113.9\n' ;;
-    *"output -raw instance_id") printf 'i-0abc\n' ;;
-  esac
-  return 0
-}
+: >"$TF_LOG"; : >"$ORDER_LOG"
+rm -f "$TFROOT/alice-prod-keypair.pem"
+stub_tf_ok
 out="$(cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes \
         --factory-packs-ref deps-gc-v1.3.5-bd-1.1.0-pins 2>&1)"
 prc=$?
@@ -483,7 +679,7 @@ log="$(cat "$TF_LOG")"
 is "$prc" "0" "provision succeeds when the box comes up"
 contains "$log" "apply"                     "runs terraform apply"
 contains "$log" "factory_name=alice-prod"   "passes the boxId as factory_name"
-contains "$log" "keypair_name=alice-prod-keypair" "defaults the key pair to the boxId"
+contains "$log" "participant_access=true"   "applies in the mode a participant can reach"
 contains "$log" "factory_packs_ref=deps-gc-v1.3.5-bd-1.1.0-pins" \
                                             "passes the packs-ref override through"
 contains "$out" "203.0.113.9"               "emits the host"
@@ -493,28 +689,68 @@ contains "$out" "sfbox save-credential"     "hands over a line the participant c
 rc_is 0 "wrote the private key at 0600" test -f "$TFROOT/alice-prod-keypair.pem"
 is "$(ls -l "$TFROOT/alice-prod-keypair.pem" | cut -c1-10)" "-rw-------" "key file is 0600"
 
-echo "instructor: the packs-ref flag is optional"
-: >"$TF_LOG"
+# The whole point of the folded-in fix. A pair minted with aws ec2
+# create-key-pair sits outside Terraform, so remove's destroy never takes it,
+# and re-provisioning a reused boxId lands on a key whose private half is gone.
+echo "instructor: the key pair is Terraform's, not provision's"
+contains "$(cat "$TFROOT/alice-prod-keypair.pem")" "BEGIN OPENSSH PRIVATE KEY" \
+                                            "writes the key the module handed back"
+contains "$log" "output -raw participant_private_key" \
+                                            "reads the private half out of the apply"
+case "$(cat "$ORDER_LOG")" in
+  *create-key-pair*) bad "mints no key pair of its own" "called aws ec2 create-key-pair" ;;
+  *)                 ok  "mints no key pair of its own" ;;
+esac
+case "$log" in
+  *keypair_name*) bad "passes no keypair_name the module would reject" "passed one" ;;
+  *)              ok  "passes no keypair_name the module would reject" ;;
+esac
+rc_is 2 "rejects --keypair, which the module now owns" \
+  cmd_instructor_provision alice-prod --tf-root "$TFROOT" --keypair mine --yes
+
+echo "instructor: provision refuses to hand back a box with no participant key"
+: >"$TF_LOG"; : >"$ORDER_LOG"
 rm -f "$TFROOT/alice-prod-keypair.pem"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  case "$*" in
+    *"output -raw public_ip")   printf '203.0.113.9\n' ;;
+    *"output -raw instance_id") printf 'i-0abc\n' ;;
+  esac
+  return 0
+}
+rc_is 7 "stops when participant_private_key is null" \
+  cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes
+msg="$(cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes 2>&1)"
+contains "$msg" "no private key for the participant" "names what is missing"
+contains "$msg" "participant access mode"            "names the cause"
+rc_is 1 "writes no key file it could not fill" test -f "$TFROOT/alice-prod-keypair.pem"
+
+echo "instructor: the packs-ref flag is optional"
+: >"$TF_LOG"; : >"$ORDER_LOG"
+rm -f "$TFROOT/alice-prod-keypair.pem"
+stub_tf_ok
 cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes >/dev/null 2>&1
 case "$(cat "$TF_LOG")" in
   *factory_packs_ref*) bad "omits factory_packs_ref when not asked for" "passed it anyway" ;;
   *)                   ok  "omits factory_packs_ref when not asked for" ;;
 esac
 
-# ---- the module gap ---------------------------------------------------------
+# ---- a root that is not in participant mode ---------------------------------
 #
-# As merged, modules/gas-city-instance sits in a private subnet with no public
-# address and exposes neither an IP nor a fingerprint. Provision has to say so
-# rather than hand back a private IP no participant can reach.
+# public_ip is null unless the root ran with participant_access, which is what
+# puts the box in the public subnet. Without it the only way in is SSM, and
+# participants hold no AWS credentials. Provision has to say so rather than hand
+# back a private IP dressed up as a host.
 
 echo "instructor: provision refuses to hand back an unreachable box"
-: >"$TF_LOG"
+: >"$TF_LOG"; : >"$ORDER_LOG"
 rm -f "$TFROOT/alice-prod-keypair.pem"
 tf_cli() {
   printf '%s\n' "$*" >>"$TF_LOG"
   case "$*" in
-    *"output -raw instance_id") printf 'i-0abc\n' ;;
+    *"output -raw participant_private_key") printf -- '-----BEGIN OPENSSH PRIVATE KEY-----\nx\n' ;;
+    *"output -raw instance_id")             printf 'i-0abc\n' ;;
   esac
   return 0
 }
@@ -522,11 +758,12 @@ rc_is 7 "refuses when the box has no reachable address" \
   cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes
 msg="$(cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes 2>&1)"
 contains "$msg" "no address a participant can reach" "names the real problem"
-contains "$msg" "associate_public_ip_address"        "names the module setting behind it"
+contains "$msg" "participant access mode"            "names the root setting behind it"
 contains "$msg" "Nothing was destroyed"              "leaves the box alone"
 
 echo "instructor: a failed apply is not reported as a provision"
-: >"$TF_LOG"
+: >"$TF_LOG"; : >"$ORDER_LOG"
+rm -f "$TFROOT/alice-prod-keypair.pem"
 tf_cli() {
   printf '%s\n' "$*" >>"$TF_LOG"
   case "$*" in
