@@ -136,6 +136,77 @@ Tunnelling is the whole point. Your security group opens `:22` and nothing else,
 
 `sfbox` owns that directory. Drop a box with `sfbox box forget <boxId>`, which clears the local credential and leaves the box itself completely untouched.
 
+## For instructors
+
+Everything above is yours as a participant. This section isn't: it needs AWS credentials, and you don't have any, on purpose. If you run one of these by accident, `sfbox` will tell you plainly that you're not missing anything.
+
+Three commands run the cohort:
+
+```bash
+sfbox instructor list                  # every live box, and which ids are taken
+sfbox instructor provision alice-prod  # build one, print its handoff
+sfbox instructor remove alice-prod     # destroy one, and everything it created
+```
+
+They drive Terraform over [`modules/gas-city-instance`](https://github.com/actual-software/actualclaw/tree/main/modules/gas-city-instance), so point them at the workspace you copied from that module's `example/` and filled in for your cohort:
+
+```bash
+export SFBOX_TF_ROOT=~/workspaces/sfi-cohort   # or pass --tf-root
+```
+
+Each box gets its own Terraform workspace named after its boxId. That's what keeps provisioning the second box from tearing down the first, since one shared state file would otherwise treat every apply as a change to the same instance.
+
+### The handoff
+
+`provision` exists to produce exactly the three things `save-credential` consumes, so the two halves of the workshop meet cleanly:
+
+```mermaid
+flowchart LR
+    A[instructor provision alice-prod] --> B[private key]
+    A --> C[host]
+    A --> D[host-key fingerprint]
+    B --> E[participant runs<br/>sfbox save-credential]
+    C --> E
+    D --> E
+    E --> F[ssh alice-prod just works]
+```
+
+It prints a ready-made `save-credential` line at the end. Send that and the key file, and there's nothing left to explain.
+
+### Allocating box ids
+
+You pick the ids, so `list` is how you find out one's already gone. `provision` refuses a taken id rather than applying over somebody else's box, and a terminated instance doesn't hold its id, so you can reuse it once the box is really gone.
+
+If that lookup can't be completed, both commands stop and say so. Neither one shows you an empty list, because an id missing from a half-answered list looks exactly like a free one, and provisioning over an allocated box takes it from whoever already has it. A role without `ec2:DescribeInstances`, a throttled call, and a `--region` pointing somewhere your boxes aren't all land here.
+
+`list` filters on a workshop tag, `Workshop=sfi` by default. The module tags an instance with its `Name` alone, so that tag comes from your root. One line on the provider puts it on everything:
+
+```hcl
+provider "aws" { default_tags { tags = { Workshop = "sfi" } } }
+```
+
+Already using a different tag? Pass `--tag-key` and `--tag-value`.
+
+### Why remove destroys rather than terminates
+
+`remove` runs `terraform destroy`. Terminating the instance by hand is faster and it's the wrong move: it strands the home volume and the address, both still billing, and it leaves Terraform's state claiming a box that no longer exists. Across a cohort that adds up quietly. Destroy takes the dependent graph with it and keeps state honest.
+
+It's not reversible, and the home volume holds that participant's city, their Dolt databases and their Claude credentials. So `remove` asks you to type the boxId back before it does anything.
+
+### Choosing the toolchain pin
+
+`--factory-packs-ref` overrides the packs ref the module pins. You need it whenever the default ref pins a `gc` whose `gc init` doesn't accept every flag the boot script passes, because the apply then aborts part-way through and the box never finishes becoming a factory:
+
+```bash
+sfbox instructor provision alice-prod --factory-packs-ref deps-gc-v1.3.5-bd-1.1.0-pins
+```
+
+### A gap worth knowing about
+
+As merged, the module puts the instance in a private subnet with `associate_public_ip_address = false`, and exposes neither a public IP nor a host-key fingerprint as an output. Its documented way in is SSM, which participants can't use because they hold no AWS credentials.
+
+So until your root gives the box a public address and exposes it as a `public_ip` output, `provision` will apply successfully and then stop, telling you it has no address a participant could reach. It won't hand back a private IP dressed up as a host. Nothing is destroyed when that happens, and the box is still there to remove or fix.
+
 ## Running the tests
 
 ```bash
@@ -143,3 +214,5 @@ Tunnelling is the whole point. Your security group opens `:22` and nothing else,
 ```
 
 These cover what runs on your laptop: local state, URL parsing, SSH config generation, and the decision half of the size guardrail. Anything that needs a live box isn't covered here.
+
+The instructor commands are covered too, and none of it touches AWS. They reach `aws`, `terraform` and `ssh-keyscan` through a few one-line wrapper functions, and the tests replace those, so the suite exercises the plumbing without running an apply, a destroy, or anything else billable.
