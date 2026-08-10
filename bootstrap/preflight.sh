@@ -177,8 +177,19 @@ if [ "$MODE_CLOUD" -eq 1 ]; then
       # sfbox preflight is the authority on whether the box answers: it checks
       # ssh, then gc, then the service, and names the layer that broke. Mirror
       # its verdict rather than deriving a second opinion here.
+      #
+      # It exits 0 when ssh and gc answer but the Gas City service is not
+      # active: that layer warns rather than failing. Reading only the exit
+      # code would call all three green while the service is down, so carry
+      # the warning through instead of dropping the captured output.
       if box_out="$("$SFBOX" preflight 2>&1)"; then
-        ok "box reachable: ssh, gc and the Gas City service all answered"
+        case "$box_out" in
+          *WARNING*)
+            warn "box: ssh and gc answered, but sfbox flagged a layer:"
+            printf '%s\n' "$box_out" | sed 's/^/         /' ;;
+          *)
+            ok "box reachable: ssh, gc and the Gas City service all answered" ;;
+        esac
       else
         fail "box unreachable — sfbox preflight says which layer broke:"
         printf '%s\n' "$box_out" | sed 's/^/         /'
