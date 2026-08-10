@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
 # Tests for sfbox. These cover the parts that run on your laptop with no box
-# attached: local state, URL parsing, ssh config generation, and the decision
-# half of the prompt-size guardrail.
+# attached: local state, URL parsing, ssh config generation, preflight against
+# a stubbed box, and both halves of the prompt-size guardrail (the decision it
+# makes, and the ssh command it composes to gather the measurement).
 #
 #   ./tests/run-tests.sh
 #
@@ -886,6 +887,42 @@ box_gc sfi-test-1 '/home/ubuntu/city' import add 'https://example.invalid/p.git'
 is "$(parse_remote "$CAPTURED" 3)" \
    "cd /home/ubuntu/city && gc import add https://example.invalid/p.git --version v1\\ 2" \
                                           "box_gc reaches gc through the login shell"
+
+# The size guardrail is the last gc caller over ssh, and the one whose failure
+# is silent: it drops stderr, so a gc that does not resolve is indistinguishable
+# from a box with no agents, and the deploy refuses on a healthy factory rather
+# than reporting why. Its remote script is many lines rather than one, so it
+# also checks the wrapper on a command that has to survive embedded newlines.
+#
+# It reads the command back from a file rather than a variable: this caller
+# wraps the ssh in a command substitution, so a stub that recorded into a
+# variable would set it in that subshell and leave the parent holding whatever
+# the previous case left behind — passing the shape assertions while proving
+# nothing about this one.
+CAPTURED_FILE="$SFBOX_TEST_ROOT/captured-remote"
+box_ssh() { shift; printf '%s' "$*" >"$CAPTURED_FILE"; }
+: >"$CAPTURED_FILE"
+check_prompt_sizes sfi-test-1 '/home/ubuntu/city' >/dev/null 2>&1
+CAPTURED="$(cat "$CAPTURED_FILE")"
+
+# The wrapper check comes first and gates the parse. parse_remote evals what it
+# is handed, which is safe once the script is quoted into a single argument and
+# emphatically is not before: unwrapped, this particular script evals down to a
+# `while read` with nothing on stdin, so a regression here would hang the suite
+# rather than fail it.
+case "$CAPTURED" in
+  "bash -lc "*)
+    ok "the size guardrail reaches gc through a login shell"
+    contains "$(parse_remote "$CAPTURED" 3)" "gc agent list" \
+                                          "carries its gc calls into the login shell"
+    contains "$(parse_remote "$CAPTURED" 3)" "gc prime" \
+                                          "carries both gc calls, not just the first"
+    ;;
+  *)
+    bad "the size guardrail reaches gc through a login shell" \
+        "sent the script raw: [$(printf '%s' "$CAPTURED" | head -1)]"
+    ;;
+esac
 
 # ------------------------------------------------------------------ done ---
 

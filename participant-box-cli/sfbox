@@ -727,7 +727,7 @@ gc agent list 2>/dev/null | awk '/^[[:space:]]/ {print \$1}' | while read -r a; 
 done
 rm -f \"\$tmp\""
 
-  out="$(box_ssh "$box" "$remote" 2>/dev/null)"
+  out="$(box_ssh_login "$box" "$remote" 2>/dev/null)"
   if [ -z "$out" ]; then
     err "could not render any agent prompt on '$box'."
     err "Without that measurement the size guardrail cannot run, so the deploy stops here."
