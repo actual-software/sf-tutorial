@@ -193,6 +193,34 @@ Already using a different tag? Pass `--tag-key` and `--tag-value`.
 
 It's not reversible, and the home volume holds that participant's city, their Dolt databases and their Claude credentials. So `remove` asks you to type the boxId back before it does anything.
 
+### The home volume takes three steps, in one order
+
+A plain `terraform destroy` of a participant box refuses. The home volume carries `prevent_destroy = true`, Terraform accepts only a literal there, and no variable can turn that guard off for one box. It exists to protect a long-lived factory, and a workshop box inherits it anyway.
+
+So `remove` does what the module's README prescribes, and what the openclaw decommission runbook already does for the shared module:
+
+```mermaid
+flowchart LR
+    A[read the volume id<br/>from state] --> B[terraform state rm<br/>the home volume]
+    B --> C[terraform destroy<br/>everything else]
+    C --> D[aws ec2 delete-volume]
+    D --> E[describe-volumes<br/>to confirm it went]
+```
+
+The order is the point, and each step is load-bearing:
+
+- **Read the id first.** Once the volume leaves state, Terraform has forgotten it. An id you didn't capture is an id no tooling can hand back, and a 128 GB gp3 volume nobody can name goes on billing. If `remove` can't read it, it stops before dropping anything and exits 9.
+- **Delete last.** This is the step that actually stops the billing, which is why it isn't first and isn't skippable. A `remove` that drops the volume from state and destroys around it but never deletes it leaves an orphan that's now invisible to Terraform too, which is worse than where you started.
+- **Confirm the delete.** `delete-volume` returns as soon as AWS accepts the request, so its exit status says the call was taken, not that the volume is gone. A volume still there afterwards exits 9 and prints the two commands that finish the job. Nothing else is watching it by then, so a quiet failure here is one nobody would catch.
+
+If the destroy fails after the volume has already left state, `remove` says so and names the volume, because a retry won't collect it either.
+
+### The key pair belongs to Terraform
+
+`provision` doesn't mint a key pair. The module does, in participant access mode, and hands the private half back as the `participant_private_key` output; `provision` writes that to `--key-out` at 0600 and hands the file to you.
+
+That's why there's no `--keypair` flag on either command. It used to mint its own with `aws ec2 create-key-pair`, which put two owners on one concept: the module rejects a caller-supplied `keypair_name` in this mode, and a pair created outside Terraform survives the destroy that `remove` runs. Re-provisioning a reused boxId then landed on an existing key whose private half was gone, and you got a warning instead of a handoff.
+
 ### Choosing the toolchain pin
 
 `--factory-packs-ref` overrides the packs ref the module pins. You need it whenever the default ref pins a `gc` whose `gc init` doesn't accept every flag the boot script passes, because the apply then aborts part-way through and the box never finishes becoming a factory:
@@ -201,11 +229,13 @@ It's not reversible, and the home volume holds that participant's city, their Do
 sfbox instructor provision alice-prod --factory-packs-ref deps-gc-v1.3.5-bd-1.1.0-pins
 ```
 
-### A gap worth knowing about
+### Your root has to offer participant access mode
 
-As merged, the module puts the instance in a private subnet with `associate_public_ip_address = false`, and exposes neither a public IP nor a host-key fingerprint as an output. Its documented way in is SSM, which participants can't use because they hold no AWS credentials.
+`provision` applies with `participant_access = true`. That's the module setting that moves the box into the public subnet, gives it an address, opens `:22`, and mints the key pair. The default is the other model: a private subnet reached only through SSM, which works fine for a factory administered by somebody holding AWS credentials and is the one route a participant can't take.
 
-So until your root gives the box a public address and exposes it as a `public_ip` output, `provision` will apply successfully and then stop, telling you it has no address a participant could reach. It won't hand back a private IP dressed up as a host. Nothing is destroyed when that happens, and the box is still there to remove or fix.
+Your root needs three things: a `participant_access` variable, a pass-through to the module, and re-exported `public_ip` and `participant_private_key` outputs. The module's `example/` has all three. Copy from it and you're done.
+
+If it isn't right, `provision` applies successfully and then stops rather than handing back something unusable, naming whichever output came back null. Both cases exit 7. Nothing is destroyed, and the box is still there to remove or fix.
 
 ## Running the tests
 
