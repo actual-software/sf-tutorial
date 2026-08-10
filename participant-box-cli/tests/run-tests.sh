@@ -133,6 +133,16 @@ rc_is 1 "dashboard --port with no value"      cmd_dashboard --port
 rc_is 1 "preflight --box with no value"       cmd_preflight --box
 rc_is 1 "deploy-factory --version with no value" cmd_deploy_factory url --version
 
+# ------------------------------------------------- flags that count things ---
+
+# --wait is the one that matters. The restart poll compares it with -lt, which
+# errors on a non-numeric operand and falls out of the loop, so an unchecked
+# value made restart-factory report its verdict at once instead of waiting.
+echo "flags that have to be numbers"
+rc_is 1 "get-box rejects a non-numeric --lines"        cmd_get_box --lines abc
+rc_is 1 "restart-factory rejects a non-numeric --wait" cmd_restart_factory --wait soon
+rc_is 1 "dashboard rejects a non-numeric --port"       cmd_dashboard --port http
+
 # ------------------------------------------------------ size guardrail -----
 
 echo "prompt-size guardrail"
@@ -155,6 +165,29 @@ is "$(sizes 'manager\tOK\tnope\n')" "1" \
    "refuses a size that is not a number instead of reading it as fitting"
 is "$(sizes '')" "3" \
    "reports could-not-measure on empty input"
+
+echo "prompt-size guardrail: reading the size out of gc prime --json"
+
+# Mirrors the reader inside check_prompt_sizes, which runs on the box inside a
+# remote command string and so cannot be called directly from here. The two
+# assertions below the fixtures check that the snippet in sfbox still matches.
+prime_bytes() { head -c 512 | sed 's/"content":.*//' | grep -o '"bytes":[0-9]*' | head -1 | tr -dc '0-9'; }
+
+is "$(printf '%s' '{"agent":"local-core.manager","bytes":299395,"content":"# Manager\n"}' | prime_bytes)" \
+   "299395" "reads the bytes field"
+is "$(printf '%s' '{"agent":"bd.dog","bytes":905,"content":""}' | prime_bytes)" \
+   "905" "reads a small prompt"
+is "$(printf '%s' '{"agent":"m","bytes":299395,"content":"a prompt quoting \"bytes\":1 in its own text"}' | prime_bytes)" \
+   "299395" "ignores a bytes-looking string inside the rendered prompt"
+is "$(printf '%s' '{"agent":"m","content":"no size here"}' | prime_bytes)" \
+   "" "reads empty when the field is gone, which the evaluator then refuses on"
+is "$(sizes "manager\tOK\t$(printf '%s' '{"agent":"m","content":"x"}' | prime_bytes)\n")" "1" \
+   "a missing bytes field refuses the deploy rather than passing it"
+
+# The quotes are backslashed in sfbox because the reader lives inside a
+# double-quoted remote command string, so match it the way it is written.
+contains "$(cat "$SFBOX")" '--strict --json'  "sfbox still asks gc prime for JSON"
+contains "$(cat "$SFBOX")" 'bytes\":[0-9]*'   "sfbox still reads the bytes field"
 
 echo "prompt-size guardrail: what it tells the participant"
 msg="$(printf 'manager\tOK\t190327\n' | evaluate_prompt_sizes 2>&1)"

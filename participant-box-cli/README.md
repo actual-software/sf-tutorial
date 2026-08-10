@@ -105,10 +105,12 @@ Fixing an oversized pack means shrinking the prompt as *rendered*, not as writte
 
 ```bash
 sfbox start-session
-cd <your-city> && gc prime <agent> --strict | wc -c
+cd <your-city> && gc prime <agent> --strict --json
 ```
 
-Do pass `--strict`. Without it, `gc prime` quietly falls back to a short default prompt for any agent it can't resolve, so an oversized pack measures small and looks perfectly healthy.
+The `bytes` field in that output is the number to watch. It's the exact length of the string Gas City puts on the command line, which is the same thing the kernel measures when it refuses.
+
+Do pass `--strict` as well. Without it, `gc prime` quietly falls back to a short default prompt for any agent it can't resolve, so an oversized pack measures small and looks perfectly healthy.
 
 ## The dashboard
 

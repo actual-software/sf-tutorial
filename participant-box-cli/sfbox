@@ -495,6 +495,9 @@ cmd_get_box() {
       *) die "get-box: unknown argument '$1'" ;;
     esac
   done
+  case "$lines" in
+    ''|*[!0-9]*) die "get-box: --lines must be numeric (got '$lines')" ;;
+  esac
   state_init
   local box; box="$(resolve_box "$box_arg")" || exit $?
 
@@ -532,6 +535,13 @@ cmd_restart_factory() {
       *) die "restart-factory: unknown argument '$1'" ;;
     esac
   done
+  # An unvalidated --wait is worse than it looks: the poll below compares it
+  # with -lt, which errors on a non-numeric operand and drops straight out of
+  # the loop, so the restart would report its verdict immediately instead of
+  # waiting the 30 to 90 seconds it actually needs.
+  case "$wait_secs" in
+    ''|*[!0-9]*) die "restart-factory: --wait must be numeric (got '$wait_secs')" ;;
+  esac
   state_init
   local box; box="$(resolve_box "$box_arg")" || exit $?
   restart_factory "$box" "$wait_secs"
@@ -579,6 +589,9 @@ cmd_dashboard() {
       *) die "dashboard: unknown argument '$1'" ;;
     esac
   done
+  case "$port" in
+    ''|*[!0-9]*) die "dashboard: --port must be numeric (got '$port')" ;;
+  esac
   state_init
   local box; box="$(resolve_box "$box_arg")" || exit $?
 
@@ -636,6 +649,18 @@ resolve_commit_sha() { # org repo ref
 # Why --strict matters: without it, gc prime silently falls back to a short
 # default worker prompt for an agent it cannot resolve, so an oversized pack
 # would measure small and sail through the check it is supposed to fail.
+#
+# Why --json matters: the bytes field is the exact UTF-8 length of the string
+# that prompt_mode="arg" hands to execve, which is the thing the kernel is
+# measuring when it refuses. Piping the plain output through wc -c agrees
+# today, measured identical on nine agents from 905 to 299,395 bytes, but it
+# is a proxy on what gc happened to print rather than the length itself.
+#
+# The reader cuts the JSON at "content" before it looks for a size, so a
+# rendered prompt that itself contains the word bytes cannot be mistaken for
+# the measurement. If the field ever moves or disappears the size comes back
+# empty, and evaluate_prompt_sizes refuses on an unreadable size rather than
+# passing it, so the whole path stays fail-closed.
 check_prompt_sizes() { # box city_path -> 0 ok, 1 oversized, 3 could-not-measure
   local box="$1" city="$2"
 
@@ -645,8 +670,8 @@ check_prompt_sizes() { # box city_path -> 0 ok, 1 oversized, 3 could-not-measure
 tmp=\$(mktemp) || exit 3
 gc agent list 2>/dev/null | awk '/^[[:space:]]/ {print \$1}' | while read -r a; do
   [ -n \"\$a\" ] || continue
-  if gc prime \"\$a\" --strict >\"\$tmp\" 2>/dev/null; then
-    printf '%s\tOK\t%s\n' \"\$a\" \"\$(wc -c <\"\$tmp\" | tr -d ' ')\"
+  if gc prime \"\$a\" --strict --json >\"\$tmp\" 2>/dev/null; then
+    printf '%s\tOK\t%s\n' \"\$a\" \"\$(head -c 512 \"\$tmp\" | sed 's/\"content\":.*//' | grep -o '\"bytes\":[0-9]*' | head -1 | tr -dc '0-9')\"
   else
     printf '%s\tERR\t0\n' \"\$a\"
   fi
@@ -671,7 +696,7 @@ evaluate_prompt_sizes() {
   while IFS="$(printf '\t')" read -r agent status bytes; do
     [ -n "$agent" ] || continue
     if [ "$status" = "ERR" ]; then
-      warn "  $agent: could not render (gc prime --strict failed)"
+      warn "  $agent: could not render (gc prime --strict --json failed)"
       unreadable=$((unreadable + 1))
       continue
     fi

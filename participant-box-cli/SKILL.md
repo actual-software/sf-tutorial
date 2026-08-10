@@ -56,8 +56,10 @@ The fix is shrinking the *rendered* prompt, not just the template. Much of the s
 
 ```
 sfbox start-session
-cd <city> && gc prime <agent> --strict | wc -c
+cd <city> && gc prime <agent> --strict --json
 ```
+
+Read the `bytes` field. That's the exact length of the string Gas City puts on the command line, so it's the number the kernel is actually comparing against the limit.
 
 Without `--strict`, `gc prime` quietly falls back to a short default prompt for any agent it can't resolve, and an oversized pack then measures small. Always pass it.
 
