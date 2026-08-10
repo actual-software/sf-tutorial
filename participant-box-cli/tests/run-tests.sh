@@ -116,6 +116,22 @@ is "$(parse_github_url 'https://github.com/acme/packs/tree/main')" \
 rc_is 1 "rejects a non-github url"     parse_github_url 'https://gitlab.com/acme/packs'
 rc_is 1 "rejects a non-url"            parse_github_url 'acme/packs'
 rc_is 1 "rejects an unknown url shape" parse_github_url 'https://github.com/acme/packs/blob/main/x'
+rc_is 1 "rejects an org with no repo"  parse_github_url 'https://github.com/acme'
+rc_is 1 "rejects a trailing-slash org" parse_github_url 'https://github.com/acme/'
+rc_is 1 "rejects a bare host"          parse_github_url 'https://github.com/'
+
+# ------------------------------------------------------- flags need values ---
+
+# A flag given without its value used to leave $# at 1, where `shift 2` refuses
+# to shift and the parse loop spun forever with no output at all.
+echo "flags that are missing their value"
+rc_is 1 "save-credential --box with no value" cmd_save_credential --box
+rc_is 1 "save-credential --host with no value" cmd_save_credential --box b --host
+rc_is 1 "get-box --lines with no value"       cmd_get_box --lines
+rc_is 1 "restart-factory --wait with no value" cmd_restart_factory --wait
+rc_is 1 "dashboard --port with no value"      cmd_dashboard --port
+rc_is 1 "preflight --box with no value"       cmd_preflight --box
+rc_is 1 "deploy-factory --version with no value" cmd_deploy_factory url --version
 
 # ------------------------------------------------------ size guardrail -----
 
@@ -135,6 +151,8 @@ is "$(sizes 'manager\tOK\t1000\nbuilder\tOK\t200000\n')" "1" \
    "refuses when any single agent is too large, not just the manager"
 is "$(sizes 'manager\tERR\t0\n')" "1" \
    "refuses when an agent cannot be rendered at all"
+is "$(sizes 'manager\tOK\tnope\n')" "1" \
+   "refuses a size that is not a number instead of reading it as fitting"
 is "$(sizes '')" "3" \
    "reports could-not-measure on empty input"
 

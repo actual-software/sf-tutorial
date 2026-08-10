@@ -20,7 +20,7 @@ sfbox save-credential --box alice-prod --host 203.0.113.10 \
   --key ~/Downloads/alice.pem --fingerprint SHA256:xxxxx --label prod
 ```
 
-The fingerprint's required, deliberately. Pinning it at save time means the very first connection is authenticated instead of trusted on sight, and a rebuilt box then says it was replaced rather than looking like an attack. If it doesn't match, don't work around it. Tell the user to check with their instructor, and only reach for `--rotate` once the instructor's confirmed the box really was rebuilt.
+The fingerprint's required, deliberately. Pinning it at save time means the very first connection is authenticated instead of trusted on sight, and a rebuilt box then says it was replaced rather than looking like an attack. If it doesn't match, don't work around it. Tell the user to check with their instructor, and only reach for `--rotate` once the instructor's confirmed the box really was rebuilt — and note that it takes the *new* fingerprint too. `--rotate` alone won't get past a mismatch.
 
 ## Picking a box
 

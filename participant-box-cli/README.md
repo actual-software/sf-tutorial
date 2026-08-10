@@ -36,7 +36,7 @@ sfbox save-credential \
   --label prod
 ```
 
-That fingerprint isn't optional, and the reason's worth knowing. `sfbox` fetches the key your box is actually offering and checks it against the one you were handed, so your very first connection is authenticated instead of trusted on sight. Later, when your instructor rebuilds a box, you'll just get a clear "this box was replaced" rather than a scary warning that reads like an attack. Accept a genuine rebuild with `--rotate`.
+That fingerprint isn't optional, and the reason's worth knowing. `sfbox` fetches the key your box is actually offering and checks it against the one you were handed, so your very first connection is authenticated instead of trusted on sight. Later, when your instructor rebuilds a box, you'll just get a clear "this box was replaced" rather than a scary warning that reads like an attack. For a genuine rebuild, get the new fingerprint from your instructor and pass that, adding `--rotate` to say the change was expected. `--rotate` on its own won't get you past a mismatch, and that's deliberate.
 
 Run it again for your second box. Then look at both:
 
@@ -74,7 +74,7 @@ When something's wrong, start with `sfbox preflight`. It'll tell "my factory is 
 Point it at any public GitHub path:
 
 ```bash
-sfbox deploy-factory https://github.com/actual-factory-demo/factory/tree/main/factory
+sfbox deploy-factory https://github.com/actual-software/actual-factory-demo/tree/main/factory
 ```
 
 Your pack becomes the top-level factory, so whatever imports you've already got on the box are replaced, with the single exception of Gas City's own `core` and `bd` imports, which get left alone because pulling those would break the city rather than swap the factory. You'll see the whole plan first. Nothing changes until you confirm it.

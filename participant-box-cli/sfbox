@@ -261,14 +261,14 @@ cmd_save_credential() {
   local port="$SFBOX_DEFAULT_PORT" label="" city="" rotate=0
   while [ $# -gt 0 ]; do
     case "$1" in
-      --box)         box="${2:-}"; shift 2 ;;
-      --host)        host="${2:-}"; shift 2 ;;
-      --key)         key="${2:-}"; shift 2 ;;
-      --fingerprint) fingerprint="${2:-}"; shift 2 ;;
-      --user)        user="${2:-}"; shift 2 ;;
-      --port)        port="${2:-}"; shift 2 ;;
-      --label)       label="${2:-}"; shift 2 ;;
-      --city)        city="${2:-}"; shift 2 ;;
+      --box)         box="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --host)        host="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --key)         key="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --fingerprint) fingerprint="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --user)        user="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --port)        port="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --label)       label="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --city)        city="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       --rotate)      rotate=1; shift ;;
       -h|--help)     usage_save_credential; return 0 ;;
       *)             die "save-credential: unknown argument '$1'" ;;
@@ -329,8 +329,10 @@ cmd_save_credential() {
     err "expected: $fingerprint"
     err "offered:  $(printf '%s' "$actual_fps" | tr '\n' ' ')"
     err ""
-    err "If your instructor rebuilt this box, that is expected — re-run with --rotate."
-    err "If they did not, stop and tell them before connecting."
+    err "If your instructor rebuilt this box, that is expected. Ask them for the NEW"
+    err "fingerprint and re-run with it, adding --rotate to replace the pin you saved."
+    err "--rotate on its own will not help: the fingerprint you pass still has to match."
+    err "If they did not rebuild it, stop and tell them before connecting."
     rm -f "$dest"
     exit 4
   fi
@@ -429,7 +431,7 @@ cmd_preflight() {
   local box_arg=""
   while [ $# -gt 0 ]; do
     case "$1" in
-      --box) box_arg="${2:-}"; shift 2 ;;
+      --box) box_arg="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       -h|--help) echo "usage: sfbox preflight [--box <boxId>]"; return 0 ;;
       *) die "preflight: unknown argument '$1'" ;;
     esac
@@ -472,7 +474,7 @@ cmd_start_session() {
   local box_arg=""
   while [ $# -gt 0 ]; do
     case "$1" in
-      --box) box_arg="${2:-}"; shift 2 ;;
+      --box) box_arg="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       -h|--help) echo "usage: sfbox start-session [--box <boxId>]"; return 0 ;;
       *) die "start-session: unknown argument '$1'" ;;
     esac
@@ -487,8 +489,8 @@ cmd_get_box() {
   local box_arg="" lines=40
   while [ $# -gt 0 ]; do
     case "$1" in
-      --box)   box_arg="${2:-}"; shift 2 ;;
-      --lines) lines="${2:-}"; shift 2 ;;
+      --box)   box_arg="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --lines) lines="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       -h|--help) echo "usage: sfbox get-box [--box <boxId>] [--lines <n>]"; return 0 ;;
       *) die "get-box: unknown argument '$1'" ;;
     esac
@@ -524,8 +526,8 @@ cmd_restart_factory() {
   local box_arg="" wait_secs=180
   while [ $# -gt 0 ]; do
     case "$1" in
-      --box)  box_arg="${2:-}"; shift 2 ;;
-      --wait) wait_secs="${2:-}"; shift 2 ;;
+      --box)  box_arg="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --wait) wait_secs="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       -h|--help) echo "usage: sfbox restart-factory [--box <boxId>] [--wait <seconds>]"; return 0 ;;
       *) die "restart-factory: unknown argument '$1'" ;;
     esac
@@ -571,8 +573,8 @@ cmd_dashboard() {
   local box_arg="" port="$SFBOX_DEFAULT_DASHBOARD_PORT"
   while [ $# -gt 0 ]; do
     case "$1" in
-      --box)  box_arg="${2:-}"; shift 2 ;;
-      --port) port="${2:-}"; shift 2 ;;
+      --box)  box_arg="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --port) port="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       -h|--help) echo "usage: sfbox dashboard [--box <boxId>] [--port <local-port>]"; return 0 ;;
       *) die "dashboard: unknown argument '$1'" ;;
     esac
@@ -601,8 +603,12 @@ parse_github_url() { # url -> prints "org repo ref subdir"
     *) return 1 ;;
   esac
   rest="${rest%/}"
-  org="${rest%%/*}"; rest="${rest#*/}"
-  [ -n "$org" ] && [ "$org" != "$rest" ] || { repo="$rest"; rest=""; }
+  org="${rest%%/*}"
+  # A bare org with no repo segment is not a pack URL. Reject it here: "${rest#*/}"
+  # leaves $rest untouched when there is no slash, so the org would otherwise be
+  # reused as the repo name and fail much later as "could not resolve acme/acme".
+  [ "$rest" != "$org" ] || return 1
+  rest="${rest#*/}"
   if [ -n "$rest" ]; then repo="${rest%%/*}"; rest="${rest#"$repo"}"; rest="${rest#/}"; fi
   repo="${repo%.git}"
   [ -n "$org" ] && [ -n "$repo" ] || return 1
@@ -659,7 +665,7 @@ rm -f \"\$tmp\""
 # The decision half of the guardrail, split out so it can be tested without a
 # box: reads "<agent>\t<OK|ERR>\t<bytes>" lines and returns 0 pass, 1 refuse.
 evaluate_prompt_sizes() {
-  local out oversized=0 unreadable=0 agent status bytes
+  local out oversized=0 unreadable=0 largest=0 agent status bytes
   out="$(cat)"
   [ -n "$out" ] || return 3
   while IFS="$(printf '\t')" read -r agent status bytes; do
@@ -669,11 +675,21 @@ evaluate_prompt_sizes() {
       unreadable=$((unreadable + 1))
       continue
     fi
+    # A size that is not a number means the measurement broke, not that the
+    # prompt fits. Without this the -ge test below errors and falls through to
+    # the "fits" branch, which is the one failure this guardrail must not have.
+    case "$bytes" in
+      ''|*[!0-9]*)
+        warn "  $agent: could not read a size (got '$bytes')"
+        unreadable=$((unreadable + 1))
+        continue ;;
+    esac
     if [ "$bytes" -ge "$SFBOX_MAX_PROMPT_BYTES" ]; then
       err "  $agent: $bytes bytes — TOO LARGE"
       oversized=$((oversized + 1))
     else
       say "  $agent: $bytes bytes"
+      [ "$bytes" -gt "$largest" ] && largest="$bytes"
     fi
   done <<<"$out"
 
@@ -699,7 +715,7 @@ evaluate_prompt_sizes() {
     err "Run 'gc prime <agent> --strict' on the box to see why."
     return 1
   fi
-  say "All agent prompts fit. Largest is comfortably under $SFBOX_MAX_PROMPT_BYTES bytes."
+  say "All agent prompts fit. Largest is $largest bytes of $SFBOX_MAX_PROMPT_BYTES."
   return 0
 }
 
@@ -707,9 +723,9 @@ cmd_deploy_factory() {
   local box_arg="" pack_url="" version="" city_override="" assume_yes=0 keep_existing=0
   while [ $# -gt 0 ]; do
     case "$1" in
-      --box)        box_arg="${2:-}"; shift 2 ;;
-      --version)    version="${2:-}"; shift 2 ;;
-      --city-path)  city_override="${2:-}"; shift 2 ;;
+      --box)        box_arg="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --version)    version="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --city-path)  city_override="${2:-}"; shift 2 || die "'$1' needs a value" ;;
       --keep-existing) keep_existing=1; shift ;;
       -y|--yes)     assume_yes=1; shift ;;
       -h|--help)    usage_deploy_factory; return 0 ;;
@@ -856,7 +872,9 @@ Stores one box's credential locally and pins its host key.
   --fingerprint  Required. Your instructor emits it with the key. Pinning it
                  means the first connection is authenticated, and a rebuilt box
                  says "replaced" instead of looking like an attack.
-  --rotate       Accept a replacement host key for a box you already saved.
+  --rotate       Replace the pinned host key for a box you already saved. You
+                 still pass the NEW fingerprint; --rotate only says the change
+                 was expected.
 EOF
 }
 
