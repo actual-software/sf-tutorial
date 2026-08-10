@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
 # Tests for sfbox. These cover the parts that run on your laptop with no box
-# attached: local state, URL parsing, ssh config generation, and the decision
-# half of the prompt-size guardrail.
+# attached: local state, URL parsing, ssh config generation, preflight against
+# a stubbed box, and both halves of the prompt-size guardrail (the decision it
+# makes, and the ssh command it composes to gather the measurement).
 #
 #   ./tests/run-tests.sh
 #
@@ -773,6 +774,155 @@ tf_cli() {
 }
 rc_is 1 "surfaces a failed terraform apply" \
   cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes
+
+# ---- preflight --------------------------------------------------------------
+#
+# Preflight is the one command whose whole job is telling "my factory is broken"
+# apart from "my ssh is broken", so a false alarm from it is worse than no
+# check at all. Both faults these cover fired on the first real workshop box:
+# gc probed over a non-login shell reported NOT FOUND, and a service that had
+# simply not been started yet reported as a fault.
+#
+# The stub answers as a provisioned box does: gc resolves only through a login
+# shell, and the service state plus the first-run marker are whatever the case
+# under test sets.
+
+echo "preflight: the box stub"
+fresh_state
+state_put sfi-test-1 host 203.0.113.20
+state_put sfi-test-1 user ubuntu
+state_put sfi-test-1 port 22
+state_set_current sfi-test-1
+
+SSH_LOG="$SFBOX_TEST_ROOT/ssh.log"
+BOX_ACTIVE="active"
+BOX_FIRST_RUN=0          # 0 logged in, 1 not yet, 2 cannot tell
+
+box_ssh() { # box command...
+  local box="$1"; shift
+  local cmd="$*"
+  printf '%s\n' "$cmd" >>"$SSH_LOG"
+  case "$cmd" in
+    'echo ok')            printf 'ok\n' ;;
+    # A non-login shell on a real box: ~/.local/bin is not on PATH.
+    'command -v gc')      return 127 ;;
+    *'bash -lc'*gc*)      printf '/home/ubuntu/.local/bin/gc\n' ;;
+    *systemctl*is-active*) printf '%s\n' "$BOX_ACTIVE" ;;
+    *gas-city.env*)       return "$BOX_FIRST_RUN" ;;
+    *) : ;;
+  esac
+  return 0
+}
+
+echo "preflight: gc is probed through a login shell"
+: >"$SSH_LOG"; BOX_ACTIVE="active"; BOX_FIRST_RUN=0
+rc_is 0 "a healthy box passes" cmd_preflight --box sfi-test-1
+out="$(cmd_preflight --box sfi-test-1 2>&1)"
+contains "$out" "gc             installed"  "reports gc as present"
+contains "$(cat "$SSH_LOG")" "bash -lc"     "asks a login shell, not the bare one"
+contains "$out" "gas-city.service  active"  "reports the running service"
+
+echo "preflight: a box that has never been logged in is not a fault"
+: >"$SSH_LOG"; BOX_ACTIVE="inactive"; BOX_FIRST_RUN=1
+rc_is 0 "a not-yet-logged-in box still passes" cmd_preflight --box sfi-test-1
+out="$(cmd_preflight --box sfi-test-1 2>&1)"
+contains "$out" "waiting on first-run login" "names the state instead of crying wolf"
+contains "$out" "sudo gas-city-login"        "names the command that finishes setup"
+contains "$out" "gc             installed"   "still reports gc as present"
+case "$out" in
+  *WARNING*) bad "raises no warning on an expected state" "warned anyway" ;;
+  *)         ok  "raises no warning on an expected state" ;;
+esac
+
+echo "preflight: a service that died after login still warns"
+: >"$SSH_LOG"; BOX_ACTIVE="failed"; BOX_FIRST_RUN=0
+out="$(cmd_preflight --box sfi-test-1 2>&1)"
+contains "$out" "WARNING"                    "warns about the genuine failure"
+contains "$out" "gas-city.service  failed"   "reports the state systemd gave"
+case "$out" in
+  *gas-city-login*) bad "sends no one after a login they already did" "named the login" ;;
+  *)                ok  "sends no one after a login they already did" ;;
+esac
+
+echo "preflight: an unreadable /etc/gas-city.env falls back to warning"
+: >"$SSH_LOG"; BOX_ACTIVE="inactive"; BOX_FIRST_RUN=2
+out="$(cmd_preflight --box sfi-test-1 2>&1)"
+contains "$out" "WARNING"                    "warns when it cannot tell the two apart"
+
+echo "preflight: ssh is reported before anything that depends on it"
+: >"$SSH_LOG"
+box_ssh() { return 255; }
+rc_is 1 "an unreachable box fails" cmd_preflight --box sfi-test-1
+out="$(cmd_preflight --box sfi-test-1 2>&1)"
+contains "$out" "ssh            FAILED"      "blames ssh, not the factory"
+case "$out" in
+  *"gc  "*) bad "probes nothing else once ssh is down" "probed gc anyway" ;;
+  *)        ok  "probes nothing else once ssh is down" ;;
+esac
+
+# The wrapper quotes a whole command into a single `bash -lc` argument, and it
+# is quoted twice on the way: once into the -lc argument, once again for the
+# remote shell. Get that wrong and every gc command over ssh breaks in a way the
+# case-matching stubs above would happily wave through. ssh joins its argv with
+# spaces and hands the result to a shell, so parsing the captured string the way
+# that shell would is exactly what the box sees.
+parse_remote() { # captured-string index
+  local captured="$1" idx="$2"
+  eval "set -- $captured"
+  eval "printf '%s' \"\${$idx}\""
+}
+
+echo "preflight: the login-shell wrapper survives the trip through ssh"
+CAPTURED=""
+box_ssh() { shift; CAPTURED="$*"; }
+box_ssh_login sfi-test-1 'cd /home/ubuntu/my city && gc session list'
+is "$(parse_remote "$CAPTURED" 1)" "bash" "invokes bash on the box"
+is "$(parse_remote "$CAPTURED" 2)" "-lc"  "as a login shell"
+is "$(parse_remote "$CAPTURED" 3)" 'cd /home/ubuntu/my city && gc session list' \
+                                          "hands the command over intact, spaces and all"
+
+# box_gc composes on top of the wrapper, so the same trip has to survive an
+# argument that needs quoting of its own.
+box_gc sfi-test-1 '/home/ubuntu/city' import add 'https://example.invalid/p.git' --version 'v1 2'
+is "$(parse_remote "$CAPTURED" 3)" \
+   "cd /home/ubuntu/city && gc import add https://example.invalid/p.git --version v1\\ 2" \
+                                          "box_gc reaches gc through the login shell"
+
+# The size guardrail is the last gc caller over ssh, and the one whose failure
+# is silent: it drops stderr, so a gc that does not resolve is indistinguishable
+# from a box with no agents, and the deploy refuses on a healthy factory rather
+# than reporting why. Its remote script is many lines rather than one, so it
+# also checks the wrapper on a command that has to survive embedded newlines.
+#
+# It reads the command back from a file rather than a variable: this caller
+# wraps the ssh in a command substitution, so a stub that recorded into a
+# variable would set it in that subshell and leave the parent holding whatever
+# the previous case left behind — passing the shape assertions while proving
+# nothing about this one.
+CAPTURED_FILE="$SFBOX_TEST_ROOT/captured-remote"
+box_ssh() { shift; printf '%s' "$*" >"$CAPTURED_FILE"; }
+: >"$CAPTURED_FILE"
+check_prompt_sizes sfi-test-1 '/home/ubuntu/city' >/dev/null 2>&1
+CAPTURED="$(cat "$CAPTURED_FILE")"
+
+# The wrapper check comes first and gates the parse. parse_remote evals what it
+# is handed, which is safe once the script is quoted into a single argument and
+# emphatically is not before: unwrapped, this particular script evals down to a
+# `while read` with nothing on stdin, so a regression here would hang the suite
+# rather than fail it.
+case "$CAPTURED" in
+  "bash -lc "*)
+    ok "the size guardrail reaches gc through a login shell"
+    contains "$(parse_remote "$CAPTURED" 3)" "gc agent list" \
+                                          "carries its gc calls into the login shell"
+    contains "$(parse_remote "$CAPTURED" 3)" "gc prime" \
+                                          "carries both gc calls, not just the first"
+    ;;
+  *)
+    bad "the size guardrail reaches gc through a login shell" \
+        "sent the script raw: [$(printf '%s' "$CAPTURED" | head -1)]"
+    ;;
+esac
 
 # ------------------------------------------------------------------ done ---
 

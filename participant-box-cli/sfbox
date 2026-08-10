@@ -216,12 +216,47 @@ box_ssh_interactive() { # box [args...]
   ssh -F "$SFBOX_SSH_CONFIG" "$box" "$@"
 }
 
+# Run a command on the box through a login shell.
+#
+# `ssh box <cmd>` gets a non-interactive, non-login shell, which never reads the
+# login profile. gc lives at ~/.local/bin/gc on a provisioned box, and only the
+# login PATH carries that directory — so a bare `command -v gc` misses on a
+# perfectly healthy box, and a bare `gc` is simply not found. Anything that
+# reaches for gc over ssh goes through here, which also matches how the
+# participant's own interactive session resolves the command.
+box_ssh_login() { # box command-string
+  local box="$1" cmd="$2"
+  box_ssh "$box" "bash -lc $(rq "$cmd")"
+}
+
+# Has the one-time interactive first-run login happened on this box?
+#
+# gas-city-login writes FIRST_RUN_MARKER as its last act before starting the
+# service, so the marker is the box's own record that a human completed the
+# step. The path is read from /etc/gas-city.env (world-readable, written at
+# provision time) rather than hardcoded, so a box that relocates it stays
+# readable here.
+#
+#   0  the login has happened
+#   1  it has not
+#   2  cannot tell — no readable /etc/gas-city.env
+box_first_run_state() { # box
+  local box="$1"
+  box_ssh "$box" '
+    [ -r /etc/gas-city.env ] || exit 2
+    . /etc/gas-city.env 2>/dev/null || exit 2
+    [ -n "${FIRST_RUN_MARKER:-}" ] || exit 2
+    [ -e "$FIRST_RUN_MARKER" ] || exit 1
+    exit 0
+  ' >/dev/null 2>&1
+}
+
 # Run a gc command inside the box's city directory.
 box_gc() { # box city_path gc-args...
   local box="$1" city="$2"; shift 2
   local args="" a
   for a in "$@"; do args="$args $(rq "$a")"; done
-  box_ssh "$box" "cd $(rq "$city") && gc$args"
+  box_ssh_login "$box" "cd $(rq "$city") && gc$args"
 }
 
 # Find the city directory on the box. Cached in boxes.toml once resolved.
@@ -237,7 +272,7 @@ resolve_city_path() { # box [override]
   if [ -n "$cached" ]; then printf '%s' "$cached"; return 0; fi
 
   local out count path
-  out="$(box_ssh "$box" 'gc cities 2>/dev/null' || true)"
+  out="$(box_ssh_login "$box" 'gc cities 2>/dev/null' || true)"
   # gc cities prints one path-bearing row per registered city.
   path="$(printf '%s\n' "$out" | grep -oE '/[^[:space:]]+' | head -1)"
   count="$(printf '%s\n' "$out" | grep -coE '/[^[:space:]]+' || true)"
@@ -452,7 +487,7 @@ cmd_preflight() {
   fi
 
   if [ "$ok" = 0 ]; then
-    if box_ssh "$box" 'command -v gc' >/dev/null 2>&1; then
+    if box_ssh_login "$box" 'command -v gc' >/dev/null 2>&1; then
       say "  gc             installed"
     else
       err "  gc             NOT FOUND on the box"
@@ -463,7 +498,21 @@ cmd_preflight() {
     if [ "$active" = "active" ]; then
       say "  $SFBOX_SERVICE  active"
     else
-      warn "  $SFBOX_SERVICE  ${active:-unknown}"
+      # Three states, not two. The unit is installed and enabled at provision
+      # time but deliberately left stopped until someone runs the one-time
+      # interactive login, so "inactive" on a new box is the expected state
+      # rather than a fault. Only an inactive service on a box that has already
+      # been logged in is the failure this warning was written for.
+      local first_run
+      box_first_run_state "$box"; first_run=$?
+      if [ "$first_run" = 1 ]; then
+        say "  $SFBOX_SERVICE  ${active:-unknown} — waiting on first-run login"
+        say "  Nothing is broken. The factory starts once you have run, on the box:"
+        say "      sudo gas-city-login"
+        say "  Get a shell there with: sfbox start-session --box $box"
+      else
+        warn "  $SFBOX_SERVICE  ${active:-unknown}"
+      fi
     fi
   fi
 
@@ -678,7 +727,7 @@ gc agent list 2>/dev/null | awk '/^[[:space:]]/ {print \$1}' | while read -r a; 
 done
 rm -f \"\$tmp\""
 
-  out="$(box_ssh "$box" "$remote" 2>/dev/null)"
+  out="$(box_ssh_login "$box" "$remote" 2>/dev/null)"
   if [ -z "$out" ]; then
     err "could not render any agent prompt on '$box'."
     err "Without that measurement the size guardrail cannot run, so the deploy stops here."

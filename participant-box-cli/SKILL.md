@@ -13,6 +13,8 @@ Run `sfbox --help` if you need the current command list.
 
 `sfbox preflight` answers the question that otherwise burns the most time: is the factory broken, or is the connection broken? Run it first whenever the user reports trouble. It checks SSH, then `gc`, then the service, stopping at the first thing that fails.
 
+On a box nobody's logged into yet, preflight reports the service as waiting on first-run login and names `sudo gas-city-login`. That's expected on a freshly provisioned box, not a fault. The unit is installed and enabled, but it's deliberately left stopped until a human finishes that one interactive step, because Claude Code's first run asks questions `gc` can't answer on an agent's behalf. Walk the user through the login instead of debugging a factory that was never asked to start.
+
 If they haven't saved a box yet, they'll need three things from their instructor: the hostname, the private key file, and the host-key fingerprint.
 
 ```
