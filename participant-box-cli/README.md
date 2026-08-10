@@ -6,13 +6,7 @@ You'll get two cloud boxes for the intensive, Prod and Test. That's so you can t
 
 ## Install
 
-```bash
-git clone https://github.com/actual-software/sf-tutorial.git
-export PATH="$PWD/sf-tutorial/participant-box-cli:$PATH"
-sfbox --help
-```
-
-Put that `PATH` line in your shell profile to make it stick. There's nothing to build, and nothing to install past what you've already got: bash, ssh, and curl.
+Setup lives on one page. [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) takes you from the four values your instructor sends you to a running factory, including putting `sfbox` on your `PATH` and saving your first box, so those steps aren't repeated here. There's nothing to build, and nothing to install past what you've already got: bash, ssh, and curl.
 
 The skill sits next to it, and it's optional. If you'd like your coding agent to drive `sfbox` for you, copy it in:
 
@@ -23,22 +17,13 @@ cp sf-tutorial/participant-box-cli/SKILL.md ~/.claude/skills/sfbox/SKILL.md
 
 It's plain markdown with no harness-specific syntax, so Codex CLI, Gemini CLI, or anything else that reads free-form skill files will happily take it too.
 
-## Save your first box
+## Why the fingerprint isn't optional
 
-Your instructor gives you three things: a hostname, a private key, and a host-key fingerprint.
+The box guide has the `save-credential` line itself. The reason it insists on a fingerprint is worth knowing, and it lives here.
 
-```bash
-sfbox save-credential \
-  --box alice-prod \
-  --host 203.0.113.10 \
-  --key ~/Downloads/alice.pem \
-  --fingerprint SHA256:AbCdEf... \
-  --label prod
-```
+`sfbox` fetches the key your box is actually offering and checks it against the one you were handed, so your very first connection is authenticated instead of trusted on sight. Later, when your instructor rebuilds a box, you'll just get a clear "this box was replaced" rather than a scary warning that reads like an attack. For a genuine rebuild, get the new fingerprint from your instructor and pass that, adding `--rotate` to say the change was expected. `--rotate` on its own won't get you past a mismatch, and that's deliberate.
 
-That fingerprint isn't optional, and the reason's worth knowing. `sfbox` fetches the key your box is actually offering and checks it against the one you were handed, so your very first connection is authenticated instead of trusted on sight. Later, when your instructor rebuilds a box, you'll just get a clear "this box was replaced" rather than a scary warning that reads like an attack. For a genuine rebuild, get the new fingerprint from your instructor and pass that, adding `--rotate` to say the change was expected. `--rotate` on its own won't get you past a mismatch, and that's deliberate.
-
-Run it again for your second box. Then look at both:
+Run `save-credential` once per box. Then look at both:
 
 ```bash
 sfbox box list
@@ -46,26 +31,13 @@ sfbox box list
 
 ### The one manual step
 
-`sfbox` writes its own SSH config and never touches yours. To get plain `ssh`, `scp`, `rsync` and port-forwards working with your box ids, add one line at the **top** of `~/.ssh/config`:
-
-```
-Include ~/.gascity/ssh_config
-```
+`sfbox` writes its own SSH config and never touches yours. The box guide has you add one line at the **top** of `~/.ssh/config`, and this is what it buys: plain `ssh`, `scp`, `rsync` and port-forwards working with your box ids.
 
 `sfbox` itself works fine without it. The Include is what makes everything *else* work, and it means the habits you're building this week will carry over to real hosts afterwards.
 
 ## Everyday commands
 
-Commands act on your current box. Switch it with `sfbox box use <boxId>`, or override just the one command using `--box <boxId>`.
-
-| Command | What it does |
-|---|---|
-| `sfbox preflight` | Checks ssh, then `gc`, then the service |
-| `sfbox get-box` | Service state, running sessions, recent log |
-| `sfbox start-session` | Opens a shell on the box |
-| `sfbox deploy-factory <url>` | Makes a pack the top-level factory and restarts |
-| `sfbox restart-factory` | Restarts the Gas City service |
-| `sfbox dashboard` | Tunnels the dashboard to `http://127.0.0.1:8372` |
+The participant command list, with a line each on what it does and when you'd reach for it, is at the bottom of the [box guide](../CLOUD_BOX_GUIDE.md#the-commands-you-will-use). The rest of this page goes deeper on the few that have something worth explaining.
 
 When something's wrong, start with `sfbox preflight`. It'll tell "my factory is broken" apart from "my ssh is broken", and honestly those two get mistaken for each other constantly.
 
