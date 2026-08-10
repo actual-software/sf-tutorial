@@ -450,6 +450,6 @@ ls ascii/j.md
 
 ## What's next
 
-Continue to [Specialize reviewers per domain](./02-specialize-reviewers-per-domain.md). H2 builds on the three spec files this page produces: the architect (currently a single agent) splits into four parallel domain reviewers, each citing the doc family the matching Lead authored.
+[H2 Specialize reviewers per domain](./02-specialize-reviewers-per-domain.md) builds on the three spec files this page produces: the architect (currently a single agent) splits into four parallel domain reviewers, each citing the doc family the matching Lead authored. The two-day path reaches it as L-2 on Thursday morning; if you are working the hardening track on your own, it is the next page.
 
 « [previous: W-5 Requirement Gates](../progression/05.1-bead-gate-checks.md) | [next: W-6 Coordination Channels](../progression/06-coordination-channels.md) »
