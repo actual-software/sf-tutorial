@@ -1,8 +1,4 @@
-# L-5 · Work on Your Factory: Implement a Feature
-
-« [previous: L-4 Self-improvement Loop](../hardening/05-self-improvement-loop.md) | [next: W-8 Sharing Your Factory](./10-sharing-your-factory.md) »
-
-**Lab · Thursday 3:00–4:30 · 90 minutes · your own project**
+# Implement a Feature
 
 ## Contents
 

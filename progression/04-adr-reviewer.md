@@ -1,6 +1,4 @@
-# Architect agent
-
-« [previous: 03 Branch protection](./03-branch-protection.md) | [next: W-5 Requirement Gates](./05.1-bead-gate-checks.md) »
+# Architect Agent
 
 ## Contents
 

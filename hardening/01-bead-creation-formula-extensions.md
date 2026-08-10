@@ -1,6 +1,4 @@
-# Bead-creation formula extensions
-
-« [previous: W-5 Requirement Gates](../progression/05.1-bead-gate-checks.md) | [next: W-6 Coordination Channels](../progression/06-coordination-channels.md) »
+# Bead Creation Formula Extensions
 
 ## Contents
 

@@ -1,8 +1,4 @@
-# W-7 · What GasCity Does Best: The Mayor and Workflows
-
-« [previous: L-1 Plan Your Factory](./07-plan-your-factory.md) | [next: L-2 Retargeting the Rig](../hardening/02-specialize-reviewers-per-domain.md) »
-
-**Workshop · Thursday 9:00–9:45 · 45 minutes · one shared example**
+# The Mayor and Workflows
 
 ## Contents
 
