@@ -177,6 +177,8 @@ It prints a ready-made `save-credential` line at the end. Send that and the key 
 
 You pick the ids, so `list` is how you find out one's already gone. `provision` refuses a taken id rather than applying over somebody else's box, and a terminated instance doesn't hold its id, so you can reuse it once the box is really gone.
 
+If that lookup can't be completed, both commands stop and say so. Neither one shows you an empty list, because an id missing from a half-answered list looks exactly like a free one, and provisioning over an allocated box takes it from whoever already has it. A role without `ec2:DescribeInstances`, a throttled call, and a `--region` pointing somewhere your boxes aren't all land here.
+
 `list` filters on a workshop tag, `Workshop=sfi` by default. The module tags an instance with its `Name` alone, so that tag comes from your root. One line on the provider puts it on everything:
 
 ```hcl

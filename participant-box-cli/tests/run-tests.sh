@@ -300,6 +300,26 @@ msg="$(cmd_instructor_list 2>&1)"
 contains "$msg" "Nothing was changed"    "says it changed nothing"
 contains "$msg" "session has probably expired" "gives the instructor the real cause too"
 
+# ---- the describe seam itself -----------------------------------------------
+#
+# Every section below stubs instructor_describe_rows wholesale, which is the
+# right level for testing its callers but never runs the function itself. This
+# one exercises the real body against a stubbed aws, because the exit status it
+# hands back is the whole reason those callers can fail closed. It runs here, up
+# ahead of the stubs, while the real implementation is still in place.
+
+echo "instructor: the describe hands back the AWS exit status"
+aws_available() { return 0; }
+aws_cli() { printf 'alice-prod\ti-0abc\trunning\tm6i.xlarge\tNone\t10.0.0.5\tt\n'; return 0; }
+rc_is 0 "a describe that worked reports success" instructor_describe_rows Workshop sfi
+is "$(instructor_describe_rows Workshop sfi | cut -f1)" "alice-prod" "still prints its rows"
+
+aws_cli() { printf 'An error occurred (RequestLimitExceeded) on DescribeInstances\n' >&2; return 254; }
+rc_is 254 "a describe that failed reports the failure" instructor_describe_rows Workshop sfi
+is "$(instructor_describe_rows Workshop sfi 2>/dev/null)" "" "keeps the AWS error off its stdout"
+contains "$(instructor_describe_rows Workshop sfi 2>&1 >/dev/null)" "RequestLimitExceeded" \
+                                            "leaves what AWS said on stderr, where the instructor sees it"
+
 # ---- shared stubs for the plumbing tests ------------------------------------
 
 TFROOT="$SFBOX_TEST_ROOT/tfroot"
@@ -352,6 +372,41 @@ instructor_describe_rows() {
 }
 rc_is 1 "shutting-down does not count as live" instructor_box_exists alice-prod Workshop sfi
 
+# ---- a lookup that errored is not an empty account --------------------------
+#
+# A denied ec2:DescribeInstances, a throttle and a wrong --region all print
+# nothing, exactly like an account with no boxes in it. Reading that silence as
+# "the id is free" is how provision would apply over somebody else's box, so the
+# guard has to fail closed.
+
+echo "instructor: a lookup that errors is not an empty account"
+instructor_describe_rows() {
+  printf 'An error occurred (UnauthorizedOperation) on DescribeInstances\n' >&2
+  return 254
+}
+rc_is 2 "box_exists answers 'could not tell' rather than 'free'" \
+  instructor_box_exists alice-prod Workshop sfi
+
+: >"$TF_LOG"
+tf_cli() { printf '%s\n' "$*" >>"$TF_LOG"; return 0; }
+rc_is 8 "provision stops when the collision check could not run" \
+  cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes
+msg="$(cmd_instructor_provision alice-prod --tf-root "$TFROOT" --yes 2>&1)"
+contains "$msg" "could not complete the EC2 lookup" "names the lookup as what failed"
+contains "$msg" "UnauthorizedOperation"             "keeps AWS's own error in front of the instructor"
+contains "$msg" "Nothing was changed"               "says it changed nothing"
+is "$(cat "$TF_LOG")" "" "an unreadable account reaches Terraform not at all"
+
+echo "instructor: list refuses to show a list it could not read"
+rc_is 8 "list stops when the describe fails" \
+  cmd_instructor_list --tag-key Workshop --tag-value sfi
+msg="$(cmd_instructor_list --tag-key Workshop --tag-value sfi 2>&1)"
+contains "$msg" "could not complete the EC2 lookup" "names the lookup as what failed"
+case "$msg" in
+  *"No workshop boxes"*) bad "does not blame the tag for an error" "printed the empty-list text" ;;
+  *)                     ok  "does not blame the tag for an error" ;;
+esac
+
 # ---- list formatting --------------------------------------------------------
 
 echo "instructor: list formatting"
@@ -388,6 +443,16 @@ contains "$log" "destroy"                   "runs terraform destroy"
 contains "$log" "factory_name=alice-prod"   "passes the boxId as factory_name"
 contains "$log" "workspace"                 "selects the per-box workspace"
 contains "$log" "-chdir=$TFROOT"            "runs against the given root"
+# keypair_name has no default in the example root, and Terraform evaluates the
+# whole root on a destroy. Omitting it fails the destroy outright under
+# -input=false, which is the one command that stops a cohort from billing on.
+contains "$log" "keypair_name=alice-prod-keypair" \
+                                            "passes every required root variable, not just factory_name"
+
+: >"$TF_LOG"
+cmd_instructor_remove alice-prod --tf-root "$TFROOT" --keypair shared-cohort-key --yes >/dev/null 2>&1
+contains "$(cat "$TF_LOG")" "keypair_name=shared-cohort-key" \
+                                            "honours a --keypair override on remove"
 case "$log" in
   *"apply "*) bad "never applies during a remove" "remove issued an apply" ;;
   *)          ok  "never applies during a remove" ;;
