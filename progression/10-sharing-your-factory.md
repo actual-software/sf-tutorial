@@ -1,6 +1,6 @@
 # W-8 · Sharing Your Factory
 
-« [previous: L-5 Implement a Feature](./09-implement-a-feature.md) | [next: modules index](../modules/README.md) »
+« [previous: L-5 Implement a Feature](./09-implement-a-feature.md) | [next: the two-day schedule](../README.md#two-day-intensive-start-here-if-you-are-at-the-event) »
 
 **Workshop · Thursday 4:30–5:00 · 30 minutes · closing block**
 
@@ -91,4 +91,4 @@ The capability map from [L-1](./07-plan-your-factory.md) is the thing to keep. I
 
 The [`hardening/`](../README.md#hardening-exercises-optional-layer-on-as-you-like) exercises you did not pick in [L-3](../hardening/03-architecture-best-practices-loop.md) are the obvious next session, and both run fine on your own rig now.
 
-« [previous: L-5 Implement a Feature](./09-implement-a-feature.md) | [next: modules index](../modules/README.md) »
+« [previous: L-5 Implement a Feature](./09-implement-a-feature.md) | [next: the two-day schedule](../README.md#two-day-intensive-start-here-if-you-are-at-the-event) »
