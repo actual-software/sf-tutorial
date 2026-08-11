@@ -27,6 +27,12 @@ pinned() {
 BD_PINNED="$(pinned BD_VERSION)"
 DOLT_PINNED="$(pinned DOLT_VERSION)"
 
+if [ -z "$BD_PINNED" ] || [ -z "$DOLT_PINNED" ]; then
+  echo "==> Could not read the pinned versions from ${HERE}/deps.sh"
+  echo "==> Expected BD_VERSION and DOLT_VERSION to be declared there."
+  exit 1
+fi
+
 read -p "Are you comfortable with resetting all of \$SOFTWARE_FACTORY_INTENSIVE_PATH? (Y/n) " confirm
 if [ "$confirm" != "Y" ]; then
   echo "==> Exiting script."

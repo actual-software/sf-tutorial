@@ -2,9 +2,10 @@
 
 # Install the pinned versions of bd and dolt into ~/.local/bin.
 #
-# The two constants below are the single source of truth for this repo's
-# toolchain pins. preflight.sh and bootstrap.sh read them from here rather than
-# restating them, so changing a version means editing exactly one line.
+# The two constants below are the single source of truth for the bd and dolt
+# pins. preflight.sh and bootstrap.sh read them from here rather than restating
+# them, so changing either version means editing exactly one line. gc is not
+# installed by this script and is pinned separately in bootstrap.sh.
   set -euo pipefail
 
   BD_VERSION=1.1.0
