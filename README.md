@@ -83,7 +83,7 @@ The CLI it drives, plus an optional agent skill, is documented in [`participant-
 | W5 | Workshop | 30 min | Coordination Channels | [`Coordination Channels`](./progression/06-coordination-channels.md) |
 | L1 | Lab | 60 min | Plan Your Factory | [`Plan Your Factory`](./progression/07-plan-your-factory.md) |
 
-#### Day 2: Build Your Own Software Factory
+### Day 2: Build Your Own Software Factory
 
 | Session | Type | Duration | Title | Session Pages |
 |----|------|----------|-------|-------------|

@@ -2,7 +2,6 @@
 
 ## Contents
 
-- [Block L-2: Retargeting the Rig](#block-l-2-retargeting-the-rig)
 - [Objective](#objective)
 - [Prereqs](#prereqs)
 - [Context](#context)
