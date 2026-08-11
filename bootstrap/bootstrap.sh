@@ -15,6 +15,18 @@ else
   SED_I=(-i)
 fi
 
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# The pinned versions live in deps.sh so there is exactly one place to change
+# them. Read them from there rather than restating them here.
+pinned() {
+  local var="$1"
+  grep -E "^[[:space:]]*${var}=" "${HERE}/deps.sh" 2>/dev/null \
+    | head -1 | cut -d= -f2 | tr -d '[:space:]'
+}
+BD_PINNED="$(pinned BD_VERSION)"
+DOLT_PINNED="$(pinned DOLT_VERSION)"
+
 read -p "Are you comfortable with resetting all of \$SOFTWARE_FACTORY_INTENSIVE_PATH? (Y/n) " confirm
 if [ "$confirm" != "Y" ]; then
   echo "==> Exiting script."
@@ -30,9 +42,9 @@ if ! command -v bd &> /dev/null; then
 fi
 
 bd_version=$(bd version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-if [[ "$bd_version" != "1.0.3" ]]; then
+if [[ "$bd_version" != "$BD_PINNED" ]]; then
   echo "==> bd is not on the correct version (found: ${bd_version:-unknown})"
-  echo "==> Please install bd 1.0.3."
+  echo "==> Please install bd ${BD_PINNED}."
   exit 1
 fi
 
@@ -56,9 +68,9 @@ if ! command -v dolt &> /dev/null; then
 fi
 
 dolt_version=$(dolt version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-if [[ "$dolt_version" != "2.0.1" ]]; then
+if [[ "$dolt_version" != "$DOLT_PINNED" ]]; then
   echo "==> dolt is not on the correct version (found: ${dolt_version:-unknown})"
-  echo "==> Please install dolt 2.0.1."
+  echo "==> Please install dolt ${DOLT_PINNED}."
   exit 1
 fi
 
