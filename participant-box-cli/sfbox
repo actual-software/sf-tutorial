@@ -202,6 +202,13 @@ report_include_hint() {
 }
 
 # ------------------------------------------------------------------- ssh ----
+#
+# External-command seams. The test suite replaces these so it can exercise the
+# ssh plumbing — the host-key fetch, fingerprinting, and the key-authentication
+# probe below — with no box on the other end.
+ssh_cli()     { command ssh "$@"; }
+keyscan_cli() { command ssh-keyscan "$@"; }
+keygen_cli()  { command ssh-keygen "$@"; }
 
 box_ssh() { # box [args...]
   local box="$1"; shift
@@ -214,6 +221,47 @@ box_ssh() { # box [args...]
 box_ssh_interactive() { # box [args...]
   local box="$1"; shift
   ssh -F "$SFBOX_SSH_CONFIG" "$box" "$@"
+}
+
+# Does this private key actually open this box?
+#
+# The fingerprint check proves the box is the one your instructor named. This
+# proves the other direction, that the key in your hand opens it. A participant
+# holding several .pem files can otherwise save the wrong one against a box that
+# verifies perfectly, and only find out three steps later.
+#
+# Runs before the ssh config exists, so it passes every option explicitly rather
+# than going through box_ssh. The host key it checks against is the one
+# save-credential just verified and pinned.
+#
+#   0  the key authenticated
+#   1  the box answered and refused the key — it is the wrong file
+#   2  no answer, so there is nothing to conclude either way
+#
+# The split between 1 and 2 is the whole point. A box that is still booting and
+# a box behind a firewall both land on 2, and neither is evidence against the
+# key, so anything short of an outright rejection reads as "cannot tell".
+probe_key_auth() { # user host port keyfile known_hosts
+  local user="$1" host="$2" port="$3" keyfile="$4" kh="$5"
+  local out rc
+  out="$(ssh_cli -o BatchMode=yes \
+                 -o ConnectTimeout=15 \
+                 -o StrictHostKeyChecking=yes \
+                 -o UserKnownHostsFile="$kh" \
+                 -o IdentitiesOnly=yes \
+                 -o PreferredAuthentications=publickey \
+                 -i "$keyfile" \
+                 -p "$port" \
+                 "$user@$host" true 2>&1)"
+  rc=$?
+  [ "$rc" = 0 ] && return 0
+  # Matching the open paren covers both "(publickey)" and the longer
+  # "(publickey,password,...)" form, and keeps this from firing on the
+  # unrelated local-file "Permission denied" that a bad key mode produces.
+  case "$out" in
+    *"Permission denied (publickey"*) return 1 ;;
+  esac
+  return 2
 }
 
 # Run a command on the box through a login shell.
@@ -354,11 +402,11 @@ cmd_save_credential() {
   # --- host key pinning ---------------------------------------------------
   say "Fetching the host key from $host:$port ..."
   local scan
-  scan="$(ssh-keyscan -p "$port" -T 10 "$host" 2>/dev/null | grep -v '^#' || true)"
+  scan="$(keyscan_cli -p "$port" -T 10 "$host" 2>/dev/null | grep -v '^#' || true)"
   [ -n "$scan" ] || die "no host key returned by $host:$port — is the box up and :22 reachable?"
 
   local actual_fps
-  actual_fps="$(printf '%s\n' "$scan" | ssh-keygen -lf - 2>/dev/null | awk '{print $2}')"
+  actual_fps="$(printf '%s\n' "$scan" | keygen_cli -lf - 2>/dev/null | awk '{print $2}')"
   if ! printf '%s\n' "$actual_fps" | grep -qxF "$fingerprint"; then
     err "HOST KEY MISMATCH for '$box' ($host)."
     err "expected: $fingerprint"
@@ -388,6 +436,45 @@ cmd_save_credential() {
   fi
   printf '%s\n' "$scan" >>"$SFBOX_KNOWN_HOSTS"
   chmod 600 "$SFBOX_KNOWN_HOSTS" 2>/dev/null || true
+
+  # --- key authentication -------------------------------------------------
+  #
+  # The pin above proved the box. This proves the key. Both directions have to
+  # hold before a credential is worth storing, and checking here is what keeps a
+  # swapped .pem from passing the step whose entire job is validating it.
+  say "Checking the key opens $box ..."
+  probe_key_auth "$user" "$host" "$port" "$dest" "$SFBOX_KNOWN_HOSTS"
+  case $? in
+    0)
+      say "Key authenticates as $user@$host."
+      ;;
+    1)
+      err "WRONG KEY for '$box' ($host)."
+      err "The box answered and then refused this key, so the file you passed almost"
+      err "certainly belongs to a different box."
+      err ""
+      err "  box: $box"
+      err "  key: $key"
+      err ""
+      err "If your instructor sent you more than one .pem, you are probably holding"
+      err "the wrong one. Find the key for '$box' and re-run with that file. Either"
+      err "of you can confirm which is which by comparing fingerprints:"
+      err ""
+      err "  ssh-keygen -lf $key"
+      err ""
+      err "Nothing was saved. This is not a host key problem and the box is fine:"
+      err "rebuilding the box would not help, and would destroy a working one."
+      rm -f "$dest"
+      exit 5
+      ;;
+    *)
+      warn "Could not reach $user@$host:$port to check the key, so it was saved unchecked."
+      warn "A box that is still booting looks exactly like this, and an unreachable box"
+      warn "says nothing about whether your key is right. If a later command fails with"
+      warn "'Permission denied (publickey)', re-run save-credential — once the box is"
+      warn "answering, this check can tell you whether the key is the wrong one."
+      ;;
+  esac
 
   # --- record + regenerate ------------------------------------------------
   state_put "$box" host "$host"
@@ -969,9 +1056,11 @@ aws_cli() {
   command aws ${extra[@]+"${extra[@]}"} "$@"
 }
 
-tf_cli()      { command terraform "$@"; }
-keyscan_cli() { command ssh-keyscan "$@"; }
-keygen_cli()  { command ssh-keygen "$@"; }
+tf_cli() { command terraform "$@"; }
+
+# keyscan_cli and keygen_cli are the other two seams provision reaches for. They
+# live up in the ssh section, because save-credential fingerprints a host key on
+# the participant side too.
 
 # A boxId becomes the Terraform factory_name, which in turn names AWS resources
 # and the Terraform workspace. Reject anything that would land somewhere odd
@@ -1623,6 +1712,11 @@ usage: sfbox save-credential --box <boxId> --host <ip> --key <path> --fingerprin
                              [--city <name>] [--rotate]
 
 Stores one box's credential locally and pins its host key.
+
+Two checks run before anything is saved. The fingerprint proves the box is the
+one your instructor named, and a test connection proves the key you passed is
+the one that opens it. A swapped .pem is refused here, rather than surfacing
+three steps later as an SSH error that points nowhere near the key.
 
   --fingerprint  Required. Your instructor emits it with the key. Pinning it
                  means the first connection is authenticated, and a rebuilt box
