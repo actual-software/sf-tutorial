@@ -8,10 +8,11 @@
 - [How the lab runs](#how-the-lab-runs)
 - [Try It](#try-it)
   - [1. Register your repo as a rig](#1-register-your-repo-as-a-rig)
-  - [2. Write a project manifest](#2-write-a-project-manifest)
-  - [3. Get real beads in](#3-get-real-beads-in)
-  - [4. Write the capability map](#4-write-the-capability-map)
-  - [5. Reflect](#5-reflect)
+  - [2. Write a project overview](#2-write-a-project-overview)
+  - [3. Write a project manifest](#2-write-a-project-manifest)
+  - [4. Get real beads in](#3-get-real-beads-in)
+  - [5. Write the capability map](#4-write-the-capability-map)
+  - [6. Reflect](#5-reflect)
 - [Deliverable](#deliverable)
 - [Verification](#verification)
 - [Ceiling](#ceiling)
@@ -69,41 +70,44 @@ your rig listed alongside ascii-art, with a path and a prefix
 
 Add `MY_RIG_PATH` to your shell rc the same way [`00.3`](../progression/00.3-setup-foundation.md) did for the other four. You will want it tomorrow.
 
-### 2. Write a project manifest
+### 2. Write a project overview
 
-The manifest is how agents learn what your project is before they touch it. Without one, every agent re-derives your conventions from the code, badly and differently each time.
-
-**Copy and paste**
+Write a **Project Overview** in `$ARTIFACTS_PATH/docs/PROJECT_OVERVIEW.md` using [`PROJECT_OVERVIEW.template.md`](./..artifacts/docs/PROJECT_OVERVIEW.template.md) — a loosely structured document that answers a few questions about the project.
 
 ```bash
-mkdir -p "$MY_RIG_PATH/docs/current"
-cp "$ARTIFACTS_PATH/docs/PROJECT_MANIFEST.template.md" "$MY_RIG_PATH/PROJECT_MANIFEST.md"
-$EDITOR "$MY_RIG_PATH/PROJECT_MANIFEST.md"
+cp $TUTORIAL_PATH/artifacts/docs/PROJECT_OVERVIEW.template.md $ARTIFACTS_PATH/docs/PROJECT_OVERVIEW.md
 ```
 
-Fill in what a competent new colleague would need on day one, and nothing more. Ten honest lines beat three pages of aspiration. The sections that earn their place are the stack, how to run the tests, what must never break, and where the conventions are written down.
+Then fill in the template with your project details.
 
-Commit it:
+### 2. Generate your project manifest
+
+While in the `docs/` directory, download and install the [Manifest Generator Skill](https://github.com/audiojak/manifest-generator):
 
 ```bash
-cd "$MY_RIG_PATH"
-git add PROJECT_MANIFEST.md
-git commit -m "Add project manifest for factory agents"
+cd $TUTORIAL_PATH/artifacts/docs
+npx skills add https://github.com/audiojak/manifest-generator
 ```
+
+Follow the steps to install the skill for your specific coding agent(s). Each agent has its own skill location — for example, Claude Code reads `.claude/skills`, OpenCode/Codex CLI/etc. read other paths. Select the install option matching your agent, then choose the Installation scope and Method (Symlink recommended).
+
+Once the skill is installed, you can invoke it inside a session with your coding agent (Claude Code, Codex CLI, OpenCode, etc.):
+
+```bash
+# Claude Code:
+claude /manifest-generator
+# Or invoke `/manifest-generator` inside whichever CLI coding agent you use.
+```
+
+The agent should provide some prompts to guide you through the process. You can also reference the [Manifest Generator Skill](https://github.com/audiojak/manifest-generator) documentation for more details. The end result should be `PROJECT_MANIFEST.md` and `SOFTWARE_FACTORY_MANIFEST.md` files in your `docs/` directory.
 
 ### 3. Get real beads in
 
 **Copy and paste**
 
 ```bash
-cd "$MY_RIG_PATH"
+cd "$MY_RIG_PATH
 bd status
-```
-
-If that errors with `no beads database found`:
-
-```bash
-bd init --prefix <your-rig-name>
 ```
 
 Now create three beads by hand. Real ones, from your actual backlog:
