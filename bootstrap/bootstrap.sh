@@ -341,6 +341,8 @@ fi
 cd $FACTORY_PATH
 cp -r $ARTIFACTS_PATH/packs/setup/ .gc/system/packs/setup
 chmod +x .gc/system/packs/setup/assets/scripts/worktree-setup.sh
+# Defensive strip: cities from gc releases predating agent auto-discovery can
+# carry [[agent]] tables. A no-op on current gc, which is why 00.1 no longer teaches it.
 sed "${SED_I[@]}" '/^\[\[agent\]\]$/,/^$/d' pack.toml
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   git add -f .gc/system/
@@ -444,11 +446,19 @@ cd $ASCII_ART_PATH
 mkdir -p .github
 cp $ARTIFACTS_PATH/github/CODEOWNERS \
   .github/CODEOWNERS
-sed "${SED_I[@]}" 's/@your-github-handle/$GITHUB_USERNAME/g' .github/CODEOWNERS
+# Double quotes so $GITHUB_USERNAME expands, and keep the leading @ — an owner
+# without it is not a valid CODEOWNERS entry and silently matches nobody.
+sed "${SED_I[@]}" "s/@your-github-handle/@$GITHUB_USERNAME/g" .github/CODEOWNERS
 git add .github/CODEOWNERS
 git commit -m "chore: add CODEOWNERS"
 git push origin main
-gh api "repos/$GITHUB_USERNAME/ascii-art/contents/.github/CODEOWNERS" -q '.path'
+# Assert the pushed file names the handle, not merely that the path exists.
+if ! gh api "repos/$GITHUB_USERNAME/ascii-art/contents/.github/CODEOWNERS" \
+     -H "Accept: application/vnd.github.raw" | grep -q "^\*[[:space:]]*@$GITHUB_USERNAME$"; then
+  echo "==> CODEOWNERS on main does not name @$GITHUB_USERNAME as the default owner." >&2
+  echo "==> Branch protection would block every merge with no reviewer able to approve." >&2
+  exit 1
+fi
 OWNER=$GITHUB_USERNAME REPO=ascii-art $ARTIFACTS_PATH/github/branch-protection.sh
 
 if [ "$TUTORIAL_STEP" == "03-branch-protection" ]; then

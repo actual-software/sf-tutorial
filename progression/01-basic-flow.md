@@ -212,8 +212,11 @@ Also remove the named session block from the city pack.toml.
 **Copy and paste**
 
 ```bash
-sed -i '' '/\[named_session\]/,/\[named_session\]/d' "$FACTORY_PATH/pack.toml"
+sed '/\[named_session\]/,/\[named_session\]/d' "$FACTORY_PATH/pack.toml" > "$FACTORY_PATH/pack.toml.tmp" \
+  && mv "$FACTORY_PATH/pack.toml.tmp" "$FACTORY_PATH/pack.toml"
 ```
+
+> **Why not `sed -i`?** GNU `sed` on Linux and BSD `sed` on macOS disagree about the argument `-i` takes, so no single `sed -i` spelling runs on both. Writing to a temp file and moving it back behaves identically everywhere. The same idiom appears wherever this tutorial edits a file in place.
 
 Now restart the city so the new patches and formulas take effect:
 
@@ -396,7 +399,7 @@ METADATA
   molecule_id: aa-vlh
   target: main
   target_file: ascii/a.md
-  work_dir: /Users/austin/software-factory-intensive/factory1/.gc/worktrees/ascii-art/polecats/pr-gate-rig.furiosa/worktrees/aa-985.2
+  work_dir: <your-home>/software-factory-intensive/factory1/.gc/worktrees/ascii-art/polecats/pr-gate-rig.furiosa/worktrees/aa-985.2
 
 PARENT
   ↑ ○ aa-52p: sling-aa-985.2 ● P2
