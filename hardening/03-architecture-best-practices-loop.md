@@ -167,13 +167,17 @@ What to notice:
 - **Self-pour pattern.** On CONTINUE, the formula `gc sling`s
   itself with `--var iteration=$NEXT`. Cap at 3.
 
-Copy the pack into the city's pack directory:
+Copy the pack into the city's `packs/` directory. Later steps on this page run
+`checks/aggregate-score.sh` straight out of this directory, so the path you copy
+to here is the path those steps expect:
 
 **Copy and paste**
 
 ```bash
+mkdir -p "$FACTORY_PATH/packs"
+
 cp -r "$ARTIFACTS_PATH/packs/principles-loop-rig" \
-      "$FACTORY_PATH/.gc/system/packs/principles-loop-rig"
+      "$FACTORY_PATH/packs/principles-loop-rig"
 ```
 
 Register the new import at rig scope:
@@ -183,7 +187,7 @@ Register the new import at rig scope:
 ```bash
 cd "$FACTORY_PATH"
 
-gc import add --rig ascii-art .gc/system/packs/principles-loop-rig
+gc import add --rig ascii-art packs/principles-loop-rig
 gc import remove --rig ascii-art domain-reviewers-rig
 ```
 
@@ -222,8 +226,8 @@ Check the aggregator script exists, and run it bare to confirm it prints a usage
 **Copy and paste**
 
 ```bash
-ls "$FACTORY_PATH/.gc/system/packs/principles-loop-rig/checks/aggregate-score.sh"
-bash "$FACTORY_PATH/.gc/system/packs/principles-loop-rig/checks/aggregate-score.sh"
+ls "$FACTORY_PATH/packs/principles-loop-rig/checks/aggregate-score.sh"
+bash "$FACTORY_PATH/packs/principles-loop-rig/checks/aggregate-score.sh"
 ```
 
 **Expected output**
@@ -352,7 +356,7 @@ You should see `rc=0` and a JSON line on stdout with `aggregate>=0.9`.
 **Copy and paste**
 
 ```bash
-$FACTORY_PATH/.gc/system/packs/principles-loop-rig/checks/aggregate-score.sh \
+$FACTORY_PATH/packs/principles-loop-rig/checks/aggregate-score.sh \
   docs/reviews/principles.$BEAD_ID.yaml --target=0.9 --min-per-principle=3
 echo "rc=$?"
 ```
@@ -477,7 +481,7 @@ Run the aggregator between iterations:
 
 ```bash
 cd $ASCII_ART_PATH
-$FACTORY_PATH/.gc/system/packs/principles-loop-rig/checks/aggregate-score.sh \
+$FACTORY_PATH/packs/principles-loop-rig/checks/aggregate-score.sh \
   docs/reviews/principles.$WEAK_BEAD.yaml --target=0.9 --min-per-principle=3
 # Iteration 1: rc=1, JSON shows aggregate ~0.5, lowest 3 principles named.
 # Iteration 2: rc=1, aggregate ~0.7, lowest principles changing.
@@ -517,7 +521,7 @@ Pack is installed and the formula is loaded.
 
 ```bash
 gc formula list | grep mol-principles-review
-ls "$FACTORY_PATH/.gc/system/packs/principles-loop-rig/checks/aggregate-score.sh"
+ls "$FACTORY_PATH/packs/principles-loop-rig/checks/aggregate-score.sh"
 python3 -c "import yaml" && echo "PyYAML ok"
 ```
 
@@ -527,7 +531,7 @@ After slinging on a clean bead, 23 rows in the YAML and PASS.
 
 ```bash
 wc -l docs/reviews/principles.$BEAD_ID.yaml
-$FACTORY_PATH/.gc/system/packs/principles-loop-rig/checks/aggregate-score.sh \
+$FACTORY_PATH/packs/principles-loop-rig/checks/aggregate-score.sh \
   docs/reviews/principles.$BEAD_ID.yaml
 echo "rc=$?"
 ```

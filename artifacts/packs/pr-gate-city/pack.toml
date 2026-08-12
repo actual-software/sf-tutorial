@@ -13,7 +13,7 @@
 #      blocked-bead triage path.
 #
 # Install:
-#   gc import add .gc/system/packs/pr-gate-city
+#   gc import add packs/pr-gate-city
 #   (lands as [imports.pr-gate-city] in the city pack.toml)
 #
 # This pack is safe to import alone, but you almost certainly want

@@ -28,7 +28,7 @@
 #      point at `mol-refinery-architect-patrol` on next start.
 #
 # Install (replaces review-loop-rig in the rig's direct imports):
-#   gc import add --rig <rig-name> .gc/system/packs/architect-rig
+#   gc import add --rig <rig-name> packs/architect-rig
 #   gc import remove --rig <rig-name> review-loop-rig
 #
 # architect-rig imports pr-gate-rig directly (for the polecat formula

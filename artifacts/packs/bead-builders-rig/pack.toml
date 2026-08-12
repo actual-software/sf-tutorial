@@ -23,7 +23,7 @@
 #      (load-context → draft-spec → drain).
 #
 # Install (sits on top of bead-gate-rig):
-#   gc import add --rig <rig-name> .gc/system/packs/bead-builders-rig
+#   gc import add --rig <rig-name> packs/bead-builders-rig
 #   gc import remove --rig <rig-name> bead-gate-rig
 #
 # bead-builders-rig imports bead-gate-rig, so the project-manager,

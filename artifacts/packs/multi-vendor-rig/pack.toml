@@ -25,7 +25,7 @@
 # single-vendor reviewers.
 #
 # Install:
-#   gc import add --rig <rig-name> .gc/system/packs/multi-vendor-rig
+#   gc import add --rig <rig-name> packs/multi-vendor-rig
 #   gc import remove --rig <rig-name> principles-loop-rig
 #
 # multi-vendor-rig imports principles-loop-rig directly so the H1

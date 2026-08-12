@@ -24,7 +24,7 @@
 # iterations; on the 3rd CONTINUE, escalate to operator.
 #
 # Install:
-#   gc import add --rig <rig-name> .gc/system/packs/principles-loop-rig
+#   gc import add --rig <rig-name> packs/principles-loop-rig
 #   gc import remove --rig <rig-name> domain-reviewers-rig
 #
 # principles-loop-rig imports domain-reviewers-rig directly, so

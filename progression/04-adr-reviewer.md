@@ -239,13 +239,15 @@ What to notice in the pack:
   writes only its verdict. The refinery counts rejections, bounces
   while under the cap, and force-forwards once the cap is reached.
 
-Copy the pack into the city's pack directory:
+Copy the pack into the city's `packs/` directory:
 
 **Copy and paste**
 
 ```bash
+mkdir -p "$FACTORY_PATH/packs"
+
 cp -r "$ARTIFACTS_PATH/packs/architect-rig" \
-      "$FACTORY_PATH/.gc/system/packs/architect-rig"
+      "$FACTORY_PATH/packs/architect-rig"
 ```
 
 Now register the new import at rig scope and remove the now-superseded
@@ -257,7 +259,7 @@ Now register the new import at rig scope and remove the now-superseded
 cd "$FACTORY_PATH"
 
 # Add the new pack at rig scope.
-gc import add --rig ascii-art .gc/system/packs/architect-rig
+gc import add --rig ascii-art packs/architect-rig
 
 # Remove review-loop-rig from the rig's direct imports.
 # architect-rig replaces it — the review loop now lives in the
@@ -279,7 +281,7 @@ gc import list --rig ascii-art
 **Expected output**
 
 ```text
-architect-rig	.gc/system/packs/architect-rig		(path)
+architect-rig	packs/architect-rig		(path)
 ```
 
 The city's imports are unchanged — `pr-gate-city` should still be there.
@@ -293,7 +295,7 @@ gc import list
 **Expected output**
 
 ```text
-pr-gate-city	.gc/system/packs/pr-gate-city		(path)
+pr-gate-city	packs/pr-gate-city		(path)
 ```
 
 Restart the city so the new agent, formulas, and refinery prompt take
@@ -680,7 +682,7 @@ Expect a single line for the rig's main checkout.
   `mol-refinery-architect-patrol`.** The architect-rig pack didn't
   load. Run `gc import list --rig ascii-art` and confirm you see
   `architect-rig`. If it's missing, re-run
-  `gc import add --rig ascii-art .gc/system/packs/architect-rig` and
+  `gc import add --rig ascii-art packs/architect-rig` and
   restart.
 - **`gc import remove --rig ascii-art review-loop-rig` errors with
   "still in use" or similar.** Some installations may complain

@@ -118,13 +118,15 @@ What to notice:
 - **Synthesizer is not a fourth reviewer.** Its prompt explicitly says "do NOT read the diff yourself." It reads only what the three vendors stamped.
 - **Majority rule, no synthesis-by-LLM tricks.** The synthesizer counts `true` verdicts; ≥ 2 of 3 stamps `adr_approved=true`. The one-paragraph `synthesizer_summary` is for the operator's benefit; the gate is the count.
 
-Copy the pack into the city's pack directory:
+Copy the pack into the city's `packs/` directory:
 
 **Copy and paste**
 
 ```bash
+mkdir -p "$FACTORY_PATH/packs"
+
 cp -r "$ARTIFACTS_PATH/packs/multi-vendor-rig" \
-      "$FACTORY_PATH/.gc/system/packs/multi-vendor-rig"
+      "$FACTORY_PATH/packs/multi-vendor-rig"
 ```
 
 Register the new import at rig scope:
@@ -134,7 +136,7 @@ Register the new import at rig scope:
 ```bash
 cd "$FACTORY_PATH"
 
-gc import add --rig ascii-art .gc/system/packs/multi-vendor-rig
+gc import add --rig ascii-art packs/multi-vendor-rig
 gc import remove --rig ascii-art principles-loop-rig
 ```
 

@@ -339,8 +339,9 @@ else
 fi
 
 cd $FACTORY_PATH
-cp -r $ARTIFACTS_PATH/packs/setup/ .gc/system/packs/setup
-chmod +x .gc/system/packs/setup/assets/scripts/worktree-setup.sh
+mkdir -p packs
+cp -r $ARTIFACTS_PATH/packs/setup/ packs/setup
+chmod +x packs/setup/assets/scripts/worktree-setup.sh
 # Defensive strip: cities from gc releases predating agent auto-discovery can
 # carry [[agent]] tables. A no-op on current gc, which is why 00.1 no longer teaches it.
 sed "${SED_I[@]}" '/^\[\[agent\]\]$/,/^$/d' pack.toml
@@ -349,7 +350,7 @@ if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   git add .
   git commit -m "00.2-setup-foundation packs"
 fi
-gc import add --rig ascii-art .gc/system/packs/setup
+gc import add --rig ascii-art packs/setup
 cd $ASCII_ART_PATH
 cp "$ARTIFACTS_PATH/beads/seed-epics.sh" ./seed-epics.sh
 chmod +x ./seed-epics.sh
@@ -395,14 +396,17 @@ fi
 # Run 01-basic-flow
 
 cd "$FACTORY_PATH"
-cp -r $ARTIFACTS_PATH/packs/pr-gate-city/ .gc/system/packs/pr-gate-city
-cp -r $ARTIFACTS_PATH/packs/pr-gate-rig/ .gc/system/packs/pr-gate-rig
+mkdir -p packs
+cp -r $ARTIFACTS_PATH/packs/pr-gate-city/ packs/pr-gate-city
+cp -r $ARTIFACTS_PATH/packs/pr-gate-rig/ packs/pr-gate-rig
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
-  git add -f .gc/system/
+  # packs/ is not gitignored, so a plain add stages it. gc import add needs the
+  # pack committed at HEAD before it can resolve a path inside a git worktree.
+  git add .
   git commit -m "01-basic-flow packs"
 fi
-gc import add .gc/system/packs/pr-gate-city
-gc import add --rig ascii-art .gc/system/packs/pr-gate-rig
+gc import add packs/pr-gate-city
+gc import add --rig ascii-art packs/pr-gate-rig
 gc import remove --rig ascii-art setup
 rm -rf "$FACTORY_PATH/agents/mayor"
 sed "${SED_I[@]}" '/\[named_session\]/,/\[named_session\]/d' "$FACTORY_PATH/pack.toml"
@@ -421,12 +425,13 @@ fi
 # Run 02-first-review-loop
 
 cd $FACTORY_PATH
-cp -r $ARTIFACTS_PATH/packs/review-loop-rig/ .gc/system/packs/review-loop-rig
+mkdir -p packs
+cp -r $ARTIFACTS_PATH/packs/review-loop-rig/ packs/review-loop-rig
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
-  git add -f .gc/system/
+  git add .
   git commit -m "02-first-review-loop packs"
 fi
-gc import add --rig ascii-art .gc/system/packs/review-loop-rig
+gc import add --rig ascii-art packs/review-loop-rig
 gc import remove --rig ascii-art pr-gate-rig
 
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
@@ -470,12 +475,13 @@ fi
 # Run 04-adr-reviewer
 
 cd $FACTORY_PATH
-cp -r $ARTIFACTS_PATH/packs/architect-rig/ .gc/system/packs/architect-rig
+mkdir -p packs
+cp -r $ARTIFACTS_PATH/packs/architect-rig/ packs/architect-rig
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
-  git add -f .gc/system/
+  git add .
   git commit -m "04-adr-reviewer packs"
 fi
-gc import add --rig ascii-art .gc/system/packs/architect-rig
+gc import add --rig ascii-art packs/architect-rig
 gc import remove --rig ascii-art review-loop-rig
 
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
@@ -492,12 +498,13 @@ fi
 # Run 05.1-bead-gate-checks
 
 cd $FACTORY_PATH
-cp -r $ARTIFACTS_PATH/packs/bead-gate-rig/ .gc/system/packs/bead-gate-rig
+mkdir -p packs
+cp -r $ARTIFACTS_PATH/packs/bead-gate-rig/ packs/bead-gate-rig
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
-  git add -f .gc/system/
+  git add .
   git commit -m "05.1-bead-gate-checks packs"
 fi
-gc import add --rig ascii-art .gc/system/packs/bead-gate-rig
+gc import add --rig ascii-art packs/bead-gate-rig
 gc import remove --rig ascii-art architect-rig
 
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
