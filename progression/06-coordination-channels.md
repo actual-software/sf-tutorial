@@ -53,11 +53,11 @@ flowchart TB
     direction LR
     PM[project-manager] --> PC[polecat] --> RF[refinery] --> AR[architect]
   end
-  T["Tasks<br/>bd + gc sling"] -.->|shared work store| F
-  M["Mail<br/>gc mail"] -.->|durable, async| F
-  O["Orders<br/>gc order"] -.->|schedule or predicate| F
-  N["Nudges<br/>gc session nudge"] -.->|recover a missed wake| F
-  S["Session attach<br/>gc session attach"] -.->|human, direct| F
+  T["Tasks: bd + gc sling"] -.->|shared work store| F
+  M["Mail: gc mail"] -.->|durable, async| F
+  O["Orders: gc order"] -.->|schedule or predicate| F
+  N["Nudges: gc session nudge"] -.->|recover a missed wake| F
+  S["Session attach: gc session attach"] -.->|human, direct| F
 ```
 
 | Channel | Primitive | When it is the right tool |
