@@ -115,7 +115,7 @@ Include ~/.gascity/ssh_config
 
 **This one needs a real terminal window.** Terminal, iTerm, your editor's terminal, anything interactive. It can't run from a script, a notebook, or a chat tool, because it opens Claude Code's full-screen interface and asks you questions.
 
-The GitHub half is a browser grant against your whole account, and this flow has no token alternative — setting a token on the box beforehand doesn't change what this step asks for. If that matters to you, [the preflight page covers what the box's token command does and doesn't cover](./progression/00.0-preflight.md#signing-the-box-in-with-a-token) before you decide.
+The GitHub half asks which credential you want to give the box: a browser grant against your whole account, or a token you mint yourself and paste. A bare Enter takes the browser grant. If you'd rather not grant the CLI that much, mint the token before you start this step, and see [the preflight page](./progression/00.0-preflight.md#signing-the-box-in-with-a-token) for what to scope it for.
 
 **Copy and paste**
 
@@ -125,7 +125,7 @@ ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" sudo gas-city-login
 
 You'll be walked through two sign-ins:
 
-1. **GitHub**, with a one-time code you approve in your browser.
+1. **GitHub**, either a one-time code you approve in your browser or a token you paste. It asks which you want, and Enter takes the code.
 2. **Claude**, inside Claude Code. Pick a theme if asked, run `/login`, finish the browser sign-in, accept the trust prompt for the directory, then `/exit`.
 
 Your box's factory doesn't start until this finishes. That's deliberate. Nothing else can answer a browser sign-in and a trust prompt on your behalf, so the box waits for you to do it rather than coming up half-configured and failing later.
