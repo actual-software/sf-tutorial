@@ -90,22 +90,36 @@ Replace the string `@your-github-handle` with your actual GitHub handle
 ```bash
 export GITHUB_USERNAME=$(gh api user -q '.login')
 
-sed -i '' 's/@your-github-handle/$GITHUB_USERNAME/g' .github/CODEOWNERS
+sed "s/@your-github-handle/@$GITHUB_USERNAME/g" .github/CODEOWNERS > .github/CODEOWNERS.tmp \
+  && mv .github/CODEOWNERS.tmp .github/CODEOWNERS
 
 git add .github/CODEOWNERS
 git commit -m "chore: add CODEOWNERS"
 git push origin main
 ```
 
-Confirm GitHub picked up the file:
+Three details in that `sed` matter, and getting any of them wrong produces a `CODEOWNERS` that GitHub accepts as a file but ignores as a rule:
+
+- **Double quotes, not single.** Single quotes stop `$GITHUB_USERNAME` expanding, and the file ends up containing the literal string `$GITHUB_USERNAME`.
+- **Keep the leading `@`.** An owner without it is not a valid `CODEOWNERS` entry, so the line silently matches nobody.
+- **Write to a temp file and move it back** rather than editing in place. GNU `sed` (Linux) and BSD `sed` (macOS) disagree about the argument `-i` takes, so no single `sed -i` spelling works on both. Redirecting and moving works everywhere.
+
+Confirm the file on GitHub actually names *your* handle — not just that a file exists there:
 
 **Copy and paste**
 
 ```bash
-gh api "repos/$GITHUB_USERNAME/ascii-art/contents/.github/CODEOWNERS" -q '.path'
+gh api "repos/$GITHUB_USERNAME/ascii-art/contents/.github/CODEOWNERS" \
+  -H "Accept: application/vnd.github.raw" | grep '^\*'
 ```
 
-You should see `.github/CODEOWNERS` echoed back.
+**Expected output** — with your own handle in place of `@your-actual-handle`:
+
+```text
+*       @your-actual-handle
+```
+
+The owner must be your real handle and must keep its leading `@`. If the line still reads `@your-github-handle`, or reads `$GITHUB_USERNAME`, or has lost the `@`, then the substitution didn't take. Fix it, commit, and push again before moving on — GitHub will happily store a `CODEOWNERS` whose owner matches nobody, and branch protection will then block every merge with no reviewer who can approve it.
 
 ### 2. Inspect the protection script
 

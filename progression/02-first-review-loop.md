@@ -328,7 +328,7 @@ METADATA
   molecule_id: aa-h77zz
   target: main
   target_file: ascii/d.md
-  work_dir: /Users/austin/software-factory-intensive/factory1/.gc/worktrees/ascii-art/polecats/review-loop-rig.furiosa
+  work_dir: <your-home>/software-factory-intensive/factory1/.gc/worktrees/ascii-art/polecats/review-loop-rig.furiosa
 
 PARENT
   ↑ ○ aa-j6mbu: sling-aa-7ln.11 ● P2
@@ -379,7 +379,7 @@ METADATA
   review_loops: 1
   target: main
   target_file: ascii/d.md
-  work_dir: /Users/austin/software-factory-intensive/factory1/.gc/worktrees/ascii-art/polecats/review-loop-rig.furiosa
+  work_dir: <your-home>/software-factory-intensive/factory1/.gc/worktrees/ascii-art/polecats/review-loop-rig.furiosa
 
 PARENT
   ↑ ○ aa-j6mbu: sling-aa-7ln.11 ● P2
