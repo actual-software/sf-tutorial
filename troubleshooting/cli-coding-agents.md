@@ -10,7 +10,7 @@ Issues with the coding agents that front the factory — Claude Code, Codex, Cur
 - [Issue: Ran `aisw use` but the CLI still uses the old account](#issue-ran-aisw-use-but-the-cli-still-uses-the-old-account)
 - [Issue: Not sure which account is currently active](#issue-not-sure-which-account-is-currently-active)
 - [Issue: `aisw status` shows a coding agent as "not installed" even though it works](#issue-aisw-status-shows-a-coding-agent-as-not-installed-even-though-it-works)
-- [Issue: `aisw use gemini … --state-mode shared` fails](#issue-aisw-use-gemini--state-mode-shared-fails)
+- [Issue: `aisw use gemini … --state-mode shared` fails](#issue-aisw-use-gemini----state-mode-shared-fails)
 
 ---
 

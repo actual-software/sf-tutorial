@@ -2,7 +2,6 @@
 
 ## Contents
 
-- [Block W-4: Review Loops](#block-w-4-review-loops)
 - [Objective](#objective)
 - [Prereqs](#prereqs)
 - [Context](#context)

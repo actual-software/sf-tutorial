@@ -85,6 +85,6 @@ That is the two days. You have a factory pointed at your own project, with gates
 
 The capability map from [L-1](./07-plan-your-factory.md) is the thing to keep. It has rows on it you did not get to, and it is the only artifact here that knows what your factory cannot do yet.
 
-The [`hardening/`](../README.md#hardening-exercises-optional-layer-on-as-you-like) exercises you did not pick in [L-3](../hardening/03-architecture-best-practices-loop.md) are the obvious next session, and both run fine on your own rig now.
+The [`hardening/`](../README.md#day-2-build-your-own-software-factory) exercises you did not pick in [L-3](../hardening/03-architecture-best-practices-loop.md) are the obvious next session, and both run fine on your own rig now.
 
-« [previous: L-5 Implement a Feature](./09-implement-a-feature.md) | [next: the two-day schedule](../README.md#two-day-intensive-start-here-if-you-are-at-the-event) »
+« [previous: L-5 Implement a Feature](./09-implement-a-feature.md) | [next: the curriculum structure](../README.md#curriculum-structure) »

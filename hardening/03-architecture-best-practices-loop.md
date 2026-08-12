@@ -2,7 +2,6 @@
 
 ## Contents
 
-- [Block L-3: Hardening](#block-l-3-hardening)
 - [Objective](#objective)
 - [Prereqs](#prereqs)
 - [Context](#context)
@@ -257,7 +256,7 @@ not, write a short one inline:
 
 **Copy and paste**
 
-```bash
+````bash
 cd "$ASCII_ART_PATH"
 mkdir -p docs/reviews docs/reviews/principles
 cat > docs/reviews/principles-schema.md <<'EOF'
@@ -284,7 +283,7 @@ EOF
 git add docs/reviews/principles-schema.md
 git commit -m "docs(reviews): add principles audit-trail schema"
 git push origin main
-```
+````
 
 ### 3. Sling a clean bead through the standard pipeline
 
