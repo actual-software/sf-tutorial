@@ -924,6 +924,114 @@ case "$CAPTURED" in
     ;;
 esac
 
+# ------------------------------------------------------- save-credential ---
+#
+# save-credential reaches the box twice: once to fetch the host key, and once to
+# check that the key it is about to store actually opens the box. Both go
+# through the ssh seams, so the whole command runs here with nothing on the
+# other end and no live box anywhere.
+
+SC_KEY="$SFBOX_TEST_ROOT/sfi-participant-2.pem"
+printf -- '-----BEGIN OPENSSH PRIVATE KEY-----\nstub\n-----END OPENSSH PRIVATE KEY-----\n' >"$SC_KEY"
+PROBE_LOG="$SFBOX_TEST_ROOT/probe.log"
+
+keyscan_cli() { printf '203.0.113.9 ssh-ed25519 AAAAC3Nz\n'; }
+keygen_cli()  { printf '256 SHA256:TESTFINGERPRINT host (ED25519)\n'; }
+
+save_cred() { # [extra args...]
+  cmd_save_credential --box sfi-test-2 --host 203.0.113.9 \
+    --key "$SC_KEY" --fingerprint SHA256:TESTFINGERPRINT "$@"
+}
+
+# ---- what counts as a rejection ---------------------------------------------
+#
+# The classifier is the whole fix. A box that refuses the key and a box that
+# never answered look similar from the outside and mean opposite things, so each
+# shape gets asserted on its own before the command-level tests build on it.
+
+echo "save-credential: what the box's answer means"
+KH="$SFBOX_HOME/known_hosts"
+
+ssh_cli() { return 0; }
+rc_is 0 "a key the box accepts" probe_key_auth ubuntu 203.0.113.9 22 "$SC_KEY" "$KH"
+
+ssh_cli() { printf 'ubuntu@203.0.113.9: Permission denied (publickey).\n' >&2; return 255; }
+rc_is 1 "a publickey rejection is a wrong key" probe_key_auth ubuntu 203.0.113.9 22 "$SC_KEY" "$KH"
+
+ssh_cli() { printf 'ubuntu@h: Permission denied (publickey,password).\n' >&2; return 255; }
+rc_is 1 "the longer rejection form counts too" probe_key_auth ubuntu 203.0.113.9 22 "$SC_KEY" "$KH"
+
+ssh_cli() { printf 'ssh: connect to host 203.0.113.9 port 22: Operation timed out\n' >&2; return 255; }
+rc_is 2 "a timeout is no verdict on the key" probe_key_auth ubuntu 203.0.113.9 22 "$SC_KEY" "$KH"
+
+ssh_cli() { printf 'ssh: connect to host 203.0.113.9 port 22: Connection refused\n' >&2; return 255; }
+rc_is 2 "a refused connection is no verdict either" probe_key_auth ubuntu 203.0.113.9 22 "$SC_KEY" "$KH"
+
+# sshd answers before the box has finished coming up, and this is what that
+# sounds like. It is the one shape most likely to be misread as a bad key.
+ssh_cli() { printf 'kex_exchange_identification: Connection closed by remote host\n' >&2; return 255; }
+rc_is 2 "sshd answering mid-boot is no verdict" probe_key_auth ubuntu 203.0.113.9 22 "$SC_KEY" "$KH"
+
+# ---- the wrong .pem ---------------------------------------------------------
+
+echo "save-credential: a key from another box is refused"
+fresh_state
+ssh_cli() { printf 'ubuntu@203.0.113.9: Permission denied (publickey).\n' >&2; return 255; }
+out="$(save_cred 2>&1)"; rc=$?
+is "$rc" "5"                     "refuses a key the box will not accept"
+contains "$out" "WRONG KEY"      "says the key is wrong"
+contains "$out" "sfi-test-2"     "names the box, so a participant can spot the mismatch"
+contains "$out" "sfi-participant-2.pem" "names the file it was handed"
+contains "$out" "Nothing was saved" "says nothing was stored"
+contains "$out" "rebuilding the box would not help" "heads off the destructive diagnosis"
+rc_is 1 "leaves no key behind"   test -f "$SFBOX_HOME/keys/sfi-test-2.pem"
+is "$(state_get sfi-test-2 host)" "" "records no box"
+
+# ---- the right .pem ---------------------------------------------------------
+
+echo "save-credential: the correct key saves as before"
+fresh_state
+ssh_cli() { return 0; }
+out="$(save_cred --label test 2>&1)"; rc=$?
+is "$rc" "0"                          "saves when the key authenticates"
+contains "$out" "Key authenticates"   "confirms the key opened the box"
+is "$(state_get sfi-test-2 host)"  "203.0.113.9" "records the host"
+is "$(state_get sfi-test-2 label)" "test"        "records the label"
+is "$(state_get sfi-test-2 fingerprint)" "SHA256:TESTFINGERPRINT" "records the pinned fingerprint"
+rc_is 0 "stores the key" test -f "$SFBOX_HOME/keys/sfi-test-2.pem"
+is "$(ls -l "$SFBOX_HOME/keys/sfi-test-2.pem" | cut -c1-10)" "-rw-------" "key file is 0600"
+contains "$(cat "$SFBOX_HOME/known_hosts")" "203.0.113.9" "pins the host key"
+
+# ---- a box that has not finished booting ------------------------------------
+
+echo "save-credential: an unreachable box saves with a warning"
+fresh_state
+ssh_cli() { printf 'ssh: connect to host 203.0.113.9 port 22: Connection refused\n' >&2; return 255; }
+out="$(save_cred 2>&1)"; rc=$?
+is "$rc" "0"                        "a box that is not answering yet still saves"
+contains "$out" "saved unchecked"   "says the check did not get to run"
+contains "$out" "still booting"     "names the likely reason"
+is "$(state_get sfi-test-2 host)" "203.0.113.9" "records the box anyway"
+case "$out" in
+  *"WRONG KEY"*) bad "does not call an unreachable box a wrong key" "said WRONG KEY" ;;
+  *)             ok  "does not call an unreachable box a wrong key" ;;
+esac
+
+# ---- the host key still goes first ------------------------------------------
+#
+# The key check is additive. The fingerprint is the security-relevant half, and
+# a mismatch there has to refuse before anything connects with the key at all.
+
+echo "save-credential: a bad fingerprint still stops everything"
+fresh_state
+: >"$PROBE_LOG"
+ssh_cli() { printf 'probed\n' >>"$PROBE_LOG"; return 0; }
+out="$(cmd_save_credential --box sfi-test-2 --host 203.0.113.9 \
+        --key "$SC_KEY" --fingerprint SHA256:NOTTHEONE 2>&1)"; rc=$?
+is "$rc" "4"                          "a host key mismatch refuses first"
+contains "$out" "HOST KEY MISMATCH"   "says which check failed"
+is "$(wc -c <"$PROBE_LOG" | tr -d ' ')" "0" "never offers the key to a box that failed the pin"
+
 # ------------------------------------------------------------------ done ---
 
 echo
