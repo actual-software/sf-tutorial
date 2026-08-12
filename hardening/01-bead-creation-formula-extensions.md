@@ -84,13 +84,15 @@ What to notice in the pack:
 - **Light-side, not gates.** The Leads do not block beads or stamp verdicts. If a Lead's output is missing, the project-manager catches it at the next bead-review pass (with extended checklist).
 - **Specs live in the rig repo.** `docs/design/<bead>.md`, `docs/testing/<bead>.md`, `docs/outlines/<bead>.md` — committed alongside source code, so the architect (page 04) and the polecat both read them out of the working tree.
 
-Copy the pack into the city's pack directory.
+Copy the pack into the city's `packs/` directory.
 
 **Copy and paste**
 
 ```bash
+mkdir -p "$FACTORY_PATH/packs"
+
 cp -r "$ARTIFACTS_PATH/packs/bead-builders-rig" \
-      "$FACTORY_PATH/.gc/system/packs/bead-builders-rig"
+      "$FACTORY_PATH/packs/bead-builders-rig"
 ```
 
 Register the new import at rig scope and remove the now-redundant direct `bead-gate-rig` import. Run from the city directory.
@@ -100,7 +102,7 @@ Register the new import at rig scope and remove the now-redundant direct `bead-g
 ```bash
 cd "$FACTORY_PATH"
 
-gc import add --rig ascii-art .gc/system/packs/bead-builders-rig
+gc import add --rig ascii-art packs/bead-builders-rig
 gc import remove --rig ascii-art bead-gate-rig
 ```
 
@@ -440,7 +442,7 @@ ls ascii/j.md
 
 ## Troubleshooting
 
-- **`gc formula list` doesn't show `mol-design-spec` etc.** The `bead-builders-rig` pack didn't load. Run `gc import list --rig ascii-art` and confirm `bead-builders-rig` is present. If missing, re-run `gc import add --rig ascii-art .gc/system/packs/bead-builders-rig` and restart.
+- **`gc formula list` doesn't show `mol-design-spec` etc.** The `bead-builders-rig` pack didn't load. Run `gc import list --rig ascii-art` and confirm `bead-builders-rig` is present. If missing, re-run `gc import add --rig ascii-art packs/bead-builders-rig` and restart.
 - **Lead writes the spec file but doesn't stamp metadata.** Most often the agent finished writing the file but the `gc bd update --set-metadata` call errored (e.g., the bead doesn't exist with that ID). Inspect the session log and re-run the metadata stamp by hand if needed.
 - **Project-manager rejects despite all three metadata fields set.** The extended checklist also requires the file each metadata field points at to **exist on disk**. If `metadata.design_doc=docs/design/foo.md` but `docs/design/foo.md` is missing (e.g., not yet committed and the project-manager is reading from `main`), the gate fires. Either commit the spec files first, or have the project-manager read from the working tree.
 - **Lead writes a spec but the polecat ignores it.** The polecat reads the spec file paths off the bead's metadata at implement time. Confirm the polecat session log mentions reading `docs/design/<bead>.md` etc. If the polecat's prompt isn't yet taught to read these files, you may need to update the polecat prompt template in a custom pack — that's a Hardening 2-and-up customization.

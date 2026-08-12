@@ -150,16 +150,18 @@ the mayor template. `pr-gate-rig/` contains `pack.toml`, a `prompts/`
 directory with the refinery template, and a `formulas/` directory
 with two `.formula.toml` files.
 
-Copy both packs into the city's pack directory:
+Copy both packs into the city's `packs/` directory:
 
 **Copy and paste**
 
 ```bash
+mkdir -p "$FACTORY_PATH/packs"
+
 cp -r "$ARTIFACTS_PATH/packs/pr-gate-city" \
-      "$FACTORY_PATH/.gc/system/packs/pr-gate-city"
+      "$FACTORY_PATH/packs/pr-gate-city"
 
 cp -r "$ARTIFACTS_PATH/packs/pr-gate-rig" \
-      "$FACTORY_PATH/.gc/system/packs/pr-gate-rig"
+      "$FACTORY_PATH/packs/pr-gate-rig"
 ```
 
 Now register both packs as imports. `gc import add` is the supported
@@ -173,11 +175,11 @@ city directory:
 cd "$FACTORY_PATH"
 
 # City scope — pr-gate-city patches the city-scoped mayor agent.
-gc import add .gc/system/packs/pr-gate-city
+gc import add packs/pr-gate-city
 
 # Rig scope — pr-gate-rig patches the rig-scoped refinery agent and
 # loads the polecat/refinery formulas. Bound to the ascii-art rig.
-gc import add --rig ascii-art .gc/system/packs/pr-gate-rig
+gc import add --rig ascii-art packs/pr-gate-rig
 
 # Remove setup pack since pr-gate-city transitively imports it now.
 gc import remove --rig ascii-art setup
@@ -575,7 +577,7 @@ all three paths print without error.
   `mol-refinery-pr-patrol`.** The pr-gate-rig pack didn't load. Run
   `gc import list` and confirm you see `rig:ascii-art:pr-gate-rig`. If
   it's missing, re-run the `gc import add --rig ascii-art
-  .gc/system/packs/pr-gate-rig` command from step 1 and restart.
+  packs/pr-gate-rig` command from step 1 and restart.
 - **`gc restart` errors with `agent "mayor" not found in pack`** (or
   the equivalent for `refinery`). You imported one of the pr-gate
   packs at the wrong scope. `pr-gate-city` patches the city-scoped

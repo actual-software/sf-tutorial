@@ -163,7 +163,7 @@ city restart that picks up these patches:
    Both formulas should appear. If either is missing, the pr-gate-rig
    pack isn't imported. Run `gc import list` — you should see both
    `pr-gate-city` (city scope) and `rig:<rig>:pr-gate-rig` (rig scope).
-   Re-add with `gc import add --rig <rig> .gc/system/packs/pr-gate-rig`
+   Re-add with `gc import add --rig <rig> packs/pr-gate-rig`
    if missing, then restart.
 
 2. **Inform the operator how to dispatch.** For every new sling against

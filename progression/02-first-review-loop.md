@@ -137,13 +137,15 @@ cat "$ARTIFACTS_PATH/packs/review-loop-rig/formulas/mol-refinery-review-loop-pat
 You should see `pack.toml`, a `formulas/` directory with one
 `.formula.toml`, and a `prompts/` directory with the refinery template.
 
-Copy the pack into the city's pack directory:
+Copy the pack into the city's `packs/` directory:
 
 **Copy and paste**
 
 ```bash
+mkdir -p "$FACTORY_PATH/packs"
+
 cp -r "$ARTIFACTS_PATH/packs/review-loop-rig" \
-      "$FACTORY_PATH/.gc/system/packs/review-loop-rig"
+      "$FACTORY_PATH/packs/review-loop-rig"
 ```
 
 Now register the new import at rig scope and remove the now-redundant
@@ -155,7 +157,7 @@ direct `pr-gate-rig` import. Run from the city directory:
 cd "$FACTORY_PATH"
 
 # Add the new pack at rig scope.
-gc import add --rig ascii-art .gc/system/packs/review-loop-rig
+gc import add --rig ascii-art packs/review-loop-rig
 
 # Remove pr-gate-rig from the rig's direct imports.
 # review-loop-rig imports it, so its formulas (including
@@ -174,7 +176,7 @@ gc import list --rig ascii-art
 **Expected output**
 
 ```text
-review-loop-rig	.gc/system/packs/review-loop-rig		(path)
+review-loop-rig	packs/review-loop-rig		(path)
 ```
 
 **Copy and paste**
@@ -186,7 +188,7 @@ gc import list
 **Expected output**
 
 ```text
-pr-gate-city	.gc/system/packs/pr-gate-city		(path)
+pr-gate-city	packs/pr-gate-city		(path)
 ```
 
 Restart the city so the new patches and formulas take effect:
@@ -529,7 +531,7 @@ both paths print without error.
   The `review-loop-rig` pack didn't load. Run `gc import list --rig
   ascii-art` and confirm you see `review-loop-rig`. If it's missing,
   re-run `gc import add --rig ascii-art
-  .gc/system/packs/review-loop-rig` and restart.
+  packs/review-loop-rig` and restart.
 - **`gc import remove --rig ascii-art pr-gate-rig` errors with
   "still in use" or similar.** Some installations may complain because
   `review-loop-rig` imports `pr-gate-rig`. The transitive dependency is

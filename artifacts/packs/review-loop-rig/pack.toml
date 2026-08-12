@@ -18,7 +18,7 @@
 #      `mol-refinery-pr-patrol` on next start.
 #
 # Install (replaces pr-gate-rig in the rig's imports):
-#   gc import add --rig <rig-name> .gc/system/packs/review-loop-rig
+#   gc import add --rig <rig-name> packs/review-loop-rig
 #   gc import remove --rig <rig-name> pr-gate-rig
 #
 # review-loop-rig transitively imports pr-gate-rig, so `mol-polecat-pr`

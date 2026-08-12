@@ -15,7 +15,7 @@
 #      and leave the bead for the human to fix and re-route.
 #
 # Install (sits on top of architect-rig):
-#   gc import add --rig <rig-name> .gc/system/packs/bead-gate-rig
+#   gc import add --rig <rig-name> packs/bead-gate-rig
 #   gc import remove --rig <rig-name> architect-rig
 #
 # bead-gate-rig imports architect-rig, so the architect agent and

@@ -183,13 +183,15 @@ What to notice:
   Reviewers can stamp in any order; the refinery's next patrol
   reads whichever subset has finished.
 
-Copy the pack into the city's pack directory.
+Copy the pack into the city's `packs/` directory.
 
 **Copy and paste**
 
 ```bash
+mkdir -p "$FACTORY_PATH/packs"
+
 cp -r "$ARTIFACTS_PATH/packs/domain-reviewers-rig" \
-      "$FACTORY_PATH/.gc/system/packs/domain-reviewers-rig"
+      "$FACTORY_PATH/packs/domain-reviewers-rig"
 ```
 
 Register the new import at rig scope and remove the now-redundant
@@ -200,7 +202,7 @@ direct `bead-builders-rig` import.
 ```bash
 cd "$FACTORY_PATH"
 
-gc import add --rig ascii-art .gc/system/packs/domain-reviewers-rig
+gc import add --rig ascii-art packs/domain-reviewers-rig
 gc import remove --rig ascii-art bead-builders-rig
 ```
 
@@ -467,7 +469,7 @@ ls ascii/k.md
 - **`gc formula list` doesn't show the four review formulas.**
   Pack didn't load. `gc import list --rig ascii-art` should show
   `domain-reviewers-rig`. If missing, re-run
-  `gc import add --rig ascii-art .gc/system/packs/domain-reviewers-rig`
+  `gc import add --rig ascii-art packs/domain-reviewers-rig`
   and restart.
 - **Refinery still says `Formula: mol-refinery-architect-patrol`.**
   The refinery prompt patch didn't apply. Confirm

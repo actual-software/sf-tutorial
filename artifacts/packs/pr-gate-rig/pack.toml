@@ -19,7 +19,7 @@
 #      `mol-refinery-pr-patrol` instead of `mol-refinery-patrol`.
 #
 # Install:
-#   gc import add --rig <rig-name> .gc/system/packs/pr-gate-rig
+#   gc import add --rig <rig-name> packs/pr-gate-rig
 #   (lands as [rigs.imports.pr-gate-rig] for that rig in city.toml)
 #
 # Without pr-gate-city, the mayor still runs the OOTB setup prompt
