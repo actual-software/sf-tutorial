@@ -115,6 +115,8 @@ Include ~/.gascity/ssh_config
 
 **This one needs a real terminal window.** Terminal, iTerm, your editor's terminal, anything interactive. It can't run from a script, a notebook, or a chat tool, because it opens Claude Code's full-screen interface and asks you questions.
 
+The GitHub half is a browser grant against your whole account, and this flow has no token alternative — setting a token on the box beforehand doesn't change what this step asks for. If that matters to you, [the preflight page covers what the box's token command does and doesn't cover](./progression/00.0-preflight.md#signing-the-box-in-with-a-token) before you decide.
+
 **Copy and paste**
 
 ```bash

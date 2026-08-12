@@ -78,7 +78,7 @@ if command -v gh >/dev/null 2>&1; then
   if gh auth status >/dev/null 2>&1; then
     ok "gh auth: authenticated"
   else
-    fail "gh auth: not authenticated — run 'gh auth login', or for a token: 'gh auth login --with-token' (classic) or export GH_TOKEN (fine-grained), then 'gh auth setup-git'"
+    fail "gh auth: not authenticated — run 'gh auth login', or step 4 of the preflight page for the token route"
   fi
 else
   fail "gh: not found on PATH"
