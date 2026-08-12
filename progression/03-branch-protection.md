@@ -110,7 +110,7 @@ Confirm the file on GitHub actually names *your* handle — not just that a file
 
 ```bash
 gh api "repos/$GITHUB_USERNAME/ascii-art/contents/.github/CODEOWNERS" \
-  -H "Accept: application/vnd.github.raw" | grep '^\*'
+  -H "Accept: application/vnd.github.raw" | grep "^\*[[:space:]]*@$GITHUB_USERNAME$"
 ```
 
 **Expected output** — with your own handle in place of `@your-actual-handle`:
@@ -119,7 +119,7 @@ gh api "repos/$GITHUB_USERNAME/ascii-art/contents/.github/CODEOWNERS" \
 *       @your-actual-handle
 ```
 
-The owner must be your real handle and must keep its leading `@`. If the line still reads `@your-github-handle`, or reads `$GITHUB_USERNAME`, or has lost the `@`, then the substitution didn't take. Fix it, commit, and push again before moving on — GitHub will happily store a `CODEOWNERS` whose owner matches nobody, and branch protection will then block every merge with no reviewer who can approve it.
+That `grep` matches only a default-owner line that names *your* handle with its leading `@`, so **no output at all means the substitution didn't take** — the file still says `@your-github-handle`, or says `$GITHUB_USERNAME` literally, or has lost the `@`. Fix it, commit, and push again before moving on — GitHub will happily store a `CODEOWNERS` whose owner matches nobody, and branch protection will then block every merge with no reviewer who can approve it.
 
 ### 2. Inspect the protection script
 

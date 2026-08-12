@@ -341,6 +341,8 @@ fi
 cd $FACTORY_PATH
 cp -r $ARTIFACTS_PATH/packs/setup/ .gc/system/packs/setup
 chmod +x .gc/system/packs/setup/assets/scripts/worktree-setup.sh
+# Defensive strip: cities from gc releases predating agent auto-discovery can
+# carry [[agent]] tables. A no-op on current gc, which is why 00.1 no longer teaches it.
 sed "${SED_I[@]}" '/^\[\[agent\]\]$/,/^$/d' pack.toml
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   git add -f .gc/system/
