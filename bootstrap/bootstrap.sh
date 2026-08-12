@@ -339,7 +339,12 @@ else
 fi
 
 cd $FACTORY_PATH
-cp -r $ARTIFACTS_PATH/packs/setup/ .gc/system/packs/setup
+# A fresh city has no .gc/system/packs/, so create it before copying. Clearing any
+# earlier copy first keeps a re-run from landing the pack inside itself: cp -r copies
+# the source *into* the destination once the destination exists.
+mkdir -p "$FACTORY_PATH/.gc/system/packs"
+rm -rf "${FACTORY_PATH:?}/.gc/system/packs/setup"
+cp -r "$ARTIFACTS_PATH/packs/setup" "$FACTORY_PATH/.gc/system/packs/setup"
 chmod +x .gc/system/packs/setup/assets/scripts/worktree-setup.sh
 # Defensive strip: cities from gc releases predating agent auto-discovery can
 # carry [[agent]] tables. A no-op on current gc, which is why 00.1 no longer teaches it.
