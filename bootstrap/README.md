@@ -12,7 +12,7 @@ This folder contains the bootstrap scripts for the Software Factory Intensive tu
 
    Open `.env` And follow the instructions in code comments to update your settings.
 
-2. Install particular pegged versions of `bd` (1.0.3) and `dolt` (2.0.1).
+2. Install the pegged versions of `bd` and `dolt`. The pins are declared in `deps.sh`, which is the one place they live. Read them there rather than from this page, so there is only one copy to keep current.
 
 	```bash
 	chmod +x deps.sh
