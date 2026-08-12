@@ -39,7 +39,7 @@ API (pay-as-you-go) billing is separate from your subscription quota, so a subsc
    export GEMINI_API_KEY=...               # from aistudio.google.com/app/apikey
    ```
 
-Restart the coding agent (or `gc restart` for factory agents — see [Troubleshooting Gas City](gas-city.md)) so the new credentials are read at startup. Set the env var in your shell config if you want the switch to persist.
+Restart the coding agent (or `gc restart` for factory agents) so the new credentials are read at startup. Set the env var in your shell config if you want the switch to persist.
 
 ### Alternative: swap to a second account with `aisw`
 
