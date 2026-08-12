@@ -42,10 +42,36 @@ if ! command -v gc &> /dev/null; then
   exit 1
 fi
 
+# gc is checked as a MINIMUM, not an exact match. The prereqs in
+# progression/00.1-setup-foundation.md ask for "1.1.0+", and gc is not one of
+# the versions deps.sh installs, so participants arrive on whatever current
+# build they installed. An exact-match gate rejects all of them the moment gc
+# moves, which is what it did.
+GC_MIN_VERSION=1.1.0
+
+# Compare dotted versions without `sort -V`, which macOS's BSD sort does not
+# have. Succeeds when $1 is at least $2, padding missing components with 0 so
+# "1.2" and "1.2.0" compare equal.
+version_at_least() {
+  local have="$1" want="$2" i have_part want_part
+  local -a have_parts want_parts
+  IFS=. read -r -a have_parts <<< "$have"
+  IFS=. read -r -a want_parts <<< "$want"
+  for ((i = 0; i < 3; i++)); do
+    # Trim any pre-release suffix so 1.4.0-rc1 compares on its numbers, and
+    # force base 10 so a zero-padded component is not read as octal.
+    have_part="${have_parts[i]:-0}"; have_part="${have_part%%[!0-9]*}"
+    want_part="${want_parts[i]:-0}"; want_part="${want_part%%[!0-9]*}"
+    if (( 10#${have_part:-0} > 10#${want_part:-0} )); then return 0; fi
+    if (( 10#${have_part:-0} < 10#${want_part:-0} )); then return 1; fi
+  done
+  return 0
+}
+
 gc_version=$(gc version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-if [ "$gc_version" != "1.1.0" ]; then
-  echo "==> gc is not on the correct version (found: ${gc_version:-unknown})"
-  echo "==> Please install gc 1.1.0."
+if ! version_at_least "$gc_version" "$GC_MIN_VERSION"; then
+  echo "==> gc is older than this tutorial supports (found: ${gc_version:-unknown})"
+  echo "==> Please install gc ${GC_MIN_VERSION} or newer."
   exit 1
 fi
 
