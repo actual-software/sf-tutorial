@@ -24,7 +24,7 @@ You'll start with out-of-the-box examples that ship with Gas City and two refere
 
 - GitHub pull requests
 - Opinionated quality gates
-- Specialize reviewer agents
+- Specialized reviewer agents
 - An architecture-best-practices loop
 - A multi-model `code-review-loop`
 - Etc.
