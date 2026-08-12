@@ -1,8 +1,6 @@
 <h1><img src="images/software_factory_intensive_title.svg" alt="Software Factory Intensive"></h1>
 
 <p>
-  Event by <a href="https://aitinkerers.org/"><img src="images/ai_tinkerers.png" alt="AI Tinkerers" height="28" valign="middle"></a>
-  &nbsp;|&nbsp;
   Hosted by <a href="https://www.actual.ai/"><img src="images/actual_ai.png" alt="Actual AI" height="28" valign="middle"></a>
 </p>
 
