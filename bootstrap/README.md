@@ -47,7 +47,7 @@ Run this script from this folder to bootstrap your factory into the **end state*
 
 A finished run prints `==> Ready to test on <step>` and exits 0, so you can chain `./bootstrap.sh <step> && <next thing>`.
 
-The banner appears only after the script confirms your city actually came up. `gc start` returns 0 even when startup failed, so the script reads two signals rather than trusting that exit code: the `fatal=` field in the `gc start` output, and the controller line from `gc status`. A run that fails either one says what went wrong and exits 1, with no banner.
+The banner appears only after the script confirms your city actually came up. Earlier versions printed it straight after `gc start` without checking anything, so a run whose city never started still reported success. The script now reads two signals: the `fatal=` field in the `gc start` output, which names the failure, and the controller line from `gc status`, which confirms the city is live. Both are more specific than the exit code on its own, and the second also catches a city that starts but never becomes ready. A run that fails either one says what went wrong and exits 1, with no banner.
 
 The wait for the city is 60 seconds. Raise it on a slow machine:
 
