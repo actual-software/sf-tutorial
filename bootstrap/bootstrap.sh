@@ -309,7 +309,6 @@ fi
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   git init -b main
   git add .
-  git add -f .gc/system/
   git commit -m "00.1-setup-foundation complete"
 fi
 
@@ -428,7 +427,6 @@ chmod +x packs/setup/assets/scripts/worktree-setup.sh
 # carry [[agent]] tables. A no-op on current gc, which is why 00.1 no longer teaches it.
 sed "${SED_I[@]}" '/^\[\[agent\]\]$/,/^$/d' pack.toml
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
-  git add -f .gc/system/
   git add .
   git commit -m "00.2-setup-foundation packs"
 fi
