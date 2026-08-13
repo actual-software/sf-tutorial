@@ -287,10 +287,16 @@ if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   git commit -m "00.1-setup-foundation complete"
 fi
 
+# Each step below ends the run the moment its own step is the one requested.
+# That is the success path — the work is done and the city is up — so it exits
+# 0, and a participant can chain `./bootstrap.sh <step> && <next thing>`. The
+# `exit 1`s elsewhere in this script are the genuine failures: a missing
+# dependency, a bad .env value, an aborted reset. Keep that split when you add
+# a step.
 if [ "$TUTORIAL_STEP" == "00.1-setup-foundation" ]; then
   gc start
   echo "==> Ready to test on 00.1-setup-foundation"
-  exit 1
+  exit 0
 fi
 
 # Run 00.2-setup-foundation
@@ -382,7 +388,7 @@ fi
 if [ "$TUTORIAL_STEP" == "00.2-setup-foundation" ]; then
   gc start
   echo "==> Ready to test on 00.2-setup-foundation"
-exit 1
+  exit 0
 fi
 
 # Run 00.3-setup-foundation
@@ -390,7 +396,7 @@ fi
 if [ "$TUTORIAL_STEP" == "00.3-setup-foundation" ]; then
   gc start
   echo "==> Ready to test on 00.3-setup-foundation"
-exit 1
+  exit 0
 fi
 
 # Run 01-basic-flow
@@ -419,7 +425,7 @@ fi
 if [ "$TUTORIAL_STEP" == "01-basic-flow" ]; then
   gc start
   echo "==> Ready to test on 01-basic-flow"
-exit 1
+  exit 0
 fi
 
 # Run 02-first-review-loop
@@ -442,7 +448,7 @@ fi
 if [ "$TUTORIAL_STEP" == "02-first-review-loop" ]; then
   gc start
   echo "==> Ready to test on 02-first-review-loop"
-exit 1
+  exit 0
 fi
 
 # Run 03-branch-protection
@@ -469,7 +475,7 @@ OWNER=$GITHUB_USERNAME REPO=ascii-art $ARTIFACTS_PATH/github/branch-protection.s
 if [ "$TUTORIAL_STEP" == "03-branch-protection" ]; then
   gc start
   echo "==> Ready to test on 03-branch-protection"
-exit 1
+  exit 0
 fi
 
 # Run 04-adr-reviewer
@@ -492,7 +498,7 @@ fi
 if [ "$TUTORIAL_STEP" == "04-adr-reviewer" ]; then
   gc start
   echo "==> Ready to test on 04-adr-reviewer"
-exit 1
+  exit 0
 fi
 
 # Run 05.1-bead-gate-checks
@@ -515,7 +521,7 @@ fi
 if [ "$TUTORIAL_STEP" == "05.1-bead-gate-checks" ]; then
   gc start
   echo "==> Ready to test on 05.1-bead-gate-checks"
-exit 1
+  exit 0
 fi
 
 # Run 05.2-bead-gate-checks
@@ -543,5 +549,5 @@ fi
 if [ "$TUTORIAL_STEP" == "05.2-bead-gate-checks" ]; then
   gc start
   echo "==> Ready to test on 05.2-bead-gate-checks"
-exit 1
+  exit 0
 fi
