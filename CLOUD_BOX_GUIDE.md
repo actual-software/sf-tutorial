@@ -143,16 +143,15 @@ sfbox preflight --box "$SFI_BOX"
 **Expected output**
 
 ```text
-Checking 'alice-test' (ubuntu@203.0.113.10) ...
-  ssh            reachable
-  gc             installed
-  gas-city.service  inactive — no city on this box yet
-  Nothing is broken. This box supplies the environment and you build the
-  city yourself, so the service stays down until there is one to run.
-PREFLIGHT: PASS
+==> Checking 'alice-test' (ubuntu@203.0.113.10) ...
+==>   ssh            reachable
+==>   gc             installed
+==>   gas-city.service  inactive — no city on this box yet
+==>   Nothing is broken. This box supplies the environment and you build the
+==>   city yourself, so the service stays down until there is one to run.
 ```
 
-`PREFLIGHT: PASS` is the whole test. `preflight` walks SSH, then `gc`, then the service, stopping at the first thing that fails, so when something is wrong it names the layer to look at instead of leaving you guessing.
+No `WARNING:` or `ERROR:` line is the whole test. `sfbox preflight` reports a healthy box by finding nothing to say about it rather than by printing a pass banner, so there is no final line to look for — the `PREFLIGHT: PASS` you meet later in the tutorial comes from `preflight.sh`, which checks your own laptop and is a different tool. `sfbox preflight` walks SSH, then `gc`, then the service, stopping at the first thing that fails, so when something is wrong it names the layer to look at instead of leaving you guessing.
 
 The service line is the one to read rather than skim. `inactive — no city on this box yet` is the success case here: there is no factory for the service to supervise until you build one. If it says `waiting on first-run login` instead, step 5 did not get to the end — run it again. If it says `active`, you have a box that was provisioned with a factory already on it, which is fine and means the tutorial's setup lesson will have less to do.
 
