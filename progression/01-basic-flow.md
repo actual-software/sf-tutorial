@@ -182,8 +182,6 @@ $FACTORY_PATH/packs/pr-gate-city/pack.toml
 $FACTORY_PATH/packs/pr-gate-rig/pack.toml
 ```
 
-One line per pack is the whole check. A third line ending in `pr-gate-city/pr-gate-city/pack.toml` is a nested copy left by an earlier run, and the fix is to delete that pack's directory and repeat the copy above. The `gc import list` check below cannot see it, because it reports the path recorded in `pack.toml` rather than what sits inside the directory.
-
 Now register both packs as imports. `gc import add` is the supported
 way to do this — it validates the source, derives the binding name,
 writes the right TOML block, and updates `packs.lock`. Run from the

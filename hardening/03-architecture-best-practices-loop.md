@@ -197,8 +197,6 @@ find "$FACTORY_PATH/packs/principles-loop-rig" -name pack.toml
 $FACTORY_PATH/packs/principles-loop-rig/pack.toml
 ```
 
-One line is the whole check. A second line ending in `principles-loop-rig/principles-loop-rig/pack.toml` is a nested copy left by an earlier run, and the fix is to delete `$FACTORY_PATH/packs/principles-loop-rig` and repeat the copy above. It is worth catching here rather than later: a nested copy leaves `checks/aggregate-score.sh` one directory below where the steps further down this page look for it, and the `gc import list` check below cannot see it, because it reports the path recorded in `pack.toml` rather than what sits inside the directory.
-
 Register the new import at rig scope:
 
 **Copy and paste**

@@ -267,8 +267,6 @@ find "$FACTORY_PATH/packs/architect-rig" -name pack.toml
 $FACTORY_PATH/packs/architect-rig/pack.toml
 ```
 
-One line is the whole check. A second line ending in `architect-rig/architect-rig/pack.toml` is a nested copy left by an earlier run, and the fix is to delete `$FACTORY_PATH/packs/architect-rig` and repeat the copy above. The `gc import list` check below cannot see it, because it reports the path recorded in `pack.toml` rather than what sits inside the directory.
-
 Now register the new import at rig scope and remove the now-superseded
 `review-loop-rig` import. Run from the city directory:
 

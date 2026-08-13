@@ -211,8 +211,6 @@ find "$FACTORY_PATH/packs/domain-reviewers-rig" -name pack.toml
 $FACTORY_PATH/packs/domain-reviewers-rig/pack.toml
 ```
 
-One line is the whole check. A second line ending in `domain-reviewers-rig/domain-reviewers-rig/pack.toml` is a nested copy left by an earlier run, and the fix is to delete `$FACTORY_PATH/packs/domain-reviewers-rig` and repeat the copy above. The `gc import list` check below cannot see it, because it reports the path recorded in `pack.toml` rather than what sits inside the directory.
-
 Register the new import at rig scope and remove the now-redundant
 direct `bead-builders-rig` import.
 
