@@ -299,6 +299,33 @@ box_first_run_state() { # box
   ' >/dev/null 2>&1
 }
 
+# Does this box have a city for the service to supervise, and was it ever meant
+# to?
+#
+# A box provisioned with provision_city = false ships the environment and stops
+# there: the participant builds the city themselves, and the service is meant to
+# stay down until they do. Without this distinction an inactive service on such
+# a box reads as the "waiting on first-run login" case below, which tells them
+# to re-run a login they have already finished.
+#
+# PROVISION_CITY is absent from a box whose /etc/gas-city.env predates the
+# variable, and defaults to true here so that box keeps its old diagnosis.
+#
+#   0  a city exists
+#   1  no city, and this box is configured not to build one
+#   2  no city on a box that was meant to have one, or cannot tell
+box_city_state() { # box
+  local box="$1"
+  box_ssh "$box" '
+    [ -r /etc/gas-city.env ] || exit 2
+    . /etc/gas-city.env 2>/dev/null || exit 2
+    [ -n "${CITY_DIR:-}" ] || exit 2
+    [ -f "$CITY_DIR/city.toml" ] && exit 0
+    [ "${PROVISION_CITY:-true}" = "true" ] && exit 2
+    exit 1
+  ' >/dev/null 2>&1
+}
+
 # Run a gc command inside the box's city directory.
 box_gc() { # box city_path gc-args...
   local box="$1" city="$2"; shift 2
@@ -585,20 +612,34 @@ cmd_preflight() {
     if [ "$active" = "active" ]; then
       say "  $SFBOX_SERVICE  active"
     else
-      # Three states, not two. The unit is installed and enabled at provision
+      # Four states, not two. The unit is installed and enabled at provision
       # time but deliberately left stopped until someone runs the one-time
       # interactive login, so "inactive" on a new box is the expected state
-      # rather than a fault. Only an inactive service on a box that has already
-      # been logged in is the failure this warning was written for.
-      local first_run
-      box_first_run_state "$box"; first_run=$?
-      if [ "$first_run" = 1 ]; then
-        say "  $SFBOX_SERVICE  ${active:-unknown} — waiting on first-run login"
-        say "  Nothing is broken. The factory starts once you have run, on the box:"
-        say "      sudo gas-city-login"
-        say "  Get a shell there with: sfbox start-session --box $box"
+      # rather than a fault. Only an inactive service on a box that has a city
+      # and has already been logged in is the failure this warning was written
+      # for.
+      #
+      # The city check comes first because it outranks the login one. On a box
+      # that ships without a city there is nothing for the supervisor to run,
+      # the first-run marker is never written, and reporting that as "waiting on
+      # first-run login" would send a participant back to a login they have
+      # already completed.
+      local city_state first_run
+      box_city_state "$box"; city_state=$?
+      if [ "$city_state" = 1 ]; then
+        say "  $SFBOX_SERVICE  ${active:-unknown} — no city on this box yet"
+        say "  Nothing is broken. This box supplies the environment and you build the"
+        say "  city yourself, so the service stays down until there is one to run."
       else
-        warn "  $SFBOX_SERVICE  ${active:-unknown}"
+        box_first_run_state "$box"; first_run=$?
+        if [ "$first_run" = 1 ]; then
+          say "  $SFBOX_SERVICE  ${active:-unknown} — waiting on first-run login"
+          say "  Nothing is broken. The factory starts once you have run, on the box:"
+          say "      sudo gas-city-login"
+          say "  Get a shell there with: sfbox start-session --box $box"
+        else
+          warn "  $SFBOX_SERVICE  ${active:-unknown}"
+        fi
       fi
     fi
   fi

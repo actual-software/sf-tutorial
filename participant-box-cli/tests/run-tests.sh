@@ -797,6 +797,7 @@ state_set_current sfi-test-1
 SSH_LOG="$SFBOX_TEST_ROOT/ssh.log"
 BOX_ACTIVE="active"
 BOX_FIRST_RUN=0          # 0 logged in, 1 not yet, 2 cannot tell
+BOX_CITY=0               # 0 city present, 1 configured without one, 2 cannot tell
 
 box_ssh() { # box command...
   local box="$1"; shift
@@ -808,6 +809,9 @@ box_ssh() { # box command...
     'command -v gc')      return 127 ;;
     *'bash -lc'*gc*)      printf '/home/ubuntu/.local/bin/gc\n' ;;
     *systemctl*is-active*) printf '%s\n' "$BOX_ACTIVE" ;;
+    # Both probes source /etc/gas-city.env, so the city one has to be matched
+    # on something only it mentions, and it has to come first.
+    *CITY_DIR*)           return "$BOX_CITY" ;;
     *gas-city.env*)       return "$BOX_FIRST_RUN" ;;
     *) : ;;
   esac
@@ -815,7 +819,7 @@ box_ssh() { # box command...
 }
 
 echo "preflight: gc is probed through a login shell"
-: >"$SSH_LOG"; BOX_ACTIVE="active"; BOX_FIRST_RUN=0
+: >"$SSH_LOG"; BOX_ACTIVE="active"; BOX_FIRST_RUN=0; BOX_CITY=0
 rc_is 0 "a healthy box passes" cmd_preflight --box sfi-test-1
 out="$(cmd_preflight --box sfi-test-1 2>&1)"
 contains "$out" "gc             installed"  "reports gc as present"
@@ -823,7 +827,7 @@ contains "$(cat "$SSH_LOG")" "bash -lc"     "asks a login shell, not the bare on
 contains "$out" "gas-city.service  active"  "reports the running service"
 
 echo "preflight: a box that has never been logged in is not a fault"
-: >"$SSH_LOG"; BOX_ACTIVE="inactive"; BOX_FIRST_RUN=1
+: >"$SSH_LOG"; BOX_ACTIVE="inactive"; BOX_FIRST_RUN=1; BOX_CITY=0
 rc_is 0 "a not-yet-logged-in box still passes" cmd_preflight --box sfi-test-1
 out="$(cmd_preflight --box sfi-test-1 2>&1)"
 contains "$out" "waiting on first-run login" "names the state instead of crying wolf"
@@ -834,8 +838,27 @@ case "$out" in
   *)         ok  "raises no warning on an expected state" ;;
 esac
 
+echo "preflight: a box that ships without a city is not waiting on a login"
+# A participant box provisions the environment and stops, leaving the city for
+# the participant to build. The first-run marker is never written there, so this
+# case arrives looking exactly like the one above — and answering it with "run
+# gas-city-login" would send someone back through a login they have finished.
+: >"$SSH_LOG"; BOX_ACTIVE="inactive"; BOX_FIRST_RUN=1; BOX_CITY=1
+rc_is 0 "a city-less box still passes" cmd_preflight --box sfi-test-1
+out="$(cmd_preflight --box sfi-test-1 2>&1)"
+contains "$out" "no city on this box yet"   "names the state it is actually in"
+contains "$out" "gc             installed"  "still reports gc as present"
+case "$out" in
+  *gas-city-login*) bad "does not send them back through the login" "named the login" ;;
+  *)                ok  "does not send them back through the login" ;;
+esac
+case "$out" in
+  *WARNING*) bad "raises no warning on an intended state" "warned anyway" ;;
+  *)         ok  "raises no warning on an intended state" ;;
+esac
+
 echo "preflight: a service that died after login still warns"
-: >"$SSH_LOG"; BOX_ACTIVE="failed"; BOX_FIRST_RUN=0
+: >"$SSH_LOG"; BOX_ACTIVE="failed"; BOX_FIRST_RUN=0; BOX_CITY=0
 out="$(cmd_preflight --box sfi-test-1 2>&1)"
 contains "$out" "WARNING"                    "warns about the genuine failure"
 contains "$out" "gas-city.service  failed"   "reports the state systemd gave"
@@ -845,7 +868,7 @@ case "$out" in
 esac
 
 echo "preflight: an unreadable /etc/gas-city.env falls back to warning"
-: >"$SSH_LOG"; BOX_ACTIVE="inactive"; BOX_FIRST_RUN=2
+: >"$SSH_LOG"; BOX_ACTIVE="inactive"; BOX_FIRST_RUN=2; BOX_CITY=0
 out="$(cmd_preflight --box sfi-test-1 2>&1)"
 contains "$out" "WARNING"                    "warns when it cannot tell the two apart"
 

@@ -128,24 +128,35 @@ You'll be walked through two sign-ins:
 1. **GitHub**, either a one-time code you approve in your browser or a token you paste. It asks which you want, and Enter takes the code.
 2. **Claude**, inside Claude Code. Pick a theme if asked, run `/login`, finish the browser sign-in, accept the trust prompt for the directory, then `/exit`.
 
-Your box's factory doesn't start until this finishes. That's deliberate. Nothing else can answer a browser sign-in and a trust prompt on your behalf, so the box waits for you to do it rather than coming up half-configured and failing later.
+Between and after the two sign-ins the box builds its toolchain and clones what it needs. Nothing else can answer a browser sign-in and a trust prompt on your behalf, which is why this one step has a person in it.
+
+**Your box has no factory on it when this finishes, and that is deliberate.** It arrives with the environment and nothing more: the `gc`, `bd` and `dolt` toolchain, your GitHub credential, and the Claude, Codex and Gemini CLIs. Building a factory on top of that is what the tutorial teaches, so the box leaves it to you rather than handing you one somebody else assembled. The login says so in as many words as it finishes.
 
 ## Step 6: check it worked
 
 **Copy and paste**
 
 ```bash
-sfbox get-box --box "$SFI_BOX"
+sfbox preflight --box "$SFI_BOX"
 ```
 
 **Expected output**
 
 ```text
-=== service ===
-active
+Checking 'alice-test' (ubuntu@203.0.113.10) ...
+  ssh            reachable
+  gc             installed
+  gas-city.service  inactive — no city on this box yet
+  Nothing is broken. This box supplies the environment and you build the
+  city yourself, so the service stays down until there is one to run.
+PREFLIGHT: PASS
 ```
 
-`active` is the whole test. `get-box` prints your box details, your sessions and a tail of the log around that section, so scroll to `=== service ===` and read the line under it. Your factory is running, and you can start the tutorial from [`progression/00.0-preflight.md`](./progression/00.0-preflight.md).
+`PREFLIGHT: PASS` is the whole test. `preflight` walks SSH, then `gc`, then the service, stopping at the first thing that fails, so when something is wrong it names the layer to look at instead of leaving you guessing.
+
+The service line is the one to read rather than skim. `inactive — no city on this box yet` is the success case here: there is no factory for the service to supervise until you build one. If it says `waiting on first-run login` instead, step 5 did not get to the end — run it again. If it says `active`, you have a box that was provisioned with a factory already on it, which is fine and means the tutorial's setup lesson will have less to do.
+
+Start the tutorial from [`progression/00.0-preflight.md`](./progression/00.0-preflight.md).
 
 ## When something looks wrong
 
@@ -155,6 +166,7 @@ active
 - **`Permission denied (publickey)`.** Your box is right and reachable, and it's refusing the key you're offering. That almost always means you're holding a `.pem` for a different box. Re-run `sfbox save-credential` with the key you believe belongs to `$SFI_BOX`; it makes a test connection before saving and will say plainly whether that key opens the box. To settle it against the instructor's copy, run `ssh-keygen -lf "$SFI_KEY"` and send them the `SHA256:` line, which they can compare against the box's key pair. Don't ask for the box to be rebuilt over this — the box is fine, and rebuilding would destroy a working one.
 - **`gas-city-login needs an interactive terminal`.** You're running it somewhere without a real terminal. Its suggestion to use `aws ssm start-session` doesn't apply to you, since you have no AWS account. Open a terminal window and run it there.
 - **The service says it's waiting on first-run login.** Expected if you haven't finished step 5. `sfbox preflight` says so in as many words and names `sudo gas-city-login`.
+- **The service says there's no city on the box yet.** Also expected, and not something to fix. Your box ships the environment and leaves the factory to you; the service starts once you have built one for it to supervise.
 - **Anything else.** Run `sfbox preflight --box "$SFI_BOX"`. It checks SSH, then `gc`, then the service, stopping at the first thing that fails, so it tells you which layer to look at instead of leaving you guessing.
 
 ## The commands you will use
