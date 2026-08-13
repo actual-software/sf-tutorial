@@ -43,6 +43,18 @@ Runs the work for 00.1 *and* 00.2, then stops. Your factory now looks like it wo
 
 Run this script from this folder to bootstrap your factory into the **end state** of a given lesson. Pass the tutorial step as the first argument; the script runs that step's setup and every earlier step's setup, cumulatively.
 
+### How a run reports success
+
+A finished run prints `==> Ready to test on <step>` and exits 0, so you can chain `./bootstrap.sh <step> && <next thing>`.
+
+The banner appears only after the script confirms your city actually came up. `gc start` returns 0 even when startup failed, so the script reads two signals rather than trusting that exit code: the `fatal=` field in the `gc start` output, and the controller line from `gc status`. A run that fails either one says what went wrong and exits 1, with no banner.
+
+The wait for the city is 60 seconds. Raise it on a slow machine:
+
+```bash
+CITY_READY_TIMEOUT=180 ./bootstrap.sh 01-basic-flow
+```
+
 ### What it does to your environment
 
 This script is destructive and meant to be re-runnable. **If you made any changes/customizations you want to keep, Make sure you pack them up somewhere Before running this.** Read this before your first run.
