@@ -26,10 +26,11 @@ pinned() {
 }
 BD_PINNED="$(pinned BD_VERSION)"
 DOLT_PINNED="$(pinned DOLT_VERSION)"
+GC_PINNED="$(pinned GC_VERSION)"
 
-if [ -z "$BD_PINNED" ] || [ -z "$DOLT_PINNED" ]; then
+if [ -z "$BD_PINNED" ] || [ -z "$DOLT_PINNED" ] || [ -z "$GC_PINNED" ]; then
   echo "==> Could not read the pinned versions from ${HERE}/deps.sh"
-  echo "==> Expected BD_VERSION and DOLT_VERSION to be declared there."
+  echo "==> Expected BD_VERSION, DOLT_VERSION and GC_VERSION to be declared there."
   exit 1
 fi
 
@@ -56,16 +57,16 @@ fi
 
 if ! command -v gc &> /dev/null; then
   echo "==> gc could not be found"
-  echo "==> Please install gc."
+  echo "==> Please run ./deps.sh, which builds the pinned gc."
   exit 1
 fi
 
-# gc is checked as a MINIMUM, not an exact match. The prereqs in
-# progression/00.1-setup-foundation.md ask for "1.1.0+", and gc is not one of
-# the versions deps.sh installs, so participants arrive on whatever current
-# build they installed. An exact-match gate rejects all of them the moment gc
-# moves, which is what it did.
-GC_MIN_VERSION=1.1.0
+# gc is checked as a MINIMUM, not an exact match. deps.sh now builds gc at its
+# pinned commit, so anyone who ran it arrives exactly on the pin — but a
+# participant who installed a newer gc themselves should still get through. An
+# exact-match gate rejects every one of them the moment gc moves, which is what
+# it did. The floor tracks the pin in deps.sh, so raising it stays one edit.
+GC_MIN_VERSION="$GC_PINNED"
 
 # Compare dotted versions without `sort -V`, which macOS's BSD sort does not
 # have. Succeeds when $1 is at least $2, padding missing components with 0 so
@@ -89,7 +90,7 @@ version_at_least() {
 gc_version=$(gc version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 if ! version_at_least "$gc_version" "$GC_MIN_VERSION"; then
   echo "==> gc is older than this tutorial supports (found: ${gc_version:-unknown})"
-  echo "==> Please install gc ${GC_MIN_VERSION} or newer."
+  echo "==> Please run ./deps.sh, which builds gc ${GC_MIN_VERSION}."
   exit 1
 fi
 
@@ -227,6 +228,20 @@ if ! [[ "$FACTORY_VERSION_CONTROL" =~ ^(true|false)$ ]]; then
   exit 1
 fi
 
+# Dolt refuses to commit without an identity, so on a fresh machine the first
+# `gc start` fails outright with "set the Dolt identity, then run 'gc start'".
+# Nothing else in the tutorial sets it, so derive it from GITHUB_USERNAME
+# (validated just above) rather than asking for two more .env values. Each
+# field is filled only when empty, so an existing Dolt identity is left alone.
+if [ -z "$(dolt config --get user.name 2>/dev/null)" ]; then
+  echo "==> Setting the Dolt user.name to $GITHUB_USERNAME"
+  dolt config --global --add user.name "$GITHUB_USERNAME"
+fi
+if [ -z "$(dolt config --get user.email 2>/dev/null)" ]; then
+  echo "==> Setting the Dolt user.email to $GITHUB_USERNAME@users.noreply.github.com"
+  dolt config --global --add user.email "$GITHUB_USERNAME@users.noreply.github.com"
+fi
+
 # Hint printed on script exit. Defined after env validation so it doesn't
 # fire for runs that bailed before beads/dolt setup was relevant.
 print_beads_dolt_hint() {
@@ -269,8 +284,19 @@ rm -rf ascii-art
 
 # Run 00.1-setup-foundation
 
-gc init factory1 --provider $MODEL_PROVIDER
-cd factory1
+# Check `gc init`, because a failure here cascades. This script has no `set -e`,
+# so an unchecked failure let the `cd` below fail too and everything after it
+# ran in the parent directory: FACTORY_PATH recorded the wrong path, and the
+# git init/add/commit block committed sf-tutorial into a stray repo. Stopping
+# at the first failure keeps the damage to nothing.
+if ! gc init factory1 --provider $MODEL_PROVIDER; then
+  echo "==> 'gc init factory1 --provider $MODEL_PROVIDER' failed." >&2
+  echo "==> Nothing was created. Fix the error above, then re-run this script." >&2
+  exit 1
+fi
+# Belt and braces: guard the cd as well, so a `gc init` that reports success
+# without leaving a factory1 directory behind still stops here.
+cd factory1 || exit 1
 
 export FACTORY_PATH="$(pwd)"
 
@@ -287,16 +313,66 @@ if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   git commit -m "00.1-setup-foundation complete"
 fi
 
-# Each step below ends the run the moment its own step is the one requested.
-# That is the success path — the work is done and the city is up — so it exits
-# 0, and a participant can chain `./bootstrap.sh <step> && <next thing>`. The
-# `exit 1`s elsewhere in this script are the genuine failures: a missing
-# dependency, a bad .env value, an aborted reset. Keep that split when you add
-# a step.
-if [ "$TUTORIAL_STEP" == "00.1-setup-foundation" ]; then
-  gc start
-  echo "==> Ready to test on 00.1-setup-foundation"
+# Each step below ends the run the moment its own step is the one requested, by
+# calling finish_step. That is the success path — the work is done and the city
+# is up — so it exits 0, and a participant can chain
+# `./bootstrap.sh <step> && <next thing>`. The `exit 1`s elsewhere in this
+# script are the genuine failures: a missing dependency, a bad .env value, an
+# aborted reset. Keep that split when you add a step, and end the new step with
+# finish_step rather than with a banner of its own.
+
+# How long to wait for the city to come up after `gc start`, in seconds. Raise
+# it on a slow box: CITY_READY_TIMEOUT=180 ./bootstrap.sh <step>
+CITY_READY_TIMEOUT="${CITY_READY_TIMEOUT:-60}"
+
+# True once the supervisor is genuinely running this city; `gc status` prints
+# the controller line only then. Pass the city path explicitly so the answer
+# does not depend on which directory the calling step left us in.
+city_is_up() {
+  gc status "$FACTORY_PATH" 2>/dev/null | grep -q 'Controller: supervisor-managed (PID'
+}
+
+# Start the city, confirm it came up, then announce the finished step. This
+# exits either way, so it is the last thing a step block runs.
+#
+# The confirmation is the point of the function. `gc start` exits 0 even when
+# startup failed, so a failed run used to print its "Ready to test" banner and
+# return 0 anyway. That was reproduced twice on a fresh box with two different
+# root causes, missing provider auth and an unset Dolt identity, which is why
+# the check is on the city rather than on any one cause. Two signals settle it:
+# the `gc start` output carries a `fatal=` field, empty on success and
+# `fatal=startup-failed` on failure, and `gc status` reports the supervisor
+# once the city is live. Read the first for a fast, specific error; poll the
+# second to be sure.
+finish_step() {
+  local step="$1" start_output deadline
+
+  start_output="$(gc start 2>&1)"
+  printf '%s\n' "$start_output"
+
+  if printf '%s' "$start_output" | grep -q 'fatal=[^[:space:]]'; then
+    echo "==> 'gc start' reported a fatal error, so the city is not running." >&2
+    echo "==> '$step' is NOT ready. Fix the error above, then re-run this script." >&2
+    exit 1
+  fi
+
+  deadline=$((SECONDS + CITY_READY_TIMEOUT))
+  while ! city_is_up; do
+    if [ "$SECONDS" -ge "$deadline" ]; then
+      echo "==> The city did not come up within ${CITY_READY_TIMEOUT}s of 'gc start'." >&2
+      echo "==> '$step' is NOT ready. Look at what the supervisor is doing with:" >&2
+      echo "==>   gc status $FACTORY_PATH" >&2
+      exit 1
+    fi
+    sleep 2
+  done
+
+  echo "==> Ready to test on $step"
   exit 0
+}
+
+if [ "$TUTORIAL_STEP" == "00.1-setup-foundation" ]; then
+  finish_step "00.1-setup-foundation"
 fi
 
 # Run 00.2-setup-foundation
@@ -386,17 +462,13 @@ if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
 fi
 
 if [ "$TUTORIAL_STEP" == "00.2-setup-foundation" ]; then
-  gc start
-  echo "==> Ready to test on 00.2-setup-foundation"
-  exit 0
+  finish_step "00.2-setup-foundation"
 fi
 
 # Run 00.3-setup-foundation
 
 if [ "$TUTORIAL_STEP" == "00.3-setup-foundation" ]; then
-  gc start
-  echo "==> Ready to test on 00.3-setup-foundation"
-  exit 0
+  finish_step "00.3-setup-foundation"
 fi
 
 # Run 01-basic-flow
@@ -423,9 +495,7 @@ if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
 fi
 
 if [ "$TUTORIAL_STEP" == "01-basic-flow" ]; then
-  gc start
-  echo "==> Ready to test on 01-basic-flow"
-  exit 0
+  finish_step "01-basic-flow"
 fi
 
 # Run 02-first-review-loop
@@ -446,9 +516,7 @@ if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
 fi
 
 if [ "$TUTORIAL_STEP" == "02-first-review-loop" ]; then
-  gc start
-  echo "==> Ready to test on 02-first-review-loop"
-  exit 0
+  finish_step "02-first-review-loop"
 fi
 
 # Run 03-branch-protection
@@ -473,9 +541,7 @@ fi
 OWNER=$GITHUB_USERNAME REPO=ascii-art $ARTIFACTS_PATH/github/branch-protection.sh
 
 if [ "$TUTORIAL_STEP" == "03-branch-protection" ]; then
-  gc start
-  echo "==> Ready to test on 03-branch-protection"
-  exit 0
+  finish_step "03-branch-protection"
 fi
 
 # Run 04-adr-reviewer
@@ -496,9 +562,7 @@ if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
 fi
 
 if [ "$TUTORIAL_STEP" == "04-adr-reviewer" ]; then
-  gc start
-  echo "==> Ready to test on 04-adr-reviewer"
-  exit 0
+  finish_step "04-adr-reviewer"
 fi
 
 # Run 05.1-bead-gate-checks
@@ -519,9 +583,7 @@ if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
 fi
 
 if [ "$TUTORIAL_STEP" == "05.1-bead-gate-checks" ]; then
-  gc start
-  echo "==> Ready to test on 05.1-bead-gate-checks"
-  exit 0
+  finish_step "05.1-bead-gate-checks"
 fi
 
 # Run 05.2-bead-gate-checks
@@ -547,7 +609,5 @@ if [ ! -f .claude/skills/grill-me/SKILL.md ]; then
 fi
 
 if [ "$TUTORIAL_STEP" == "05.2-bead-gate-checks" ]; then
-  gc start
-  echo "==> Ready to test on 05.2-bead-gate-checks"
-  exit 0
+  finish_step "05.2-bead-gate-checks"
 fi
