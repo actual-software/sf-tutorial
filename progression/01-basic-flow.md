@@ -157,12 +157,32 @@ Copy both packs into the city's `packs/` directory:
 ```bash
 mkdir -p "$FACTORY_PATH/packs"
 
+# Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
+rm -rf "$FACTORY_PATH/packs/pr-gate-city" "$FACTORY_PATH/packs/pr-gate-rig"
+
 cp -r "$ARTIFACTS_PATH/packs/pr-gate-city" \
       "$FACTORY_PATH/packs/pr-gate-city"
 
 cp -r "$ARTIFACTS_PATH/packs/pr-gate-rig" \
       "$FACTORY_PATH/packs/pr-gate-rig"
 ```
+
+Confirm both packs landed flat, with a single `pack.toml` at the top level of each:
+
+**Copy and paste**
+
+```bash
+find "$FACTORY_PATH/packs/pr-gate-city" "$FACTORY_PATH/packs/pr-gate-rig" -name pack.toml
+```
+
+**Expected output**
+
+```text
+$FACTORY_PATH/packs/pr-gate-city/pack.toml
+$FACTORY_PATH/packs/pr-gate-rig/pack.toml
+```
+
+One line per pack is the whole check. A third line ending in `pr-gate-city/pr-gate-city/pack.toml` is a nested copy left by an earlier run, and the fix is to delete that pack's directory and repeat the copy above. The `gc import list` check below cannot see it, because it reports the path recorded in `pack.toml` rather than what sits inside the directory.
 
 Now register both packs as imports. `gc import add` is the supported
 way to do this — it validates the source, derives the binding name,

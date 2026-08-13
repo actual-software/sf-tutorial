@@ -176,9 +176,28 @@ to here is the path those steps expect:
 ```bash
 mkdir -p "$FACTORY_PATH/packs"
 
+# Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
+rm -rf "$FACTORY_PATH/packs/principles-loop-rig"
+
 cp -r "$ARTIFACTS_PATH/packs/principles-loop-rig" \
       "$FACTORY_PATH/packs/principles-loop-rig"
 ```
+
+Confirm the pack landed flat, with a single `pack.toml` at its top level:
+
+**Copy and paste**
+
+```bash
+find "$FACTORY_PATH/packs/principles-loop-rig" -name pack.toml
+```
+
+**Expected output**
+
+```text
+$FACTORY_PATH/packs/principles-loop-rig/pack.toml
+```
+
+One line is the whole check. A second line ending in `principles-loop-rig/principles-loop-rig/pack.toml` is a nested copy left by an earlier run, and the fix is to delete `$FACTORY_PATH/packs/principles-loop-rig` and repeat the copy above. It is worth catching here rather than later: a nested copy leaves `checks/aggregate-score.sh` one directory below where the steps further down this page look for it, and the `gc import list` check below cannot see it, because it reports the path recorded in `pack.toml` rather than what sits inside the directory.
 
 Register the new import at rig scope:
 

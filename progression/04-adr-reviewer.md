@@ -246,9 +246,28 @@ Copy the pack into the city's `packs/` directory:
 ```bash
 mkdir -p "$FACTORY_PATH/packs"
 
+# Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
+rm -rf "$FACTORY_PATH/packs/architect-rig"
+
 cp -r "$ARTIFACTS_PATH/packs/architect-rig" \
       "$FACTORY_PATH/packs/architect-rig"
 ```
+
+Confirm the pack landed flat, with a single `pack.toml` at its top level:
+
+**Copy and paste**
+
+```bash
+find "$FACTORY_PATH/packs/architect-rig" -name pack.toml
+```
+
+**Expected output**
+
+```text
+$FACTORY_PATH/packs/architect-rig/pack.toml
+```
+
+One line is the whole check. A second line ending in `architect-rig/architect-rig/pack.toml` is a nested copy left by an earlier run, and the fix is to delete `$FACTORY_PATH/packs/architect-rig` and repeat the copy above. The `gc import list` check below cannot see it, because it reports the path recorded in `pack.toml` rather than what sits inside the directory.
 
 Now register the new import at rig scope and remove the now-superseded
 `review-loop-rig` import. Run from the city directory:
