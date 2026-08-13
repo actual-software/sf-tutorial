@@ -26,10 +26,11 @@ pinned() {
 }
 BD_PINNED="$(pinned BD_VERSION)"
 DOLT_PINNED="$(pinned DOLT_VERSION)"
+GC_PINNED="$(pinned GC_VERSION)"
 
-if [ -z "$BD_PINNED" ] || [ -z "$DOLT_PINNED" ]; then
+if [ -z "$BD_PINNED" ] || [ -z "$DOLT_PINNED" ] || [ -z "$GC_PINNED" ]; then
   echo "==> Could not read the pinned versions from ${HERE}/deps.sh"
-  echo "==> Expected BD_VERSION and DOLT_VERSION to be declared there."
+  echo "==> Expected BD_VERSION, DOLT_VERSION and GC_VERSION to be declared there."
   exit 1
 fi
 
@@ -56,16 +57,16 @@ fi
 
 if ! command -v gc &> /dev/null; then
   echo "==> gc could not be found"
-  echo "==> Please install gc."
+  echo "==> Please run ./deps.sh, which builds the pinned gc."
   exit 1
 fi
 
-# gc is checked as a MINIMUM, not an exact match. The prereqs in
-# progression/00.1-setup-foundation.md ask for "1.1.0+", and gc is not one of
-# the versions deps.sh installs, so participants arrive on whatever current
-# build they installed. An exact-match gate rejects all of them the moment gc
-# moves, which is what it did.
-GC_MIN_VERSION=1.1.0
+# gc is checked as a MINIMUM, not an exact match. deps.sh now builds gc at its
+# pinned commit, so anyone who ran it arrives exactly on the pin — but a
+# participant who installed a newer gc themselves should still get through. An
+# exact-match gate rejects every one of them the moment gc moves, which is what
+# it did. The floor tracks the pin in deps.sh, so raising it stays one edit.
+GC_MIN_VERSION="$GC_PINNED"
 
 # Compare dotted versions without `sort -V`, which macOS's BSD sort does not
 # have. Succeeds when $1 is at least $2, padding missing components with 0 so
@@ -89,7 +90,7 @@ version_at_least() {
 gc_version=$(gc version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 if ! version_at_least "$gc_version" "$GC_MIN_VERSION"; then
   echo "==> gc is older than this tutorial supports (found: ${gc_version:-unknown})"
-  echo "==> Please install gc ${GC_MIN_VERSION} or newer."
+  echo "==> Please run ./deps.sh, which builds gc ${GC_MIN_VERSION}."
   exit 1
 fi
 
@@ -225,6 +226,20 @@ if ! [[ "$FACTORY_VERSION_CONTROL" =~ ^(true|false)$ ]]; then
   echo "==> FACTORY_VERSION_CONTROL environment variable is not valid"
   echo "==> Please set the FACTORY_VERSION_CONTROL environment variable to a valid value (true, false)."
   exit 1
+fi
+
+# Dolt refuses to commit without an identity, so on a fresh machine the first
+# `gc start` fails outright with "set the Dolt identity, then run 'gc start'".
+# Nothing else in the tutorial sets it, so derive it from GITHUB_USERNAME
+# (validated just above) rather than asking for two more .env values. Each
+# field is filled only when empty, so an existing Dolt identity is left alone.
+if [ -z "$(dolt config --get user.name 2>/dev/null)" ]; then
+  echo "==> Setting the Dolt user.name to $GITHUB_USERNAME"
+  dolt config --global --add user.name "$GITHUB_USERNAME"
+fi
+if [ -z "$(dolt config --get user.email 2>/dev/null)" ]; then
+  echo "==> Setting the Dolt user.email to $GITHUB_USERNAME@users.noreply.github.com"
+  dolt config --global --add user.email "$GITHUB_USERNAME@users.noreply.github.com"
 fi
 
 # Hint printed on script exit. Defined after env validation so it doesn't
