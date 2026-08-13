@@ -91,9 +91,28 @@ Copy the pack into the city's `packs/` directory.
 ```bash
 mkdir -p "$FACTORY_PATH/packs"
 
+# Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
+rm -rf "$FACTORY_PATH/packs/bead-builders-rig"
+
 cp -r "$ARTIFACTS_PATH/packs/bead-builders-rig" \
       "$FACTORY_PATH/packs/bead-builders-rig"
 ```
+
+Confirm the pack landed flat, with a single `pack.toml` at its top level:
+
+**Copy and paste**
+
+```bash
+find "$FACTORY_PATH/packs/bead-builders-rig" -name pack.toml
+```
+
+**Expected output**
+
+```text
+$FACTORY_PATH/packs/bead-builders-rig/pack.toml
+```
+
+One line is the whole check. A second line ending in `bead-builders-rig/bead-builders-rig/pack.toml` is a nested copy left by an earlier run, and the fix is to delete `$FACTORY_PATH/packs/bead-builders-rig` and repeat the copy above. The `gc import list` check below cannot see it, because it reports the path recorded in `pack.toml` rather than what sits inside the directory.
 
 Register the new import at rig scope and remove the now-redundant direct `bead-gate-rig` import. Run from the city directory.
 
