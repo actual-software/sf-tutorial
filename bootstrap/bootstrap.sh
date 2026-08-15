@@ -331,6 +331,31 @@ city_is_up() {
   gc status "$FACTORY_PATH" 2>/dev/null | grep -q 'Controller: supervisor-managed (PID'
 }
 
+# This script runs as a child process, so every `export` above dies with it and
+# the caller's shell comes back from a bootstrap run with none of the four paths
+# set. That is what makes the rc append on page 00.3 write four empty values:
+# the append succeeds, so nothing reports an error, and the failure only shows
+# up a lesson later as an empty `$FACTORY_PATH`. Printing the resolved values
+# here gives the participant something to paste, and keeps the tutorial from
+# restating a derivation that lives in this file.
+print_reexport_block() {
+  local var val
+
+  echo
+  echo "==> Paste these into your shell before you continue:"
+  echo
+  for var in FACTORY_PATH ASCII_ART_PATH TUTORIAL_PATH ARTIFACTS_PATH; do
+    val="${!var}"
+    if [ -z "$val" ]; then
+      echo "# $var is not set yet — a later lesson creates it"
+    else
+      # Normalize away the `/..` segments the derivations above leave behind,
+      # falling back to the raw value if the directory has gone missing.
+      echo "export $var=\"$( (cd "$val" 2>/dev/null && pwd -P) || printf '%s' "$val" )\""
+    fi
+  done
+}
+
 # Start the city, confirm it came up, then announce the finished step. This
 # exits either way, so it is the last thing a step block runs.
 #
@@ -367,6 +392,8 @@ finish_step() {
   done
 
   echo "==> Ready to test on $step"
+
+  print_reexport_block
   exit 0
 }
 

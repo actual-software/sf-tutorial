@@ -51,8 +51,10 @@ Ninety minutes, participant-led, no shared end state. The instructor circulates;
 
 ```bash
 cd "$MY_RIG_PATH"
-$EDITOR docs/current/capability-map.md
+nano "$MY_RIG_PATH/docs/current/capability-map.md"
 ```
+
+`nano` ships with the box and is not modal: `Ctrl-O` then `Enter` saves, and `Ctrl-X` exits. Swap in a different editor if you already have one you prefer.
 
 Re-rank if the morning changed your mind, then commit the re-rank before you build. A map with a stale ranking is a map you will stop trusting.
 

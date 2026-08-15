@@ -83,6 +83,8 @@ cd path/to/sf-tutorial/bootstrap
 ./bootstrap.sh 05.1-bead-gate-checks
 ```
 
+After it finishes, paste the export block it prints to re-export the four env vars — the script cannot set them in your shell for you. See [00.3](./00.3-setup-foundation.md) if the block scrolled past.
+
 ## Try It
 
 The first twenty minutes are a demo you follow along with. Steps 5 and 6 are yours.
