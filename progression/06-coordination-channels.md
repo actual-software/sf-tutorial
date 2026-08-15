@@ -95,6 +95,8 @@ cd path/to/sf-tutorial/bootstrap
 ./bootstrap.sh 05.1-bead-gate-checks
 ```
 
+After it finishes, paste the export block it prints to re-export the four env vars — the script cannot set them in your shell for you. See [00.3](./00.3-setup-foundation.md) if the block scrolled past.
+
 ### Confirm every channel answers
 
 **Copy and paste**
@@ -230,8 +232,10 @@ Copy the template into the rig and fill it in:
 
 ```bash
 cp "$ARTIFACTS_PATH/docs/coordination-channels.template.md" "$ASCII_ART_PATH/docs/current/coordination-channels.md"
-$EDITOR "$ASCII_ART_PATH/docs/current/coordination-channels.md"
+nano "$ASCII_ART_PATH/docs/current/coordination-channels.md"
 ```
+
+`nano` ships with the box and is not modal: `Ctrl-O` then `Enter` saves, and `Ctrl-X` exits. Swap in a different editor if you already have one you prefer.
 
 Fill in the second table. Every handoff in your pipeline gets a primary channel and a fallback:
 

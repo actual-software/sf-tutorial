@@ -10,7 +10,7 @@ This folder contains the bootstrap scripts for the Software Factory Intensive tu
 	cp .env.example .env
 	```
 
-   Open `.env` And follow the instructions in code comments to update your settings.
+   Open `.env` with `nano .env` and follow the instructions in the code comments to update your settings. `nano` ships with the box and is not modal: `Ctrl-O` then `Enter` saves, and `Ctrl-X` exits. Swap in a different editor if you already have one you prefer.
 
 2. Install the pegged versions of `bd`, `dolt` and `gc`. The pins are declared in `deps.sh`, which is the one place they live. Read them there rather than from this page, so there is only one copy to keep current. `bd` and `dolt` arrive as release archives; `gc` is built from source at a pinned commit, so budget a few minutes for the first run and expect a later one to skip the build.
 
@@ -37,6 +37,8 @@ Runs the work for 00.1 *and* 00.2, then stops. Your factory now looks like it wo
 
 **Mental model:** `./bootstrap.sh <step>` answers "make my factory look like I just finished `<step>`," not "make my factory ready for me to start `<step>`."
 
+**Then paste the export block the run prints.** The script sets `FACTORY_PATH`, `ASCII_ART_PATH`, `TUTORIAL_PATH` and `ARTIFACTS_PATH` in its own child process, so they do not reach the shell you launched it from. Every run ends by printing them in paste-ready form; do that before you continue, and before you append them to a shell rc on [page 00.3](../progression/00.3-setup-foundation.md).
+
 ## About the Bootstrap Script
 
 ### Running the script
@@ -45,7 +47,7 @@ Run this script from this folder to bootstrap your factory into the **end state*
 
 ### How a run reports success
 
-A finished run prints `==> Ready to test on <step>` and exits 0, so you can chain `./bootstrap.sh <step> && <next thing>`.
+A finished run prints `==> Ready to test on <step>`, then the export block described above, and exits 0, so you can chain `./bootstrap.sh <step> && <next thing>`.
 
 The banner appears only after the script confirms your city actually came up. Earlier versions printed it straight after `gc start` without checking anything, so a run whose city never started still reported success. The script now reads two signals: the `fatal=` field in the `gc start` output, which names the failure, and the controller line from `gc status`, which confirms the city is live. Both are more specific than the exit code on its own, and the second also catches a city that starts but never becomes ready. A run that fails either one says what went wrong and exits 1, with no banner.
 

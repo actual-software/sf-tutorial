@@ -72,7 +72,7 @@ Add `MY_RIG_PATH` to your shell rc the same way [`00.3`](../progression/00.3-set
 
 ### 2. Write a project overview
 
-Write a **Project Overview** in `$ARTIFACTS_PATH/docs/PROJECT_OVERVIEW.md` using [`PROJECT_OVERVIEW.template.md`](./..artifacts/docs/PROJECT_OVERVIEW.template.md) — a loosely structured document that answers a few questions about the project.
+Write a **Project Overview** in `$ARTIFACTS_PATH/docs/PROJECT_OVERVIEW.md` using [`PROJECT_OVERVIEW.template.md`](../artifacts/docs/PROJECT_OVERVIEW.template.md) — a loosely structured document that answers a few questions about the project.
 
 ```bash
 cp $TUTORIAL_PATH/artifacts/docs/PROJECT_OVERVIEW.template.md $ARTIFACTS_PATH/docs/PROJECT_OVERVIEW.md
@@ -106,7 +106,7 @@ The agent should provide some prompts to guide you through the process. You can 
 **Copy and paste**
 
 ```bash
-cd "$MY_RIG_PATH
+cd "$MY_RIG_PATH"
 bd status
 ```
 
@@ -136,8 +136,10 @@ This is the deliverable. Twenty minutes, and do not skip it because the rig is m
 
 ```bash
 cp "$ARTIFACTS_PATH/docs/capability-map.template.md" "$MY_RIG_PATH/docs/current/capability-map.md"
-$EDITOR "$MY_RIG_PATH/docs/current/capability-map.md"
+nano "$MY_RIG_PATH/docs/current/capability-map.md"
 ```
+
+`nano` ships with the box and is not modal: `Ctrl-O` then `Enter` saves, and `Ctrl-X` exits. Swap in a different editor if you already have one you prefer.
 
 The map has one row per change you want to make to your factory. Each row names the change, which of the three layers it touches, what it costs, and how you will know it worked.
 
