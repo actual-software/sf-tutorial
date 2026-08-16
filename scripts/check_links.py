@@ -350,8 +350,16 @@ def check(root: Path, files: list[Path]) -> Report:
             Link(rl.line, rl.raw, *_resolve_ref(doc, rl)) for rl in doc.ref_links
         ]:
             dest = link.dest
-            if dest.startswith(SKIP_SCHEMES):
+            # Schemes are case-insensitive, so the comparison has to be too.
+            # Matching the literal lowercase prefix would take `HTTP://example.com`
+            # for a relative path and report a working external link broken.
+            if dest.lower().startswith(SKIP_SCHEMES):
                 continue
+
+            # A query string is not part of the path on disk. The shell checker
+            # this replaces stripped it, and losing that would report
+            # `./guide.md?plain=1` broken with the file sitting right there.
+            dest = dest.partition("?")[0]
 
             if not dest:
                 # Pure anchor: [Foo](#bar) points into this same file. The shell
@@ -360,7 +368,12 @@ def check(root: Path, files: list[Path]) -> Report:
                 if not link.fragment:
                     continue
                 report.anchors_checked += 1
-                if link.fragment.lower() not in doc.anchors:
+                # Compared as written, not lowercased. slugify() lowercases
+                # unconditionally, so every anchor here is already lowercase, and
+                # GitHub resolves a fragment through getElementById, which is
+                # case-sensitive. Lowercasing the fragment would pass `#Real-Heading`
+                # against `real-heading` and call a link good that scrolls nowhere.
+                if link.fragment not in doc.anchors:
                     report.anchors_broken.append(
                         f"{rel}:{link.line}: dead anchor -> #{link.fragment}"
                     )
@@ -394,7 +407,8 @@ def check(root: Path, files: list[Path]) -> Report:
                     report.anchors_checked -= 1
                     continue
 
-            if link.fragment.lower() not in target_doc.anchors:
+            # Case-sensitive, for the reason given at the same-file check above.
+            if link.fragment not in target_doc.anchors:
                 report.anchors_broken.append(
                     f"{rel}:{link.line}: dead anchor -> {dest}#{link.fragment}"
                 )
@@ -464,21 +478,35 @@ def self_test(root: Path, legacy_scope: bool = False) -> int:
     # Each probe carries one of each defect class, so a pass proves the file
     # pass and the anchor pass are both live. A probe with only a bad path would
     # leave a silently no-op anchor check indistinguishable from a working one.
+    #
+    # The last three links pin the three ways this checker can be wrong about a
+    # link that is fine. `#PROBE` is the right heading in the wrong case, which
+    # GitHub resolves through a case-sensitive getElementById and so must be
+    # reported; the other two must stay silent, and they catch a scheme skip that
+    # forgot schemes are case-insensitive and a resolver that reads a query
+    # string as part of the filename.
     body = (
         "# Probe\n\n"
         "[deliberately broken path](./no-such-file-{pid}.md)\n\n"
-        "[deliberately dead anchor](#no-such-heading-{pid})\n"
+        "[deliberately dead anchor](#no-such-heading-{pid})\n\n"
+        "[right heading, wrong case, dead on GitHub](#PROBE)\n\n"
+        "[external link, not a path](HTTPS://example.invalid/{pid})\n\n"
+        "[query string on a file that exists](./{name}?plain=1)\n"
     )
 
     planted: list[Path] = []
     try:
         for probe in probes:
-            probe.write_text(body.format(pid=os.getpid()), encoding="utf-8")
+            probe.write_text(
+                body.format(pid=os.getpid(), name=probe.name), encoding="utf-8"
+            )
             planted.append(probe)
 
         report = check(root, discover(root, legacy_scope=legacy_scope))
-        paths_caught = {line.split(":", 1)[0] for line in report.file_links_broken}
-        anchors_caught = {line.split(":", 1)[0] for line in report.anchors_broken}
+        path_hits = Counter(line.split(":", 1)[0] for line in report.file_links_broken)
+        anchor_hits = Counter(line.split(":", 1)[0] for line in report.anchors_broken)
+        paths_caught = set(path_hits)
+        anchors_caught = set(anchor_hits)
 
         missed = [
             p for p in planted
@@ -497,8 +525,36 @@ def self_test(root: Path, legacy_scope: bool = False) -> int:
         if missed:
             print(f"\nself-test FAILED: {len(missed)} probe(s) not fully caught.")
             return 1
-        print("\nself-test passed: every directory holding markdown is traversed,"
-              " and both the path and the anchor pass caught their planted defect.")
+
+        # A probe the walk reached scores exactly one broken path and two dead
+        # anchors. Any other number is a check misfiring rather than a check
+        # going missing, and the membership test above is blind to it. A second
+        # broken path means the scheme skip or the query strip flagged a link
+        # that is fine; a single dead anchor means the fragment comparison went
+        # back to ignoring case. Zero is a miss, already reported.
+        want_paths, want_anchors = 1, 2
+        wrong = [
+            p for p in planted
+            if path_hits[str(p.relative_to(root))] not in (0, want_paths)
+            or anchor_hits[str(p.relative_to(root))] not in (0, want_anchors)
+        ]
+        if wrong:
+            print(f"\nself-test FAILED: {len(wrong)} probe(s) scored the wrong defect count.")
+            for p in wrong:
+                rel = str(p.relative_to(root))
+                print(f"  {rel}: {path_hits[rel]} broken path(s), want {want_paths};"
+                      f" {anchor_hits[rel]} dead anchor(s), want {want_anchors}")
+            return 1
+
+        # Say what this run proves and no more. The probes are planted in the
+        # directories this same walk reports, so a whole-tree run cannot fail on
+        # breadth however narrow the walk is; --legacy-scope is the arm that can.
+        # Claiming otherwise here would be this checker making the confident-green
+        # mistake it exists to catch.
+        print(f"\nself-test passed: {len(planted)} probe(s) found, each scoring exactly"
+              f" {want_paths} broken path and {want_anchors} dead anchors."
+              "\nThat proves the checks fire wherever the walk reaches."
+              " Run --legacy-scope for how far it reaches: that arm must fail.")
         return 0
     finally:
         for probe in planted:
