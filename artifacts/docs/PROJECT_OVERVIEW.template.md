@@ -1,6 +1,6 @@
 # Project Overview: [Your Project Name]
 
-Fill this out before you create your manifest. This is a **loosely structured brief** — prose, bullets, and sketches are all fine. Your local coding agent will read this document (plus ask you follow-up questions) during L1 to generate the structured [`docs/PROJECT_MANIFEST.md`](./PROJECT_MANIFEST_TEMPLATE.md) that every factory agent will then consume.
+Fill this out before you create your manifest. This is a **loosely structured brief** — prose, bullets, and sketches are all fine. Your local coding agent will read this document (plus ask you follow-up questions) during L1 to generate the structured [`docs/PROJECT_MANIFEST.md`](./PROJECT_MANIFEST.template.md) that every factory agent will then consume.
 
 ---
 

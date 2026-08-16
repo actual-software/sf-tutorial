@@ -9,7 +9,7 @@
 - [Try It](#try-it)
   - [1. Register your repo as a rig](#1-register-your-repo-as-a-rig)
   - [2. Write a project overview](#2-write-a-project-overview)
-  - [3. Write a project manifest](#2-write-a-project-manifest)
+  - [3. Generate your project manifest](#2-generate-your-project-manifest)
   - [4. Get real beads in](#3-get-real-beads-in)
   - [5. Write the capability map](#4-write-the-capability-map)
   - [6. Reflect](#5-reflect)
