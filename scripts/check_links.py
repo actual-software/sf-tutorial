@@ -29,10 +29,30 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# Directories never worth walking. Deliberately short: an allowlist of directories
-# to *visit* is the defect this checker exists to end, so anything not named here
-# is checked, including directories that do not exist yet.
-IGNORED_DIRS = {".git", "node_modules", ".venv", "__pycache__"}
+# Directories never worth walking, named one by one. This is the *only* thing that
+# narrows the walk: an allowlist of directories to visit is the defect this checker
+# exists to end, so anything absent from this set is checked, including directories
+# that do not exist yet.
+#
+# Note what is deliberately missing: a rule skipping every name that starts with a
+# dot. That rule reads as housekeeping and behaves as a second, invisible allowlist,
+# and it hides `.github/`, where CONTRIBUTING.md and the issue and pull-request
+# templates live, all of them carrying relative links. Naming `.github` as an
+# exception would fix that one directory and leave `.gitlab/`, `.circleci/` and
+# `.devcontainer/` hidden, which is the same defect one size smaller. Every entry
+# below is a build cache or a dependency tree, so the list grows only when a tool
+# adds one.
+IGNORED_DIRS = {
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".venv",
+    "__pycache__",
+    "node_modules",
+    "venv",
+}
 
 # The directory list the shell checker used to walk, kept so --legacy-scope can
 # reproduce the old numbers alongside the new ones. Nothing else reads it.
@@ -262,6 +282,14 @@ def parse(path: Path, root: Path) -> Document:
             path_part, _, fragment = dest.partition("#")
             doc.links.append(Link(lineno, match.group(0), path_part, fragment))
 
+        # Reference links, and the two limits worth knowing before you trust this
+        # pass. A collapsed `[Foo][]` looks up the empty label rather than `foo`,
+        # so it resolves to nothing and is skipped. A reference whose definition
+        # is missing is skipped too, rather than reported: `[1-9][0-9]` is a
+        # character class this repo writes in prose, and it is indistinguishable
+        # here from a link to an undefined label. Both stay quiet because the repo
+        # has no reference-style definitions at all. Add the definitions and these
+        # two want revisiting together.
         for match in re.finditer(r"\[(?:[^\[\]]|\[[^\]]*\])*\]\[([^\]]*)\]", scan):
             doc.ref_links.append(Link(lineno, match.group(0), match.group(1).strip().lower(), ""))
 
@@ -285,7 +313,7 @@ def discover(root: Path, legacy_scope: bool = False) -> list[Path]:
 
     found: list[Path] = []
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = sorted(d for d in dirnames if d not in IGNORED_DIRS and not d.startswith("."))
+        dirnames[:] = sorted(d for d in dirnames if d not in IGNORED_DIRS)
         for name in sorted(filenames):
             if name.lower().endswith(".md"):
                 found.append(Path(dirpath) / name)
@@ -322,7 +350,7 @@ def check(root: Path, files: list[Path]) -> Report:
             Link(rl.line, rl.raw, *_resolve_ref(doc, rl)) for rl in doc.ref_links
         ]:
             dest = link.dest
-            if dest.startswith(SKIP_SCHEMES) or dest.startswith("#!"):
+            if dest.startswith(SKIP_SCHEMES):
                 continue
 
             if not dest:

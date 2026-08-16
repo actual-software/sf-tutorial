@@ -20,3 +20,6 @@
 
 # Scratch review / experiment directories
 .tmp/
+
+# Bytecode from scripts/check_links.py
+__pycache__/
