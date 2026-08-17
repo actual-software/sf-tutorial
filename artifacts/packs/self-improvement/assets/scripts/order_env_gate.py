@@ -118,16 +118,12 @@ def parse_env_file(path):
             end = value.find(quote, 1)
             if end != -1:
                 value = value[1:end]
-            elif len(value) >= 2 and value[-1] == quote:
-                value = value[1:-1]
         else:
             # A `#` only opens a comment when whitespace precedes it, so a value
             # that starts with one — a channel name like `#ops` — survives whole.
-            for marker in (" #", "\t#"):
-                cut = value.find(marker)
-                if cut != -1:
-                    value = value[:cut].rstrip()
-                    break
+            cuts = [c for c in (value.find(" #"), value.find("\t#")) if c != -1]
+            if cuts:
+                value = value[:min(cuts)].rstrip()
         out[key] = value
     return out
 
