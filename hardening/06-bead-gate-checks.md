@@ -38,9 +38,9 @@ By the end of this exercise you will have installed a `bead-gate-rig` pack that 
 
 ## Context
 
-Branching/Merging strategy is unchanged from page 04. What changes
-here is **the entry point** to the factory. Before page 05.1, the
-operator slung beads directly at the polecat. After page 05.1, every
+Branching/Merging strategy is unchanged from the base factory's architect. What changes
+here is **the entry point** to the factory. Before the bead gate, the
+operator slung beads directly at the polecat. After the bead gate, every
 bead is slung at a **project-manager** agent first, which runs a
 small conformity checklist on the bead's title, description, and
 metadata; routes well-formed beads to the polecat pool; and blocks
@@ -59,7 +59,7 @@ Agent workflow with the project-manager in place:
    - **PASS**: the project-manager stamps `bead_review_passed=true`
      and sets `gc.routed_to=<rig>/polecat`. The polecat pool's
      reconciler picks the bead up next; the polecat poured against
-     the bead runs `mol-polecat-pr` (taught in pages 01–04).
+     the bead runs `mol-polecat-pr` (taught in the base factory).
    - **FAIL**: the project-manager stamps `bead_review_passed=false`
      and `bead_review_feedback=<reason>`, sets the bead's status to
      `blocked`, mails the mayor, and exits. The polecat pool ignores
@@ -72,7 +72,7 @@ Agent workflow with the project-manager in place:
    05.2 walks through using a Grill-Me skill in your local agent to
    refine beads quickly so the project-manager passes them on the
    first pass.
-1. The **polecat / refinery / architect** chain (pages 01–04) runs
+1. The **polecat / refinery / architect** chain (the base factory) runs
    exactly as before once the bead is in the polecat pool.
 
 The project-manager does **not** push code, modify the bead's text
@@ -103,7 +103,7 @@ After it finishes, re-export the four env vars per [W3 Run Your Factory](../prog
 
 ### 1. Install the bead-gate-rig pack into factory1
 
-The page 04 setup gave the rig a downstream architecture review —
+The the base factory's architect setup gave the rig a downstream architecture review —
 the architect reads each polecat's diff before the refinery merges.
 But there is no upstream check on the **bead** itself. A bead with a
 wrong title, a missing `target_file`, or a description that says
@@ -268,7 +268,7 @@ mol-refinery-architect-patrol
 
 ### 1. Locate one bead from the first epic
 
-Letters a–g have merged through pages 01–04. List the remaining open
+Letters a–g have merged through the base factory. List the remaining open
 `Implement <letter>.md` tasks and grab the next one.
 
 **Copy and paste**
@@ -365,7 +365,7 @@ METADATA
 
 The bead is back in the polecat pool. The polecat reconciler will
 spawn a polecat session next; the polecat pours `mol-polecat-pr`
-exactly as in pages 01–04.
+exactly as in the base factory.
 
 **Copy and paste**
 
@@ -374,7 +374,7 @@ gc session list
 gc session attach <polecat-session>
 ```
 
-From here, the rest of the pipeline is unchanged from page 04 —
+From here, the rest of the pipeline is unchanged from the base factory's architect —
 polecat writes the file, hands the bead to the refinery, the
 refinery routes to the architect, the architect approves, the
 refinery publishes a PR. Wait for the PR and merge as before.
@@ -565,7 +565,7 @@ What's still missing:
 - **The operator has to fix blocked beads by hand.** When a bead
   fails review, the project-manager surfaces the problem — but
   rewording the bead's description, filling in `target_file`, or
-  adding a missing parent epic is human work. **Page 05.2 — Grill
+  adding a missing parent epic is human work. **The Grill-Me section below — Grill
   Me skill** installs a productivity skill in your local agent that
   walks you through refining a bead by question-and-answer, so the
   next sling at the project-manager is more likely to pass on the
@@ -710,7 +710,7 @@ ls ascii/h.md
   rig-pack-specific; for `bead-gate-rig` running over `architect-rig`
   the prefix may differ). If the `routed_to` value points at a
   non-existent agent, the reconciler will not spawn a polecat. Compare
-  against a working bead from page 04 by `gc bd show` after the
+  against a working bead from the base factory's architect by `gc bd show` after the
   refinery's bounce path fired.
 - **Project-manager keeps failing a bead the operator believes is
   fine.** Read `metadata.bead_review_feedback` carefully — it cites

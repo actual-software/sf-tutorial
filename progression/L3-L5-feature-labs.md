@@ -1,6 +1,6 @@
 # L3, L4 and L5 · Feature Labs
 
-**Three labs · 45 minutes each · Day 2**
+**Three labs · 45 to 60 minutes each · Day 2**
 
 ## Contents
 
@@ -57,9 +57,9 @@ If your rank-1 row said "install option X", this is where you find X. If it did 
 
 ## How each lab runs
 
-Forty-five minutes, participant-led, no shared end state. The instructor circulates; say which layer you are working in when they reach you, because the failure modes differ per layer and pairing works best within one.
+Participant-led, no shared end state. The instructor circulates; say which layer you are working in when they reach you, because the failure modes differ per layer and pairing works best within one.
 
-Forty-five minutes is enough to build one change properly. It is not enough for two. The ranking you did in L2 is what makes that survivable.
+A slot is enough to build one change properly. It is not enough for two. The ranking you did in L2 is what makes that survivable.
 
 ## Try It
 

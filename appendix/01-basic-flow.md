@@ -513,7 +513,7 @@ What's still missing:
   03 — Branch protection** wires that up.
 - **The refinery's approval is a single, generic gate.** It doesn't
   know the rig's ADR, doesn't know the design intent, doesn't have a
-  separate testing or design lens. **Page 04 — ADR-aware reviewer**
+  separate testing or design lens. **The base factory's architect — ADR-aware reviewer**
   introduces a dedicated reviewer agent that reads the controlling ADR
   and gives the refinery a more substantive read.
 - **There's no upstream check on the bead itself.** A malformed bead

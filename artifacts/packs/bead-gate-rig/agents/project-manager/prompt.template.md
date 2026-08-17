@@ -120,7 +120,7 @@ gc bd note $WORK "project-manager: PASSED. <one-line summary of which checks wer
 ```
 
 The polecat pool's reconciler picks the bead up next; the polecat
-poured against the bead runs `mol-polecat-pr` (taught in pages 01–04).
+poured against the bead runs `mol-polecat-pr` (taught in the base factory).
 
 **FAIL — at least one check fails:**
 

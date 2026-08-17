@@ -54,7 +54,7 @@ By the end of this exercise you will have:
 
 ## Context
 
-Branching/merging strategy is unchanged from page 04. What changes here is the *vendor diversity* of the ADR-lane review. The single `adr-reviewer` (H2) — and its principles-loop variant (H3) — runs against whichever model your harness pins. A single LLM is a single point of view; the cheapest way to harden a code review is to ask two more reviewers who were trained differently and synthesize their answers. This page does exactly that: three vendor-pinned reviewer agents (`reviewer-codex`, `reviewer-claude`, `reviewer-gemini`) run in parallel against the same diff and the same ADR corpus; a `synthesizer` agent reads all three verdicts and applies majority rule.
+Branching/merging strategy is unchanged from the base factory's architect. What changes here is the *vendor diversity* of the ADR-lane review. The single `adr-reviewer` (H2) — and its principles-loop variant (H3) — runs against whichever model your harness pins. A single LLM is a single point of view; the cheapest way to harden a code review is to ask two more reviewers who were trained differently and synthesize their answers. This page does exactly that: three vendor-pinned reviewer agents (`reviewer-codex`, `reviewer-claude`, `reviewer-gemini`) run in parallel against the same diff and the same ADR corpus; a `synthesizer` agent reads all three verdicts and applies majority rule.
 
 Agent workflow with the multi-vendor fan-out in place:
 
@@ -81,7 +81,7 @@ Agent workflow with the multi-vendor fan-out in place:
 
    The synthesizer reads the three verdicts, applies majority rule (≥ 2 of 3 approve → `adr_approved=true`; otherwise `false`), and writes a one-paragraph `synthesizer_summary` distilling points of agreement and disagreement.
 1. The **refinery** (H2's `verify-reviewers` step) reads the `adr_approved` value the synthesizer wrote, alongside `design_approved`, `testing_approved`, `docs_approved` from the other three lanes — and aggregates as before. From the refinery's point of view, the ADR lane looks the same as it did in H2; the fan-out is invisible to it.
-1. The **merger** (human, plus branch protection from page 03) reads the four-lane verdict trail (with `synthesizer_summary` as the most useful single artifact for the ADR lane) and clicks **Merge**.
+1. The **merger** (human, plus branch protection from branch protection) reads the four-lane verdict trail (with `synthesizer_summary` as the most useful single artifact for the ADR lane) and clicks **Merge**.
 
 The vendor reviewers do **not** push code, share state with each other, or write to the cross-vendor `adr_approved` field. The synthesizer does **not** read the diff; it only fuses what the three vendors wrote.
 
@@ -473,7 +473,7 @@ ls ascii/n.md
 ## Troubleshooting
 
 - **Provider X not installed.** The matching vendor reviewer cannot spawn. Either install the provider, or run the H4 flow with the remaining vendors. With two vendors, both must approve for the synthesizer to stamp `adr_approved=true`. With one, the synthesizer always says `false` (1 vote is not majority by design — adjust the synthesizer prompt if you want a different policy for solo-vendor mode).
-- **Synthesizer escalates with `<2 votes`.** The vendors posted `--comment` instead of approve / request-changes. (This is the GitHub self-author footgun from page 03 in disguise — the vendors are reviewing a feature branch, not a PR, so it shouldn't fire here. If it does, your vendor reviewer prompt is leaking PR-review semantics into a branch-review flow.)
+- **Synthesizer escalates with `<2 votes`.** The vendors posted `--comment` instead of approve / request-changes. (This is the GitHub self-author footgun from branch protection in disguise — the vendors are reviewing a feature branch, not a PR, so it shouldn't fire here. If it does, your vendor reviewer prompt is leaking PR-review semantics into a branch-review flow.)
 - **Vendor stamps a value that isn't `true` or `false`.** The shared prompt explicitly says to write `true` or `false`. If a vendor wrote `yes` / `no` / `approved` / a free-form sentence, the synthesizer's count goes wrong. Edit the vendor reviewer prompt to be more emphatic about the literal stamp value.
 - **Synthesizer stamps `adr_approved=true` despite obvious violations.** Read `synthesizer_summary` — the synthesizer followed majority rule on what the three vendors wrote. If two vendors approved a bad diff, the synthesizer is doing its job, not yours; the issue is upstream (vendor prompt drift, training-data overlap between two of the three vendors). Lower the approval threshold (require unanimity instead of majority), or add a fourth vendor.
 - **Cost spikes.** Three vendors per bead adds up. Reserve the full trio for risky changes; for routine work, fall back to the H3 single-vendor principles loop or the H2 single-vendor `adr-reviewer`.

@@ -81,7 +81,7 @@ checks in GitHub Actions. Concretely:
   line. This is the workflow's UX target — surface failures inline on the
   PR diff so the author can fix without re-reading the ADR.
 
-The reviewer agent (page 04) and the vendor-diverse reviewers added in
+The reviewer agent (the base factory's architect) and the vendor-diverse reviewers added in
 Hardening 4 both treat a green `ci/ascii-compliance` as a precondition;
 they do not duplicate these mechanical checks.
 

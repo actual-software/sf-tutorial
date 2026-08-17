@@ -35,7 +35,7 @@ Install the [domain reviewers](./02-specialize-reviewers-per-domain.md) as well 
 
 ## Context
 
-Branching/Merging strategy is unchanged from page 04. What changes
+Branching/Merging strategy is unchanged from the base factory's architect. What changes
 here is the *depth* of the ADR-lane review introduced in Hardening
 2. The single binary "ADR approved / rejected" verdict is replaced
 with a per-principle scoring pass against **23 canonical
@@ -75,7 +75,7 @@ Agent workflow with the principles loop in place:
    three lanes) and aggregates as in H2. The principles loop's
    verdict surfaces through the same lane the H2 ADR reviewer used,
    so no refinery prompt change is required.
-1. The **merger** (human, plus branch protection from page 03)
+1. The **merger** (human, plus branch protection from branch protection)
    reads the YAML audit trail (now part of the bead's durable
    record) plus the four-lane verdicts and clicks **Merge**.
 

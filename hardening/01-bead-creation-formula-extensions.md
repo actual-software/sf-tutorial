@@ -33,17 +33,17 @@ By the end of this exercise you will have installed the `bead-builders-rig` pack
 
 ## Context
 
-Branching/Merging strategy is unchanged from page 04. What changes here is the *front* of the factory: in addition to the project-manager (the gate that decides whether a bead is well-formed enough for a polecat to start), the rig now ships three "light-side" helper agents — a **Design Lead**, a **Test Lead**, and a **Doc Lead** — each of which produces a focused spec for the work the bead describes. The polecat reads those specs at implement time; the project-manager's checklist (extended in this hardening) requires them to exist before a bead is allowed through.
+Branching/Merging strategy is unchanged from the base factory's architect. What changes here is the *front* of the factory: in addition to the project-manager (the gate that decides whether a bead is well-formed enough for a polecat to start), the rig now ships three "light-side" helper agents — a **Design Lead**, a **Test Lead**, and a **Doc Lead** — each of which produces a focused spec for the work the bead describes. The polecat reads those specs at implement time; the project-manager's checklist (extended in this hardening) requires them to exist before a bead is allowed through.
 
 Agent workflow with the Leads in place:
 
-1. The **operator** drafts the bead (or uses the Grill-Me skill from page 05.2 to refine its title and description).
+1. The **operator** drafts the bead (or uses the Grill-Me skill from the Grill-Me section below to refine its title and description).
 1. The **operator** slings the three Leads at the bead, one at a time:
    - `gc sling <rig>/design-lead <bead> --on mol-design-spec` — drafts `docs/design/<bead-id>.md`, stamps `metadata.design_doc=<path>`.
    - `gc sling <rig>/test-lead <bead> --on mol-test-spec` — drafts `docs/testing/<bead-id>.md`, stamps `metadata.test_plan=<path>`.
    - `gc sling <rig>/doc-lead <bead> --on mol-doc-spec` — drafts `docs/outlines/<bead-id>.md`, stamps `metadata.docs_outline=<path>`.
-1. The **project-manager** (page 05.1, with an extended checklist): in addition to the conformity checks from 05.1, the project-manager now refuses to pass a bead unless `design_doc`, `test_plan`, and `docs_outline` are all set on the bead and point at files that exist on disk.
-1. The **polecat / refinery / architect** chain (pages 01–04) runs exactly as before. The polecat reads the three specs at implement time. The architect (page 04) references them during architecture review.
+1. The **project-manager** (the bead gate, with an extended checklist): in addition to the conformity checks from 05.1, the project-manager now refuses to pass a bead unless `design_doc`, `test_plan`, and `docs_outline` are all set on the bead and point at files that exist on disk.
+1. The **polecat / refinery / architect** chain (the base factory) runs exactly as before. The polecat reads the three specs at implement time. The architect (the base factory's architect) references them during architecture review.
 
 The Leads do **not** write production code, modify the bead's title or description, or stamp any downstream verdict flags. They are upstream "light-side" helpers — agents whose job is to **shape higher-quality work with less effort**. The operator could have written all three docs by hand; the Leads automate the boring parts and surface trade-offs the operator would otherwise miss.
 
@@ -55,7 +55,7 @@ The next page (Hardening 2) builds on these spec files: the architect (currently
 
 ### 1. Install the bead-builders-rig pack into factory1
 
-The page 05.1 setup gave the rig a project-manager that gates beads on a small conformity checklist (title, description, `target_file`, parent epic). The page 05.2 walkthrough added the Grill-Me skill so the operator can refine vague beads quickly. What's still missing is **design / test / docs context on every bead**: the operator types a title and a one-paragraph description, and the polecat is left to guess at the design, the test plan, and the docs impact.
+The the bead gate setup gave the rig a project-manager that gates beads on a small conformity checklist (title, description, `target_file`, parent epic). The the Grill-Me section below walkthrough added the Grill-Me skill so the operator can refine vague beads quickly. What's still missing is **design / test / docs context on every bead**: the operator types a title and a one-paragraph description, and the polecat is left to guess at the design, the test plan, and the docs impact.
 
 This ships as a single rig-scoped pack, **`bead-builders-rig`**, that adds three new agents and three new formulas:
 
@@ -84,7 +84,7 @@ What to notice in the pack:
 
 - **One Lead per discipline.** Each agent owns one doc file under one directory; each formula is a 3-step (load-context → draft-spec → drain) pour. They do not overlap.
 - **Light-side, not gates.** The Leads do not block beads or stamp verdicts. If a Lead's output is missing, the project-manager catches it at the next bead-review pass (with extended checklist).
-- **Specs live in the rig repo.** `docs/design/<bead>.md`, `docs/testing/<bead>.md`, `docs/outlines/<bead>.md` — committed alongside source code, so the architect (page 04) and the polecat both read them out of the working tree.
+- **Specs live in the rig repo.** `docs/design/<bead>.md`, `docs/testing/<bead>.md`, `docs/outlines/<bead>.md` — committed alongside source code, so the architect (the base factory's architect) and the polecat both read them out of the working tree.
 
 Copy the pack into the city's `packs/` directory.
 
@@ -322,7 +322,7 @@ gc.routed_to=<rig>/<binding-prefix>polecat,
 notes include "project-manager: PASSED..."
 ```
 
-From here, the polecat / refinery / architect chain runs as in pages 01–04. Wait for the PR and merge.
+From here, the polecat / refinery / architect chain runs as in the base factory. Wait for the PR and merge.
 
 **Copy and paste**
 
@@ -390,7 +390,7 @@ That worked. Every bead now reaches the polecat with three small specs already d
 
 What's still missing:
 
-- **One reviewer at the back, four specs at the front.** The architect (page 04) reviews against the rig's full doc corpus — but it doesn't have a separate lens per discipline. **Hardening 2 — Specialize reviewers per domain** splits the architect into four parallel reviewers (ADR, design, testing, docs), each citing the doc family the matching Lead authored.
+- **One reviewer at the back, four specs at the front.** The architect (the base factory's architect) reviews against the rig's full doc corpus — but it doesn't have a separate lens per discipline. **Hardening 2 — Specialize reviewers per domain** splits the architect into four parallel reviewers (ADR, design, testing, docs), each citing the doc family the matching Lead authored.
 - **No depth-of-review on architecture principles.** Architecture is binary at the architect — approve or reject. **Hardening 3 — Architecture-best-practices loop** introduces a per-bead score against 23 canonical principles with an append-only audit trail.
 - **Solo provider.** Every reviewer agent in the rig runs against the same model. **Hardening 4 — Strengthen the review system** fans out to vendor-diverse reviewers plus a synthesizer.
 

@@ -342,7 +342,7 @@ guard.
 
 **What's still missing.** Two things. First, there is no automated check
 for ADR adherence — a human has to remember to compare every diff against
-`0001.ADR.ASCII.md`, and humans forget. **Page 04 — ADR reviewer** adds
+`0001.ADR.ASCII.md`, and humans forget. **The base factory's architect — ADR reviewer** adds
 an AI reviewer that runs `gh pr review` automatically against that ADR,
 so every PR receives a structured ADR check before the human looks.
 Second, no CI status check is required. A reviewer could approve a PR
@@ -417,7 +417,7 @@ block the merge regardless of approvals.
   last resort for a solo learner, temporarily set `MIN_APPROVALS=0` and
   re-run the script for this one merge, then re-tighten immediately. The
   third option defeats the gate — only use it to unblock the exercise.
-  Page 04's AI reviewer does not solve this either; GitHub also refuses
+  The base factory's architect's AI reviewer does not solve this either; GitHub also refuses
   reviews from the PR-author identity. Plan for a separate approver
   identity before relying on this gate in real work.
 

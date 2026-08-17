@@ -34,9 +34,9 @@ Install the `domain-reviewers-rig` pack into the `ascii-art` rig, replacing the 
 
 ## Context
 
-Branching/Merging strategy is unchanged from page 04. What changes
+Branching/Merging strategy is unchanged from the base factory's architect. What changes
 here is the back of the factory: the single `architect` agent from
-page 04 splits into **four parallel domain reviewers** — ADR,
+the base factory's architect splits into **four parallel domain reviewers** — ADR,
 design, testing, docs — that all run against the same polecat diff,
 each citing its own doc family. The refinery waits for approvals
 from all four lanes before letting a bead reach the inherited
@@ -48,7 +48,7 @@ Agent workflow with the four reviewers in place:
    commits the spec files, and slings the project-manager. (Same
    front-of-factory flow as Hardening 1.)
 1. The **polecat** writes the file and reassigns to the refinery.
-   (Unchanged from pages 01–04.)
+   (Unchanged from the base factory.)
 1. The **refinery's** first step on the patrol — `verify-reviewers`
    — reads four lane-verdict metadata fields:
    `adr_approved`, `design_approved`, `testing_approved`,
@@ -84,7 +84,7 @@ Agent workflow with the four reviewers in place:
      and falls through to the inherited gates. The four
      `*_feedback` fields stay on the bead as the durable record of
      open concerns.
-1. The **merger** (human, plus branch protection from page 03)
+1. The **merger** (human, plus branch protection from branch protection)
    reads the four review trails (and `review_cap_reached` /
    `*_feedback` if the cap fired) and clicks **Merge**.
 
@@ -112,7 +112,7 @@ principles with an append-only audit trail.
 
 ### 1. Install the domain-reviewers-rig pack into factory1
 
-The page 04 architect was a single reviewer with a single corpus
+The the base factory's architect architect was a single reviewer with a single corpus
 (ADRs + `docs/current/`). H1 added three pre-PM Leads producing
 design / test / docs specs per bead — but the post-PM review side
 was still one agent reading everything. The natural next step is to
@@ -149,7 +149,7 @@ four new reviewers instead. The architect agent itself is harmless
 to leave loaded (it sits idle), but you can remove it from the rig
 import chain if you want a leaner agent set.
 
-The review-cycle cap is **2 rejections**, same as page 04.
+The review-cycle cap is **2 rejections**, same as the base factory's architect.
 
 Inspect the pack before installing.
 
@@ -307,7 +307,7 @@ pick it up next from the polecat pool.
 
 ### 3. Watch the polecat work and hand the bead to the refinery
 
-Same play-by-play as pages 01–04. The polecat writes
+Same play-by-play as the base factory. The polecat writes
 `ascii/k.md`, pushes the branch, reassigns to the refinery.
 
 ### 4. Watch the refinery fan out to four reviewers in parallel

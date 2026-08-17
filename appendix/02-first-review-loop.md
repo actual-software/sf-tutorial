@@ -42,7 +42,7 @@ By the end of this exercise you will have installed the `review-loop-rig` pack a
 
 ## Context
 
-Branching/Merging strategy is unchanged from page 01. What changes
+Branching/Merging strategy is unchanged from the basic flow. What changes
 here is the refinery's behavior between rebase and PR publish: it now
 does **one** required round of feedback before the bead is allowed to
 reach the approval gate.
@@ -63,7 +63,7 @@ Agent workflow with the loop in place:
 1. On the *second* patrol, the refinery sees `review_loops>=1`, skips
    the loop, and proceeds through the inherited approval-review and
    merge-push steps. A clean bead becomes a PR.
-1. The **merger** (human, for now) merges the PR exactly as on page 01.
+1. The **merger** (human, for now) merges the PR exactly as on the basic flow.
 
 The next three pages add deeper gates on top of this loop:
 branch protection on the GitHub side, an ADR-aware reviewer, and a
@@ -92,7 +92,7 @@ After it finishes, re-export the four env vars per [W3 Run Your Factory](../prog
 
 ### 1. Install the review-loop-rig pack into factory1
 
-The page 01 setup left the refinery as a single-shot approver: read the
+The the basic flow setup left the refinery as a single-shot approver: read the
 diff, stamp `refinery_approved=true`, publish a PR. There is no
 mechanism for the refinery to ask the polecat to revise its work — it
 either approves or blocks. We want a softer gate on the way in: one
@@ -235,7 +235,7 @@ mol-refinery-review-loop-patrol
 
 ### 1. Locate one bead from the first epic
 
-Three letters merged on page 01. List the remaining open `Implement
+Three letters merged on the basic flow. List the remaining open `Implement
 <letter>.md` tasks and grab the next one:
 
 **Copy and paste**
@@ -259,7 +259,7 @@ field yet — the refinery will write that during the first patrol.
 
 ### 2. Sling the bead to the polecat (PR mode)
 
-Same dispatch recipe as page 01 — the loop is entirely on the refinery
+Same dispatch recipe as the basic flow — the loop is entirely on the refinery
 side, so the polecat dispatch is unchanged:
 
 **Copy and paste**
@@ -424,7 +424,7 @@ METADATA
 ```
 
 If the refinery had blocked the bead at approval-review instead, the
-behavior would match the pr-gate block path from page 01:
+behavior would match the pr-gate block path from the basic flow:
 `refinery_approved: "false"`, `blocked_reason: "<reason>"` populated. The loop runs once
 and is done; an approval block on the second patrol is a separate concern.
 
@@ -474,11 +474,11 @@ What's still missing:
 - **The required modification is whatever the refinery thinks of in
   the moment.** There's no domain knowledge driving the ask — no ADR,
   no design intent, no separate testing or documentation lens.
-  **Page 04 — ADR-aware reviewer** introduces a dedicated reviewer
+  **The base factory's architect — ADR-aware reviewer** introduces a dedicated reviewer
   agent that reads the controlling ADR and gives the refinery a more
   substantive read.
 - **The PR is still mergeable by anyone with write access.** No
-  required reviewers, no required CI on the GitHub side. **Page 03 —
+  required reviewers, no required CI on the GitHub side. **Branch protection —
   Branch protection** wires that up.
 - **Bead malformation still gets caught downstream.** A bead with a
   wrong title or a bad `target_file` will still get claimed by a
@@ -500,20 +500,20 @@ git log --oneline origin/main
 
 ```text
 2 new merge commits whose messages reference Implement d.md / e.md
-(in addition to the 3 from page 01).
+(in addition to the 3 from the basic flow).
 ```
 
 **Copy and paste**
 
 ```bash
-# 2. Two pull requests merged on the rig's GitHub repo since page 01.
+# 2. Two pull requests merged on the rig's GitHub repo since the basic flow.
 gh pr list --state=merged --limit 10
 ```
 
 **Expected output**
 
 ```text
-at least 5 merged PRs total (a, b, c from page 01 plus d, e from this page).
+at least 5 merged PRs total (a, b, c from the basic flow plus d, e from this page).
 ```
 
 **Copy and paste**
@@ -577,7 +577,7 @@ both paths print without error.
   the inherited approval gate doing its job on the second patrol. Read
   `metadata.blocked_reason` — most likely the polecat's revision
   introduced a new problem (off-scope edit, empty file). Treat as a
-  page 01 approval block: re-sling once, escalate if it blocks twice.
+  the basic flow approval block: re-sling once, escalate if it blocks twice.
 - **`gh pr create` fails with auth or remote errors.** Same as page
   01 — `git remote -v` should show `origin` pointing at the GitHub repo
   from page 00.2. If it doesn't, the refinery's `gh pr create` will
@@ -588,7 +588,7 @@ both paths print without error.
 
 ## What's next
 
-Continue to [Branch protection](./03-branch-protection.md). Page 03
+Continue to [Branch protection](./03-branch-protection.md). Branch protection
 closes the GitHub-side hole this page leaves open: a PR cleared by the
 refinery is still mergeable by anyone with write access, with no
 required CI and no human review. Branch protection wires those gates

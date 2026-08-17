@@ -2,7 +2,7 @@
 
 A step-by-step for a participant with an SSH key and no AWS account. Your instructor sends you four values, you paste them in once, and everything after that is copy-paste.
 
-Running the two days on your own laptop instead? You don't need this page. Go straight to [`progression/00.0-preflight.md`](./progression/W2-cloud-box-and-preflight.md).
+Running the two days on your own laptop instead? You don't need this page. Go straight to [W2 Cloud Box and Preflight](./progression/W2-cloud-box-and-preflight.md), whose appendix covers the local path.
 
 **Step 5 needs a real terminal window.** It opens Claude Code's full-screen interface and asks you questions, so a web IDE, a notebook, or a chat tool can't drive it. Have Terminal, iTerm, or your editor's built-in terminal open before you start. It's the step that trips people up, and finding that out now is a good deal cheaper than finding it out live at step 5 with the rest of the room already moving on.
 
@@ -155,7 +155,7 @@ No `WARNING:` or `ERROR:` line is the whole test. `sfbox preflight` reports a he
 
 The service line is the one to read rather than skim. `inactive — no city on this box yet` is the success case here: there is no factory for the service to supervise until you build one. If it says `waiting on first-run login` instead, step 5 did not get to the end — run it again. If it says `active`, you have a box that was provisioned with a factory already on it, which is fine and means the tutorial's setup lesson will have less to do.
 
-Start the tutorial from [`progression/00.0-preflight.md`](./progression/W2-cloud-box-and-preflight.md).
+Start the tutorial from [W2 Cloud Box and Preflight](./progression/W2-cloud-box-and-preflight.md).
 
 ## When something looks wrong
 
