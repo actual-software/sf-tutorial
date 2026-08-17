@@ -55,7 +55,7 @@ cd "$MY_RIG_PATH"
 ls -la docs/reviews/ 2>/dev/null                 # L-3 Track A: per-principle scores
 bd list --status blocked --json | jq -r '.[] | "\(.id)  \(.metadata.bead_review_feedback // .metadata.blocker_reason // "")"'
 cd "$FACTORY_PATH"
-gc order history --limit 20
+gc order history
 gc costs 2>/dev/null | head -20
 ```
 
