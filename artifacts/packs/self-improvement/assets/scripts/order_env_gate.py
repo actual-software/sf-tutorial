@@ -97,9 +97,9 @@ def find_factory_root(start):
 def parse_env_file(path):
     """Parse a shell-style ``.env`` file into a dict.
 
-    Skips blank lines and ``#`` comments, strips a leading ``export ``, and peels
-    one layer of matching single or double quotes off the value. Lines without an
-    ``=`` are ignored.
+    Skips blank lines and ``#`` comments, strips a leading ``export ``, peels one
+    layer of matching single or double quotes off the value, and drops a trailing
+    inline comment. Lines without an ``=`` are ignored.
     """
     out = {}
     for raw in Path(path).read_text().splitlines():
@@ -113,8 +113,21 @@ def parse_env_file(path):
         key, _, value = line.partition("=")
         key = key.strip()
         value = value.strip()
-        if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
-            value = value[1:-1]
+        if value[:1] in ("'", '"'):
+            quote = value[0]
+            end = value.find(quote, 1)
+            if end != -1:
+                value = value[1:end]
+            elif len(value) >= 2 and value[-1] == quote:
+                value = value[1:-1]
+        else:
+            # A `#` only opens a comment when whitespace precedes it, so a value
+            # that starts with one — a channel name like `#ops` — survives whole.
+            for marker in (" #", "\t#"):
+                cut = value.find(marker)
+                if cut != -1:
+                    value = value[:cut].rstrip()
+                    break
         out[key] = value
     return out
 
