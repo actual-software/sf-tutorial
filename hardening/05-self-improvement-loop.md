@@ -102,21 +102,23 @@ Risk: <what this makes worse>." \
   --type task --priority 3
 ```
 
-**What to notice.** Writing the proposal as a bead is not bookkeeping. It puts the proposal into the same system every other piece of work goes through, which means the gate you built in [the bead gate option](./06-bead-gate-checks.md) will now judge it. A proposal that cannot survive your own front gate is not ready to change your factory.
+**What to notice.** Writing the proposal as a bead is not bookkeeping. It puts the proposal into the same system every other piece of work goes through, so whatever gate stands in front of your beads now judges it too. A proposal that cannot survive your own front gate is not ready to change your factory.
 
 ### 4. Put a gate in front of the proposal
 
 This is the step that makes the loop safe, and it is the one people skip.
 
+The gate that always applies is a named person. A config change gets one whatever else you have installed, and the mechanism you already have for that is branch protection from [the branch-protection appendix](../appendix/03-branch-protection.md): your factory's configuration lives in files, those files live in a repo, and a change to them is a pull request somebody approves.
+
+If you also installed the [bead gate](./06-bead-gate-checks.md) option, run the proposal through its project-manager first and the bead has to clear your own front gate before it reaches that person:
+
 **Copy and paste**
 
 ```bash
 cd "$FACTORY_PATH"
-gc sling project-manager <the-proposal-bead-id>
+gc sling ascii-art/bead-gate-rig.project-manager <the-proposal-bead-id> --on mol-bead-review
 bd show <the-proposal-bead-id> --json | jq -r '.[0] | .status, (.metadata.bead_review_feedback // "passed")'
 ```
-
-Then add the human. Whatever the verdict, a config change gets a named person, and the mechanism you already have for that is branch protection from [the branch-protection appendix](../appendix/03-branch-protection.md): your factory's configuration lives in files, those files live in a repo, and a change to them is a pull request somebody approves.
 
 Say the rule out loud and write it into your capability map:
 

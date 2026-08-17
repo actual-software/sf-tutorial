@@ -174,13 +174,13 @@ gc restart
 
 Confirm the three formulas loaded.
 
-Four rows should be listed.
+Three rows should be listed.
 
 **Copy and paste**
 
 ```bash
 gc formula list \
-  | grep -E "mol-(design|test|doc)-spec|mol-bead-review"
+  | grep -E "mol-(design|test|doc)-spec"
 ```
 
 **Expected output**
