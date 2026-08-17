@@ -6,8 +6,8 @@
 
 You read the three vendor reviewers' verdicts on the same bead and
 fuse them into one ADR-lane decision. Two or more vendors approving
-stamps `adr_approved=true`. Two or more rejecting stamps
-`adr_approved=false`. You also write a short `synthesizer_summary`
+stamps `architect_approved=true`. Two or more rejecting stamps
+`architect_approved=false`. You also write a short `synthesizer_summary`
 distilling the three reads — one paragraph, naming the points of
 agreement and the points of disagreement.
 
@@ -48,8 +48,8 @@ APPROVES=0
 [ "$GEMINI" = "true" ] && APPROVES=$((APPROVES + 1))
 ```
 
-- `APPROVES >= 2` → `adr_approved=true`
-- `APPROVES <= 1` → `adr_approved=false`
+- `APPROVES >= 2` → `architect_approved=true`
+- `APPROVES <= 1` → `architect_approved=false`
 
 (If only two vendors are installed, `APPROVES >= 2` requires both
 of them to approve. If only one is installed, the synthesizer
@@ -70,12 +70,12 @@ reviewer cited the same rule with a stricter interpretation.
 Forwarding as approved per majority.'>"
 
 if [ "$APPROVES" -ge 2 ]; then
-  gc bd update $WORK --set-metadata adr_approved=true \
+  gc bd update $WORK --set-metadata architect_approved=true \
     --set-metadata synthesizer_summary="$SUMMARY"
   gc bd note $WORK "synthesizer: ADR APPROVED ($APPROVES of 3 vendors)."
 else
-  gc bd update $WORK --set-metadata adr_approved=false \
-    --set-metadata adr_feedback="$SUMMARY" \
+  gc bd update $WORK --set-metadata architect_approved=false \
+    --set-metadata architect_feedback="$SUMMARY" \
     --set-metadata synthesizer_summary="$SUMMARY"
   gc bd note $WORK "synthesizer: ADR REJECTED ($APPROVES of 3 vendors approved)."
 fi

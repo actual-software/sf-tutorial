@@ -1,14 +1,13 @@
-# principles-loop-rig — rig-scoped pack that adds depth to the ADR
-# reviewer lane: a per-principle scoring loop that scores every
-# polecat diff against 23 canonical Gas City architecture
-# principles, with an append-only audit trail per bead. Installed
-# in Hardening 3.
+# principles-loop-rig — rig-scoped pack that adds depth to the
+# architecture review lane: a per-principle scoring loop that scores
+# every polecat diff against 23 canonical Gas City architecture
+# principles, with an append-only audit trail per bead.
 #
 # What this pack contributes:
-#   1. `mol-principles-review` — replaces `mol-adr-review` as the
-#      formula the adr-reviewer pours. Scores the diff against 23
-#      principles (0-5 per principle), appends one row per
-#      principle to `docs/reviews/principles.<bead-id>.yaml`,
+#   1. `mol-principles-review` — replaces `mol-architect-review` as
+#      the formula the base factory's architect pours. Scores the
+#      diff against 23 principles (0-5 per principle), appends one row
+#      per principle to `docs/reviews/principles.<bead-id>.yaml`,
 #      writes detailed per-principle findings to
 #      `docs/reviews/principles/<bead-id>.<slug>.md`. The
 #      aggregator decides PASS / CONTINUE / ESCALATE based on
@@ -23,17 +22,26 @@
 # formula re-pours itself with `iteration` incremented. Cap at 3
 # iterations; on the 3rd CONTINUE, escalate to operator.
 #
-# Install:
-#   gc import add --rig <rig-name> packs/principles-loop-rig
-#   gc import remove --rig <rig-name> domain-reviewers-rig
+# Install (sits directly on the base factory):
+#   gc import add --rig <rig-name> artifacts/packs/principles-loop-rig
 #
-# principles-loop-rig imports domain-reviewers-rig directly, so
-# the four reviewer agents and the new refinery patrol from H2
-# remain available transitively.
+# principles-loop-rig imports architect-rig, the base factory's top
+# node, so the architect agent this formula is poured by and the
+# refinery patrol that reads its verdict both remain resolvable. It
+# does not import any other option, and no other option has to be
+# installed first.
+#
+# WHY THE ARCHITECT AND NOT A REVIEWER. This pack is a formula and a
+# check script; it ships no agent of its own, so it has to be poured by
+# an agent that already exists. On the base factory that is the
+# architect, and the refinery patrol already gates on
+# `architect_approved`, which is what this formula stamps. Install the
+# domain reviewers option as well and the same loop deepens whichever
+# architecture lane that option leaves in place.
 
 [pack]
 name = "principles-loop-rig"
 schema = 1
 
-[imports.domain-reviewers-rig]
-source = "../domain-reviewers-rig"
+[imports.architect-rig]
+source = "../architect-rig"

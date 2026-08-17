@@ -1,0 +1,69 @@
+# base-factory — the factory every participant starts from.
+#
+# Installed in W3. One `gc import add` brings up a working factory with an
+# example of every Gas City primitive already running in it, so the first day
+# is spent reading a factory that works rather than assembling one that does
+# not yet.
+#
+# WHAT ONE IMPORT BRINGS. Packs import transitively, so this pack's single
+# import pulls the whole base chain:
+#
+#   base-factory -> architect-rig -> pr-gate-rig -> setup
+#
+#   setup          polecat and refinery agents, the two reference formulas,
+#                  and the worktree helper. This is where mail is used.
+#   pr-gate-rig    the PR-publish path: `mol-polecat-pr` stamps the work bead
+#                  into PR mode, `mol-refinery-pr-patrol` inserts an approval
+#                  step between checks and merge.
+#   architect-rig  the architect agent and its review formula, plus the
+#                  refinery patrol that routes work through it.
+#
+# WHAT THIS PACK ADDS ON TOP. Two orders, which is the one primitive the base
+# chain did not already demonstrate. `factory-pulse` is on a schedule and
+# `bead-closed-log` fires on an event, so a participant sees both trigger
+# styles. They write to the same file on purpose: FACTORY_LOG.md in the rig
+# root ends the day carrying interleaved lines from both, which is the shortest
+# demonstration that the two are different mechanisms.
+#
+# THE FIVE PRIMITIVES, and where to read each one in the installed factory:
+#
+#   Formulas      setup/formulas/mol-polecat-work.toml and the two patrol
+#                 formulas in pr-gate-rig and architect-rig. Steps carry no
+#                 assignee; the pool is resolved per step at dispatch.
+#   Agent persona architect-rig/agents/architect — a persona with its own
+#                 prompt, its own pool bounds, and a verdict it writes back
+#                 onto the bead.
+#   Orders        this pack's orders/ directory, both of them.
+#   Rig           the ASCII-art rig the participant adds in W3, which is what
+#                 all of the above is scoped to.
+#   Mail          used by setup/agents/refinery and setup/agents/polecat, and
+#                 again in the pr-gate and architect refinery prompts.
+#
+# Install (rig scope — everything here is scoped to one workspace):
+#   gc import add --rig <rig-name> artifacts/packs/base-factory
+#
+# THE ONE THING THIS PACK CANNOT BRING is the mayor's half of the PR gate.
+# `pr-gate-city` patches the mayor, the mayor is city-scoped, and a pack
+# composes at one scope, so it stays a separate city-scoped import:
+#
+#   gc import add artifacts/packs/pr-gate-city
+#
+# All five primitives are in the rig-scoped chain above, so the base factory is
+# complete without it. What the city half adds is the mayor knowing to dispatch
+# with `--on mol-polecat-pr`, which is worth the second command.
+#
+# The hardening options each import architect-rig directly rather than each
+# other, so any option composes on top of this pack alone. Pick options in any
+# order; none of them requires another.
+
+[pack]
+name = "base-factory"
+schema = 1
+
+# ── IMPORTS ───────────────────────────────────────────────────────────
+# One import, because architect-rig already carries the rest of the chain.
+# Adding pr-gate-rig or setup here as well would be redundant rather than
+# wrong: composition resolves each pack once however many paths reach it.
+
+[imports.architect-rig]
+source = "../architect-rig"
