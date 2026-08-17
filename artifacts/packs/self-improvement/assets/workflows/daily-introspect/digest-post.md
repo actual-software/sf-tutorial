@@ -1,6 +1,6 @@
 # The digest, on the days there is one
 
-Post a digest if — and only if — the pass produced at least one finding that warrants operator visibility: a structural-fix bead the operator should know was minted, an operator-decision item, or a delta worth their attention. Zero such findings means post nothing. The silent pass is the common case and the correct one.
+Post a digest only when the pass produced at least one finding that warrants operator visibility: a structural-fix bead the operator should know was minted, an operator-decision item, or a delta worth their attention. Zero such findings means post nothing. The silent pass is the common case and the correct one.
 
 ### Where it goes
 

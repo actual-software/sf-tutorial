@@ -18,4 +18,4 @@ Walk this checklist top to bottom until one of the bounds fires.
   # gh search commits --repo <your-org>/<your-knowledge-repo> --author-date=">=$(date -u -d '1 day ago' '+%Y-%m-%d')"
   ```
 
-The list is a starting set rather than a closed one. If a pass turns up a recurring shape that fits none of these categories, surface it in the digest and ask whether the checklist itself should grow — a gap in the checklist is a structural-fix candidate in its own right.
+The list is a starting set rather than a closed one. If a pass turns up a recurring shape that fits none of these categories, surface it in the digest and ask whether the checklist itself should grow. A gap in the checklist is a structural-fix candidate in its own right.
