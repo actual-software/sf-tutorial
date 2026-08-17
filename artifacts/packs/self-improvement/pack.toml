@@ -1,0 +1,38 @@
+# self-improvement — a factory that audits itself once a day, on a schedule,
+# with bounds on what it is allowed to do about what it finds.
+#
+# This is the packaged form of the loop in the Self-Improvement Loop lab
+# (hardening/05-self-improvement-loop.md): the factory reads signals it already
+# emits, and a proposal to change its own configuration goes through a gate
+# rather than straight into effect. The lab has you run that loop by hand once.
+# This pack runs the observation half on a schedule and leaves the decision half
+# where the lab leaves it, with a person.
+#
+# What this pack contributes:
+#   1. `daily-introspect` — a condition-trigger order whose check owns both the
+#      environment gate and the cadence, dispatching the formula directly rather
+#      than nudging an agent in prose. The order file explains why at length;
+#      that comment is the most transferable thing in the pack.
+#   2. `daily-introspect` — a six-step workflow formula: enter the mode, walk a
+#      bounded audit, sort each finding into one of three dispositions, post a
+#      digest only when there is something to say, carry state forward, stop.
+#   3. `assets/scripts/order_env_gate.py` — an environment gate that loads the
+#      city's `.env` itself, because an order's shell line does not.
+#   4. `assets/scripts/introspect_due.py` — the cadence check, which reads the
+#      last *completed pass* rather than the last dispatch.
+#
+# It contributes no agents. The pass runs on an agent you already have, named by
+# the `pool` field in the order (default: `mayor`), plus one line in that agent's
+# prompt. See README.md for the line and for the three optional dependencies.
+#
+# Install (city scope — the pass audits the whole factory, not one rig):
+#   gc import add ../sf-tutorial/artifacts/packs/self-improvement
+#
+# Two bounds hold every pass: roughly five minutes of agent time, and at most
+# three structural-fix beads minted. Whichever fires first stops it. Those
+# numbers live in the workflow steps and are meant to be edited, but read the
+# README's note on the lab's ceiling before you raise the second one.
+
+[pack]
+name = "self-improvement"
+schema = 1
