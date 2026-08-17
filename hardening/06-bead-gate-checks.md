@@ -69,9 +69,9 @@ Agent workflow with the project-manager in place:
    problem on the bead (correct the title, fill in the description,
    set `target_file`, etc.), runs `bd update <bead> --status=open`,
    and re-slings the project-manager for a clean re-review. Page
-   05.2 walks through using a Grill-Me skill in your local agent to
-   refine beads quickly so the project-manager passes them on the
-   first pass.
+   The Grill-Me section below walks through using a Grill-Me skill in
+   your local agent to refine beads quickly so the project-manager
+   passes them on the first pass.
 1. The **polecat / refinery / architect** chain (the base factory) runs
    exactly as before once the bead is in the polecat pool.
 
@@ -103,7 +103,7 @@ After it finishes, re-export the four env vars per [W3 Run Your Factory](../prog
 
 ### 1. Install the bead-gate-rig pack into factory1
 
-The the base factory's architect setup gave the rig a downstream architecture review —
+The base factory's architect gives the rig a downstream architecture review —
 the architect reads each polecat's diff before the refinery merges.
 But there is no upstream check on the **bead** itself. A bead with a
 wrong title, a missing `target_file`, or a description that says
@@ -478,9 +478,9 @@ gc sling ascii-art/bead-gate-rig.project-manager $BAD_BEAD --on mol-bead-review
 ```
 
 This time the project-manager passes the bead and routes it to the
-polecat pool. From here, the rest of the pipeline is unchanged. (Page
-05.2 introduces a Grill-Me skill in your local agent so you can
-refine vague or malformed beads before slinging them at the
+polecat pool. From here, the rest of the pipeline is unchanged. (The
+Grill-Me section below introduces a Grill-Me skill in your local agent
+so you can refine vague or malformed beads before slinging them at the
 project-manager — saves a round-trip.)
 
 ### 6. Demonstrate the test-generation gate

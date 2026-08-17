@@ -112,7 +112,7 @@ principles with an append-only audit trail.
 
 ### 1. Install the domain-reviewers-rig pack into factory1
 
-The the base factory's architect architect was a single reviewer with a single corpus
+The base factory's architect was a single reviewer with a single corpus
 (ADRs + `docs/current/`). H1 added three pre-PM Leads producing
 design / test / docs specs per bead — but the post-PM review side
 was still one agent reading everything. The natural next step is to

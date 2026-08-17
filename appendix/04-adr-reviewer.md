@@ -140,7 +140,7 @@ After it finishes, re-export the four env vars per [W3 Run Your Factory](../prog
 
 ### 1. Install the architect-rig pack into factory1
 
-The the review loop setup gave the refinery a single hard-coded round of
+The review loop setup gave the refinery a single hard-coded round of
 self-generated feedback. The branch protection setup gated PRs on a CODEOWNER
 approval. Neither one knows about the rig's ADRs or current
 architecture docs — feedback was whatever the refinery thought of in

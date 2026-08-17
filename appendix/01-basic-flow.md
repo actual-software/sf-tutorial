@@ -625,8 +625,8 @@ all three paths print without error.
   fails instead, check the refinery's session logs for which check
   it tried to run.
 - **Pushed to the wrong remote.** `git remote -v` from the rig should
-  show `origin` pointing at the GitHub repo you created in page 00.2
-  step 4. If it points elsewhere, the refinery's `gh pr create` will
+  show `origin` pointing at the GitHub repo you created when you set
+  the rig up. If it points elsewhere, the refinery's `gh pr create` will
   fail or open the PR on the wrong repository.
 - **Bead closes but the file is empty or missing.** Look at the
   polecat's session log. The log will show what the agent actually wrote and where.

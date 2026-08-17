@@ -37,12 +37,12 @@ Branching/Merging strategy is unchanged from the base factory's architect. What 
 
 Agent workflow with the Leads in place:
 
-1. The **operator** drafts the bead (or uses the Grill-Me skill from the Grill-Me section below to refine its title and description).
+1. The **operator** drafts the bead (or uses the Grill-Me skill from the [bead gate](./06-bead-gate-checks.md) option's Grill-Me section to refine its title and description).
 1. The **operator** slings the three Leads at the bead, one at a time:
    - `gc sling <rig>/design-lead <bead> --on mol-design-spec` — drafts `docs/design/<bead-id>.md`, stamps `metadata.design_doc=<path>`.
    - `gc sling <rig>/test-lead <bead> --on mol-test-spec` — drafts `docs/testing/<bead-id>.md`, stamps `metadata.test_plan=<path>`.
    - `gc sling <rig>/doc-lead <bead> --on mol-doc-spec` — drafts `docs/outlines/<bead-id>.md`, stamps `metadata.docs_outline=<path>`.
-1. The **project-manager** (the bead gate, with an extended checklist): in addition to the conformity checks from 05.1, the project-manager now refuses to pass a bead unless `design_doc`, `test_plan`, and `docs_outline` are all set on the bead and point at files that exist on disk.
+1. The **project-manager** (the bead gate, with an extended checklist): in addition to the conformity checks from the [bead gate](./06-bead-gate-checks.md) option, the project-manager now refuses to pass a bead unless `design_doc`, `test_plan`, and `docs_outline` are all set on the bead and point at files that exist on disk.
 1. The **polecat / refinery / architect** chain (the base factory) runs exactly as before. The polecat reads the three specs at implement time. The architect (the base factory's architect) references them during architecture review.
 
 The Leads do **not** write production code, modify the bead's title or description, or stamp any downstream verdict flags. They are upstream "light-side" helpers — agents whose job is to **shape higher-quality work with less effort**. The operator could have written all three docs by hand; the Leads automate the boring parts and surface trade-offs the operator would otherwise miss.
@@ -55,7 +55,7 @@ The next page (Hardening 2) builds on these spec files: the architect (currently
 
 ### 1. Install the bead-builders-rig pack into factory1
 
-The the bead gate setup gave the rig a project-manager that gates beads on a small conformity checklist (title, description, `target_file`, parent epic). The the Grill-Me section below walkthrough added the Grill-Me skill so the operator can refine vague beads quickly. What's still missing is **design / test / docs context on every bead**: the operator types a title and a one-paragraph description, and the polecat is left to guess at the design, the test plan, and the docs impact.
+The [bead gate](./06-bead-gate-checks.md) option gives the rig a project-manager that gates beads on a small conformity checklist (title, description, `target_file`, parent epic), and its Grill-Me section adds a skill for refining vague beads quickly. What's still missing, with or without that option, is **design / test / docs context on every bead**: the operator types a title and a one-paragraph description, and the polecat is left to guess at the design, the test plan, and the docs impact.
 
 This ships as a single rig-scoped pack, **`bead-builders-rig`**, that adds three new agents and three new formulas:
 
@@ -65,7 +65,7 @@ This ships as a single rig-scoped pack, **`bead-builders-rig`**, that adds three
 
 Each Lead is independent. Run them in any order. They do not depend on each other; they each take the same inputs (the bead and the relevant doc tree) and produce one focused spec.
 
-The new pack declares one import: `bead-gate-rig` (which transitively brings `architect-rig`, `pr-gate-rig`, and `setup`). The project-manager's prompt is patched in this pack so the existing conformity checklist also requires `metadata.design_doc`, `metadata.test_plan`, and `metadata.docs_outline` to be set and to point at files that exist on disk.
+The new pack declares one import: `architect-rig` (which transitively brings `pr-gate-rig` and `setup`), so it sits directly on the base factory. The project-manager's prompt is patched in this pack so the existing conformity checklist also requires `metadata.design_doc`, `metadata.test_plan`, and `metadata.docs_outline` to be set and to point at files that exist on disk.
 
 Inspect the pack before installing.
 
@@ -116,7 +116,7 @@ $FACTORY_PATH/packs/bead-builders-rig/pack.toml
 
 One line is the whole check. A second line ending in `bead-builders-rig/bead-builders-rig/pack.toml` is a nested copy left by an earlier run, and the fix is to delete `$FACTORY_PATH/packs/bead-builders-rig` and repeat the copy above. The `gc import list` check below cannot see it, because it reports the path recorded in `pack.toml` rather than what sits inside the directory.
 
-Register the new import at rig scope and remove the now-redundant direct `bead-gate-rig` import. Run from the city directory.
+Register the new import at rig scope. Run from the city directory.
 
 **Copy and paste**
 
@@ -132,7 +132,7 @@ gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/bead-builders-rig"
 
 Verify the imports.
 
-The rig should now import `bead-builders-rig` and no longer import `bead-gate-rig`.
+The rig should now import `bead-builders-rig` alongside `base-factory`.
 
 **Copy and paste**
 

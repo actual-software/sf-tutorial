@@ -92,7 +92,7 @@ After it finishes, re-export the four env vars per [W3 Run Your Factory](../prog
 
 ### 1. Install the review-loop-rig pack into factory1
 
-The the basic flow setup left the refinery as a single-shot approver: read the
+The basic flow setup left the refinery as a single-shot approver: read the
 diff, stamp `refinery_approved=true`, publish a PR. There is no
 mechanism for the refinery to ask the polecat to revise its work — it
 either approves or blocks. We want a softer gate on the way in: one
@@ -580,7 +580,7 @@ both paths print without error.
   the basic flow approval block: re-sling once, escalate if it blocks twice.
 - **`gh pr create` fails with auth or remote errors.** Same as page
   01 — `git remote -v` should show `origin` pointing at the GitHub repo
-  from page 00.2. If it doesn't, the refinery's `gh pr create` will
+  you created when you set the rig up. If it doesn't, the refinery's `gh pr create` will
   open the PR on the wrong repository (or fail).
 - **`watch` is not installed (macOS default).** Either `brew install
   watch`, or just re-run the `gc bd show $BEAD_ID --json | jq ...`
