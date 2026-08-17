@@ -666,6 +666,205 @@ case "$(cat "$ORDER_LOG")" in
   *)               ok  "a mistyped confirmation deletes no volume" ;;
 esac
 
+# ---- the workspace remove destroys in ---------------------------------------
+#
+# Two root layouts are in use and remove has to be right in both. sfbox's own is
+# one root holding a workspace per box, which is what provision builds. The
+# cohort roots are the other: a directory per box, each with its own state key
+# and no workspace but default.
+#
+# remove used to create the workspace it asked for when the select missed. That
+# is right at provision time and wrong here: against a per-directory root it
+# swapped the box's real state for an empty one, so the destroy had nothing to
+# do, succeeded, and printed that it had destroyed the box while the instance
+# went on running and billing. Nothing in the output said otherwise.
+
+echo "instructor: remove never creates the workspace it destroys in"
+: >"$TF_LOG"; : >"$ORDER_LOG"; VOL_STATE="deleted"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  printf 'tf %s\n' "$*" >>"$ORDER_LOG"
+  case "$*" in
+    *"workspace select"*)          return 1 ;;
+    *"workspace show")             printf 'default\n' ;;
+    *"state list")                 printf 'data.aws_vpc.shared\nmodule.gas_city.aws_instance.main\nmodule.gas_city.aws_ebs_volume.home\n' ;;
+    *"output -raw home_volume_id") return 1 ;;
+    *"state show"*"aws_instance.main")
+      printf 'resource "aws_instance" "main" {\n    tags = {\n        "Name"     = "alice-prod"\n        "Workshop" = "sfi"\n    }\n}\n' ;;
+    *"state show"*)                printf '    id  = "vol-0home"\n' ;;
+  esac
+  return 0
+}
+rc_is 0 "removes a box from a per-directory root" \
+  cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
+log="$(cat "$TF_LOG")"
+case "$log" in
+  *"workspace new"*) bad "never creates a workspace on the remove path" "issued workspace new" ;;
+  *)                 ok  "never creates a workspace on the remove path" ;;
+esac
+contains "$log" "destroy" "destroys the state the root already had"
+contains "$log" "state rm module.gas_city.aws_ebs_volume.home" \
+                          "drops the real home volume rather than an empty workspace's"
+
+# The failure as it actually happened, with the consequence modelled rather than
+# just the call: in Terraform a newly created workspace is empty, so the state the
+# box lives in stops being the state the rest of the command can see. Everything
+# downstream then behaves correctly against nothing at all — no volume to drop, a
+# destroy with no work in it, exit 0, and a closing line reporting the box gone.
+#
+# The marker goes through a file because rc_is runs its command in a subshell, so
+# a shell variable set inside the stub would not survive to be asserted on, and
+# the assertion would pass without ever having watched anything.
+echo "instructor: a box in a per-directory root is really destroyed, not reported destroyed"
+: >"$TF_LOG"; : >"$ORDER_LOG"; VOL_STATE="deleted"
+WS_FLAG="$SFBOX_TEST_ROOT/ws-created"; rm -f "$WS_FLAG"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  printf 'tf %s\n' "$*" >>"$ORDER_LOG"
+  case "$*" in
+    *"workspace select"*)          return 1 ;;
+    *"workspace new"*)             : >"$WS_FLAG"; return 0 ;;
+    *"workspace show")             printf 'default\n' ;;
+    *"state list")
+      [ -f "$WS_FLAG" ] && return 0
+      printf 'module.gas_city.aws_instance.main\nmodule.gas_city.aws_ebs_volume.home\n' ;;
+    *"output -raw home_volume_id") return 1 ;;
+    *"state show"*"aws_instance.main")
+      printf 'resource "aws_instance" "main" {\n    tags = {\n        "Name" = "alice-prod"\n    }\n}\n' ;;
+    *"state show"*)                printf '    id  = "vol-0home"\n' ;;
+  esac
+  return 0
+}
+rc_is 0 "removes the box" cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
+if [ -f "$WS_FLAG" ]; then
+  bad "leaves the box's own state in view" "created a workspace, so the destroy ran against an empty one"
+else
+  ok  "leaves the box's own state in view"
+fi
+contains "$(cat "$ORDER_LOG")" "delete-volume --volume-id vol-0home" \
+                          "deletes the box's real home volume rather than finding none to delete"
+seq="$(awk '
+  /^tf .*state rm/         { print "state-rm" }
+  /^tf .*destroy /         { print "destroy" }
+  /^aws ec2 delete-volume/ { print "delete-volume" }
+' "$ORDER_LOG" | paste -sd, -)"
+is "$seq" "state-rm,destroy,delete-volume" \
+                          "runs the same three steps a workspace root gets"
+
+echo "instructor: remove refuses a workspace with no state in it"
+: >"$TF_LOG"; : >"$ORDER_LOG"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  case "$*" in
+    *"workspace select"*) return 1 ;;
+    *"workspace show")    printf 'default\n' ;;
+    *"state list")        : ;;
+  esac
+  return 0
+}
+rc_is 9 "refuses to destroy an empty workspace" \
+  cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
+msg="$(cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes 2>&1)"
+contains "$msg" "holds no state"  "says the workspace is empty"
+contains "$msg" "still running"   "warns that the box is still there"
+case "$(cat "$TF_LOG")" in
+  *destroy*) bad "runs no destroy against empty state" "issued a destroy" ;;
+  *)         ok  "runs no destroy against empty state" ;;
+esac
+
+# A root that was initialised and refreshed but never applied lists its data
+# sources and nothing else. Counting those as state would let through exactly the
+# no-op the guard above exists to catch.
+echo "instructor: a root that was never applied does not count as state"
+: >"$TF_LOG"; : >"$ORDER_LOG"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  case "$*" in
+    *"workspace select"*) return 1 ;;
+    *"workspace show")    printf 'default\n' ;;
+    *"state list")        printf 'data.aws_vpc.shared\ndata.aws_subnet.public\nmodule.gas_city.data.aws_ami.ubuntu\n' ;;
+  esac
+  return 0
+}
+rc_is 9 "reads a data-source-only state as empty" \
+  cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
+case "$(cat "$TF_LOG")" in
+  *destroy*) bad "destroys nothing against data sources alone" "issued a destroy" ;;
+  *)         ok  "destroys nothing against data sources alone" ;;
+esac
+
+# Falling back to the current workspace is only safe because of this. A mistyped
+# boxId or a --tf-root pointing one directory sideways lands on a real workspace
+# holding somebody else's box, and the home volume remove deletes on its way out
+# carries that participant's city and their credentials.
+echo "instructor: remove refuses a root holding a different box"
+: >"$TF_LOG"; : >"$ORDER_LOG"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  case "$*" in
+    *"workspace select"*) return 1 ;;
+    *"workspace show")    printf 'default\n' ;;
+    *"state list")        printf 'module.gas_city.aws_instance.main\n' ;;
+    *"state show"*)       printf 'resource "aws_instance" "main" {\n    tags = {\n        "Name" = "bob-prod"\n    }\n}\n' ;;
+  esac
+  return 0
+}
+rc_is 9 "refuses when the root holds somebody else's box" \
+  cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
+msg="$(cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes 2>&1)"
+contains "$msg" "holds 'bob-prod', not 'alice-prod'" "names both boxes"
+case "$(cat "$TF_LOG")" in
+  *"state rm"*) bad "drops no state out of a root it refused" "ran state rm" ;;
+  *)            ok  "drops no state out of a root it refused" ;;
+esac
+case "$(cat "$TF_LOG")" in
+  *destroy*) bad "destroys nothing in a root it refused" "issued a destroy" ;;
+  *)         ok  "destroys nothing in a root it refused" ;;
+esac
+
+# The identity check reads the instance's Name tag, and falls back to the home
+# volume's FactoryName when the instance has already gone. Without that fallback
+# a destroy that failed part-way could not be retried: the guard would refuse the
+# very state the first run left behind.
+echo "instructor: a part-destroyed box is still identified by its home volume"
+: >"$TF_LOG"; : >"$ORDER_LOG"; VOL_STATE="deleted"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  printf 'tf %s\n' "$*" >>"$ORDER_LOG"
+  case "$*" in
+    *"workspace select"*)          return 1 ;;
+    *"workspace show")             printf 'default\n' ;;
+    *"state list")                 printf 'module.gas_city.aws_ebs_volume.home\n' ;;
+    *"output -raw home_volume_id") return 1 ;;
+    *"state show"*)                printf 'resource "aws_ebs_volume" "home" {\n    id   = "vol-0home"\n    tags = {\n        "FactoryName" = "alice-prod"\n    }\n}\n' ;;
+  esac
+  return 0
+}
+rc_is 0 "finishes a removal the instance has already left" \
+  cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
+contains "$(cat "$TF_LOG")" "destroy" "destroys what is left of it"
+
+# A state that names no box at all is not evidence of the wrong root, so it must
+# not stop the command. Roots whose module tags differently would otherwise stop
+# removing altogether, which trades a rare mistake for a broken command.
+echo "instructor: a state that names no box is not read as the wrong box"
+: >"$TF_LOG"; : >"$ORDER_LOG"; VOL_STATE="deleted"
+tf_cli() {
+  printf '%s\n' "$*" >>"$TF_LOG"
+  printf 'tf %s\n' "$*" >>"$ORDER_LOG"
+  case "$*" in
+    *"workspace select"*)          return 1 ;;
+    *"workspace show")             printf 'default\n' ;;
+    *"state list")                 printf 'module.gas_city.aws_instance.main\n' ;;
+    *"output -raw home_volume_id") return 1 ;;
+    *"state show"*)                printf 'resource "aws_instance" "main" {\n    id = "i-0abc"\n}\n' ;;
+  esac
+  return 0
+}
+rc_is 0 "destroys a state that carries no name tag" \
+  cmd_instructor_remove alice-prod --tf-root "$TFROOT" --yes
+contains "$(cat "$TF_LOG")" "destroy" "still runs the destroy"
+
 # ---- provision plumbing -----------------------------------------------------
 
 echo "instructor: provision plumbing"

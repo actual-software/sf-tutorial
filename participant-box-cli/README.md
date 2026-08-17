@@ -126,7 +126,19 @@ They drive Terraform over [`modules/gas-city-instance`](https://github.com/actua
 export SFBOX_TF_ROOT=~/workspaces/sfi-cohort   # or pass --tf-root
 ```
 
-Each box gets its own Terraform workspace named after its boxId. That's what keeps provisioning the second box from tearing down the first, since one shared state file would otherwise treat every apply as a change to the same instance.
+`provision` gives each box its own Terraform workspace named after its boxId. That's what keeps provisioning the second box from tearing down the first, since one shared state file would otherwise treat every apply as a change to the same instance.
+
+The other layout works too, and is the one the live cohort roots use: a directory per box, each with its own state key and no workspace but `default`. `remove` selects the box's workspace when there is one and otherwise stays on whichever the root is already on. It never creates one, because a workspace it had to create is empty by definition, and destroying an empty workspace succeeds while the box goes on running.
+
+Two guards decide whether `remove` proceeds, and both stop it rather than destroying something unintended:
+
+| It finds | What it does |
+|---|---|
+| No state to destroy | Stops, and says the box is probably still running |
+| State naming a different box | Stops, and names the box the root actually holds |
+| State naming this box, or naming none | Destroys |
+
+The second guard is what makes a mistyped boxId or a `--tf-root` pointing one directory sideways safe: it reads the boxId back off the instance's `Name` tag, or the home volume's `FactoryName` when the instance has already gone.
 
 ### The handoff
 
