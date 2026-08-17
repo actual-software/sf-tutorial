@@ -28,7 +28,7 @@ By the end of this exercise you will have:
 
 ## Prereqs
 
-- Hardening 3 complete: `principles-loop-rig` is installed, the per-principle audit trail is wired, and at least one bead has been through the principles loop end-to-end.
+- [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on a rig, with the polecat, refinery and architect running.
 - **Three CLI providers** installed and authenticated on the host running the pool: `codex`, `claude`, `gemini`. Each provider is installed separately; check the Gas City installation docs (or each provider's own docs) for current install instructions. Verify each:
 
   **Copy and paste**
@@ -39,8 +39,10 @@ By the end of this exercise you will have:
   gemini --version
   ```
 
-  If any provider is missing, you can either skip H4 and stay on the single-vendor flow, or run with two providers (majority rule still works at 2/2; at 1/1 the synthesizer always says `false` — see Troubleshooting).
-- You're inside the rig directory. If a fresh shell, re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and `$ARTIFACTS_PATH` per [00.3](../progression/00.3-setup-foundation.md), then:
+  If any provider is missing, you can either pick a different option and stay on the single-vendor flow, or run with two providers (majority rule still works at 2/2; at 1/1 the synthesizer always says `false` — see Troubleshooting).
+
+**This option needs no other option.** It installs on the base factory and replaces the single architecture reviewer with three. The synthesizer stamps `architect_approved`, which is the field the base factory's refinery patrol already gates on, so the fan-out is invisible from the refinery's side: it sees one architecture verdict, the same as before.
+- You're inside the rig directory. If a fresh shell, re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and `$ARTIFACTS_PATH` per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then:
 
   **Copy and paste**
 
@@ -153,8 +155,11 @@ Register the new import at rig scope:
 ```bash
 cd "$FACTORY_PATH"
 
-gc import add --rig ascii-art packs/multi-vendor-rig
-gc import remove --rig ascii-art principles-loop-rig
+gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/multi-vendor-rig"
+
+# Nothing is removed. This option sits alongside the base factory,
+# which keeps its orders and resolves the shared packs once.
+
 ```
 
 The rig should now import `multi-vendor-rig` and no longer import `principles-loop-rig`.
@@ -477,6 +482,8 @@ ls ascii/n.md
 
 ## What's next
 
-Return to the [tutorial index](../README.md). The Hardening track is complete. Beyond this, the direction is yours.
+This is one of six options, and they are a menu rather than a sequence. Every one installs on the base factory alone, so take them in whatever order solves a problem you actually have. The full list is in [the feature labs](../progression/L3-L5-feature-labs.md#the-six-options).
 
-« [previous: L-3 Hardening — Track A, scoring](./03-architecture-best-practices-loop.md) | [next: L-4 Self-improvement Loop](./05-self-improvement-loop.md) »
+Pairs naturally with the [architecture best-practices loop](./03-architecture-best-practices-loop.md), which deepens the same lane along a different axis: this option asks more reviewers, that one asks more questions.
+
+« [back to the feature labs](../progression/L3-L5-feature-labs.md) »

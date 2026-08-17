@@ -24,10 +24,12 @@ By the end of this exercise you will have installed the `bead-builders-rig` pack
 
 ## Prereqs
 
-- Progression complete through [05.2](../progression/05.2-bead-gate-checks.md): `bead-gate-rig` is installed, the project-manager agent is the factory's front gate, the Grill-Me skill is set up locally.
-- You're inside the rig directory. If you opened a fresh shell, re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and `$ARTIFACTS_PATH` per [00.3](../progression/00.3-setup-foundation.md), then `cd "$ASCII_ART_PATH"`.
+- [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on a rig, with the polecat, refinery and architect running.
+- You are inside the rig directory, with `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH` and `$ARTIFACTS_PATH` exported, then `cd "$ASCII_ART_PATH"`.
 - `gh` is authenticated; `jq` is installed.
-- Letters consumed so far: a–i. The next open task bead is `Implement j.md`.
+- An open task bead to work with. `bd list --status open --limit 5` picks one.
+
+**This option needs no other option.** It installs on the base factory, so take it first, last, or on its own. Pairing it with the [bead gate](./06-bead-gate-checks.md) is the natural next step once you have both, because that gate can then require the specs these Leads write.
 
 ## Context
 
@@ -121,8 +123,11 @@ Register the new import at rig scope and remove the now-redundant direct `bead-g
 ```bash
 cd "$FACTORY_PATH"
 
-gc import add --rig ascii-art packs/bead-builders-rig
-gc import remove --rig ascii-art bead-gate-rig
+gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/bead-builders-rig"
+
+# Nothing is removed. This option sits alongside the base factory,
+# which keeps its orders and resolves the shared packs once.
+
 ```
 
 Verify the imports.
@@ -469,6 +474,8 @@ ls ascii/j.md
 
 ## What's next
 
-[H2 Specialize reviewers per domain](./02-specialize-reviewers-per-domain.md) builds on the three spec files this page produces: the architect (currently a single agent) splits into four parallel domain reviewers, each citing the doc family the matching Lead authored. The two-day path reaches it as L-2 on Thursday morning; if you are working the hardening track on your own, it is the next page.
+This is one of six options, and they are a menu rather than a sequence. Every one installs on the base factory alone, so take them in whatever order solves a problem you actually have. The full list is in [the feature labs](../progression/L3-L5-feature-labs.md#the-six-options).
 
-« [previous: W-5 Requirement Gates](../progression/05.1-bead-gate-checks.md) | [next: W-6 Coordination Channels](../progression/06-coordination-channels.md) »
+Pairs naturally with the [bead gate](./06-bead-gate-checks.md), whose checklist can then require the specs these Leads write, and with the [domain reviewers](./02-specialize-reviewers-per-domain.md), whose design, testing and docs lanes read them.
+
+« [back to the feature labs](../progression/L3-L5-feature-labs.md) »

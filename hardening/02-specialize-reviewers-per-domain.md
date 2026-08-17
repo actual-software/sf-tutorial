@@ -23,18 +23,14 @@ Install the `domain-reviewers-rig` pack into the `ascii-art` rig, replacing the 
 
 ## Prereqs
 
-- Hardening 1 complete: `bead-builders-rig` is installed, the three
-  Leads (Design / Test / Doc) are registered, and at least one bead
-  has been through them so `metadata.design_doc`, `test_plan`,
-  `docs_outline` are stamped.
-- You're inside the rig directory. If a fresh shell, re-export
-  `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and
-  `$ARTIFACTS_PATH` per
-  [00.3](../progression/00.3-setup-foundation.md), then
-  `cd "$ASCII_ART_PATH"`.
+- [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on a rig, with the polecat, refinery and architect running.
+- You are inside the rig directory, with `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH` and `$ARTIFACTS_PATH` exported, then `cd "$ASCII_ART_PATH"`.
 - `gh` is authenticated; `jq` is installed.
-- Letters consumed so far: a–j. The next open task bead is
-  `Implement k.md`.
+- An open task bead to work with. `bd list --status open --limit 5` picks one.
+
+**This option needs no other option.** It installs on the base factory and ships all four reviewers plus the refinery patrol that fans out to them.
+
+**Three of the four lanes defer without the [bead creation](./01-bead-creation-formula-extensions.md) option.** The design, testing and docs reviewers each read a spec that option's Leads write (`metadata.design_doc`, `test_plan`, `docs_outline`), and each is written to stamp its lane approved with a deferral note when that field is unset rather than block on it. So on the base factory alone this is a real ADR review plus three lanes that pass through. Installing both options is what turns the other three on, and that is by design: the Leads are the spec authors and these reviewers are not.
 
 ## Context
 
@@ -219,8 +215,11 @@ direct `bead-builders-rig` import.
 ```bash
 cd "$FACTORY_PATH"
 
-gc import add --rig ascii-art packs/domain-reviewers-rig
-gc import remove --rig ascii-art bead-builders-rig
+gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/domain-reviewers-rig"
+
+# Nothing is removed. This option sits alongside the base factory,
+# which keeps its orders and resolves the shared packs once.
+
 ```
 
 Verify.
@@ -513,9 +512,8 @@ ls ascii/k.md
 
 ## What's next
 
-Continue to [Architecture-best-practices loop](./03-architecture-best-practices-loop.md).
-H3 adds depth along the ADR lane: a per-bead append-only score
-across 23 canonical architecture principles, iterated up to 3
-cycles until aggregate hits 0.9 or the cap trips.
+This is one of six options, and they are a menu rather than a sequence. Every one installs on the base factory alone, so take them in whatever order solves a problem you actually have. The full list is in [the feature labs](../progression/L3-L5-feature-labs.md#the-six-options).
 
-« [previous: W-7 The Mayor and Workflows](../progression/08-mayor-and-workflows.md) | [next: L-3 Hardening — Track A, scoring](./03-architecture-best-practices-loop.md) »
+Pairs naturally with the [bead creation Leads](./01-bead-creation-formula-extensions.md), which turn on the three lanes that otherwise defer, and with the [architecture best-practices loop](./03-architecture-best-practices-loop.md), which adds depth to whichever architecture lane you keep.
+
+« [back to the feature labs](../progression/L3-L5-feature-labs.md) »

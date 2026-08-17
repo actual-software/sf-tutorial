@@ -27,14 +27,14 @@ By the end of this exercise you will have three letters from the `letters-a-m` e
 
 ## Prereqs
 
-- Pages [00.1](./00.1-setup-foundation.md), [00.2](./00.2-setup-foundation.md),
-  and [00.3](./00.3-setup-foundation.md) complete: city stood up with setup
+- Pages [W3 Run Your Factory](../progression/W3-run-your-factory.md), [W3 Run Your Factory](../progression/W3-run-your-factory.md),
+  and [W3 Run Your Factory](../progression/W3-run-your-factory.md) complete: city stood up with setup
   pack imported, rig registered with locked docs in place, 138 beads seeded,
   `main` pushed to GitHub, and `$ASCII_ART_PATH`/`$ARTIFACTS_PATH` exported in your
   shell.
 - You're inside the rig directory. If you opened a fresh shell, re-export
   `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and `$ARTIFACTS_PATH`
-  per [00.3](./00.3-setup-foundation.md), then `cd "$ASCII_ART_PATH"`.
+  per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then `cd "$ASCII_ART_PATH"`.
 - `gh` is authenticated and can create PRs against the rig's GitHub repo.
   Verify with `gh auth status` and `gh repo view`.
 - `jq` is installed (the new formulas use it).
@@ -85,7 +85,7 @@ cd path/to/sf-tutorial/bootstrap
 
 The script reproduces every step up through this lesson — `pr-gate-city` and `pr-gate-rig` are imported, the city's `mayor` agent directory is removed (the new pack patches the mayor), and the city is restarted.
 
-After it finishes, re-export the four env vars per [00.3](./00.3-setup-foundation.md), then jump to [Try It](#try-it).
+After it finishes, re-export the four env vars per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then jump to [Try It](#try-it).
 
 ### Build Factory1 by Hand
 
@@ -649,4 +649,4 @@ extends `mol-refinery-pr-patrol` with a `feedback-loop` step and
 patches the refinery to use it, so every bead now makes two trips
 through the polecat before reaching `main`.
 
-« [previous: 00.3 Env vars for fresh shells](./00.3-setup-foundation.md) | [next: W-4 Review Loops](./02-first-review-loop.md) »
+« [previous: W3 Run Your Factory](../progression/W3-run-your-factory.md) | [next: the review-loop appendix](./02-first-review-loop.md) »

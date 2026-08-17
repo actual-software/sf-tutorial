@@ -22,21 +22,16 @@ By the end of this exercise you will have installed the `principles-loop-rig` pa
 
 ## Prereqs
 
-- Hardening 2 complete: `domain-reviewers-rig` is installed, four
-  reviewer agents (`adr-reviewer`, `design-reviewer`,
-  `testing-reviewer`, `docs-reviewer`) are registered, and the
-  refinery is using `mol-refinery-domain-patrol`.
+- [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on a rig, with the polecat, refinery and architect running.
 - `python3` available; `PyYAML` installed
   (`python3 -m pip install pyyaml`).
-- You're inside the rig directory. If a fresh shell, re-export
-  `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and
-  `$ARTIFACTS_PATH` per
-  [00.3](../progression/00.3-setup-foundation.md), then
-  `cd "$ASCII_ART_PATH"`.
+- You are inside the rig directory, with `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH` and `$ARTIFACTS_PATH` exported, then `cd "$ASCII_ART_PATH"`.
 - `gh` is authenticated; `jq` is installed.
-- Letters consumed so far: a–k. The next two open task beads are
-  `Implement l.md` (clean sanity check) and `Implement m.md` (the
-  weak-bead demo).
+- Two open task beads: one you expect to pass cleanly, one you expect to score badly.
+
+**This option needs no other option.** It ships a formula and a check script rather than an agent, so it is poured by an agent you already have: the base factory's **architect**. The refinery patrol already gates on `architect_approved`, which is what this formula stamps, so the loop closes with nothing else installed.
+
+Install the [domain reviewers](./02-specialize-reviewers-per-domain.md) as well and the same loop deepens whichever architecture lane that option leaves in place.
 
 ## Context
 
@@ -204,8 +199,11 @@ Register the new import at rig scope:
 ```bash
 cd "$FACTORY_PATH"
 
-gc import add --rig ascii-art packs/principles-loop-rig
-gc import remove --rig ascii-art domain-reviewers-rig
+gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/principles-loop-rig"
+
+# Nothing is removed. This option sits alongside the base factory,
+# which keeps its orders and resolves the shared packs once.
+
 ```
 
 The rig should now import `principles-loop-rig` and no longer import `domain-reviewers-rig`.
@@ -607,11 +605,8 @@ ls docs/reviews/principles/$BEAD_ID.*.md | head -5
 
 ## What's next
 
-Continue to [Strengthen the review system](./04-strengthen-review-system.md).
-H4 adds review breadth on a different axis — vendor diversity. The
-adr-reviewer (or any of the four domain reviewers) is replaced
-with three vendor-pinned reviewers running in parallel, plus a
-synthesizer agent that fuses three independent verdicts into one
-recommendation.
+This is one of six options, and they are a menu rather than a sequence. Every one installs on the base factory alone, so take them in whatever order solves a problem you actually have. The full list is in [the feature labs](../progression/L3-L5-feature-labs.md#the-six-options).
 
-« [previous: L-2 Retargeting the Rig](./02-specialize-reviewers-per-domain.md) | [next: L-3 Hardening — Track B, multi-vendor](./04-strengthen-review-system.md) »
+Pairs naturally with the [domain reviewers](./02-specialize-reviewers-per-domain.md), which add review breadth where this option adds depth, and with [multi-vendor review](./04-strengthen-review-system.md), which widens the same lane across models rather than across principles.
+
+« [back to the feature labs](../progression/L3-L5-feature-labs.md) »

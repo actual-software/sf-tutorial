@@ -1,24 +1,26 @@
-# Preflight Setup
+# W2 · Cloud Box and Preflight
+
+**Workshop · 45 minutes · Day 1**
 
 ## Contents
 
 - [Objective](#objective)
 - [Prereqs](#prereqs)
 - [Context](#context)
-- [Option A: Local Factory Check](#option-a-local-factory-check)
+- [The cloud box (recommended)](#the-cloud-box-recommended)
+  - [Signing the box in with a token](#signing-the-box-in-with-a-token)
+  - [Run preflight against the box](#run-preflight-against-the-box)
+- [Appendix: running it on your own machine](#appendix-running-it-on-your-own-machine)
   - [1. Clone the tutorial](#1-clone-the-tutorial)
   - [2. Install the pinned dependencies](#2-install-the-pinned-dependencies)
   - [3. Run preflight](#3-run-preflight)
   - [4. Sign in to GitHub](#4-sign-in-to-github)
-- [Option B: Cloud-Hosted Factory Check](#option-b-cloud-hosted-factory-check)
-  - [Signing the box in with a token](#signing-the-box-in-with-a-token)
-  - [Run preflight against the box](#run-preflight-against-the-box)
 - [Troubleshooting](#troubleshooting)
 - [What's next](#whats-next)
 
 ## Objective
 
-By the end of this hour `./preflight.sh` prints `PREFLIGHT: PASS` on your machine, which means every dependency the first session needs is installed at the version it was written against.
+By the end of this session `./preflight.sh` prints `PREFLIGHT: PASS` wherever you are going to work, which means every dependency the rest of the curriculum needs is installed at the version it was written against.
 
 ## Prereqs
 
@@ -28,9 +30,88 @@ By the end of this hour `./preflight.sh` prints `PREFLIGHT: PASS` on your machin
 
 ## Context
 
-In this session you will follow preflight steps to ensure your environment (whether local or cloud-based) is ready for the rest of the curriculum. Please choose either Option A or Option B based on whete you would like to run the curriculum.
+Nothing in the rest of the curriculum works until preflight passes, and the failures it catches are all cheaper to find now than at step nine of the next session.
 
-## Option A: Local Factory Check
+Most participants work on an instructor-provided cloud box, which is the path below. Your own machine works too, and that path is in the appendix at the end of this page. Do one of them, not both.
+
+## The cloud box (recommended)
+
+
+Getting onto the box is its own page. [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) takes the four values your instructor sends you through to a running factory, and it is the one place those steps live. Work through it first, then come back here for the preflight run below.
+
+### Signing the box in with a token
+
+The box holds its own GitHub credential, separate from the one on your laptop, and [step 5 of the box guide](../CLOUD_BOX_GUIDE.md#step-5-the-first-run-login) is where it gets one. That step asks which way you would like to give it:
+
+```text
+ GitHub sign-in. Two ways to give this box a credential:
+
+   1. Browser sign-in. gh prints a short one-time code and a URL; you open it
+      on any device, enter the code, and approve. Nothing is pasted back into
+      this terminal. This grants the GitHub CLI repo, read:org, gist and
+      workflow on your account.
+
+   2. Paste a token you mint yourself. Choose this if you would rather not
+      grant the CLI that access, or your organisation does not permit it. You
+      will be asked for the token on the next line, and it stays on this box.
+
+ Which route? [1]
+```
+
+A bare Enter takes the browser grant, which is what the rest of the guide assumes and what most of the room will take. Answering `2` prompts for a token instead. It is read without echoing, checked against GitHub before anything is written, and stored readable only by the factory user. Both routes then check that the account can actually read the repositories the box provisions from, so a credential that authenticates but cannot reach them fails at the prompt rather than three minutes later inside a clone.
+
+So the choice about a broad grant is yours on a box, the same as it is on your laptop above. The only thing to arrange beforehand is the token itself. Mint it before you start step 5 and have it ready when the prompt appears.
+
+You will only meet that menu on a box that holds no credential yet. If step 5 tells you it is already authenticated as somebody, then someone has been here before you, and it names the `gh auth logout` that hands the choice back.
+
+If the paste comes back empty or GitHub rejects it, nothing is written and first-run stops there rather than carrying on without a credential. Resume with `sudo gas-city-login --from github`, which redoes the sign-in and continues through the steps that had not run yet. Reaching for `gas-city-set-token` on its own instead is the tempting mistake: it writes the token and leaves the box unprovisioned.
+
+`gas-city-set-token` is what replaces the box's credential later, and the order there is not obvious. It refuses to run while the box still holds a `gh` credential, because that credential wins over the token file and the token would be written and then ignored. So drop that one first:
+
+**Copy and paste**
+
+```bash
+ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" gh auth logout --hostname github.com
+ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" sudo gas-city-set-token
+ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" sudo gas-city-refresh
+```
+
+The first line is only needed if the box took the browser route at step 5; a box already on a pasted token has no `gh` credential to drop. The last line is the part that is easy to leave off, and the swap is not finished without it: the agents already running keep the old credential until the service restarts. `gas-city-refresh` rewrites the factory's environment from the stored token, restarts the service, and prints its status so you can see it came back.
+
+The way back is open too. `sudo gas-city-login github` on a box holding a pasted token offers the browser route and defaults to keeping the token, so a box is never stuck on whichever credential it was given first.
+
+This route needs no `gh auth setup-git`, unlike the laptop ones. The box wires `git` to a credential helper that asks for whichever credential the box currently holds, so it keeps working across a swap in either direction.
+
+On scopes, the two routes ask for the same thing. The browser grant yields `repo`, `read:org`, `gist` and `workflow`. The token prompt asks for a classic token with `repo`, plus `workflow` if any repository the agents touch carries GitHub Actions workflows, or a fine-grained one with contents and pull-requests read and write, plus workflows, on those repositories. Scope it for the whole two days rather than for the clone. A read-only token is enough to provision the box and then stops at the first push, which is a failure that arrives once the agents are already working.
+
+### Run preflight against the box
+
+**Copy and paste**
+
+```bash
+cd bootstrap
+./preflight.sh --cloud
+```
+
+`--cloud` runs every local check first and then adds a "Cloud path" section.
+
+**Expected output**
+
+```text
+Cloud path
+  [ ok ] sfbox: /path/to/sf-tutorial/participant-box-cli/sfbox
+  [ ok ] box credential: <boxId>
+  [ ok ] box reachable: ssh, gc and the Gas City service all answered
+
+PREFLIGHT: PASS
+```
+
+The reachability check delegates to `sfbox preflight`, which walks the three layers in order and stops at the first one that fails. That ordering is the useful part: it tells you whether the problem is SSH, a missing `gc`, or the Gas City service, so you know which of the three to fix instead of guessing.
+
+## Appendix: running it on your own machine
+
+Everything below works, and it is the fallback rather than the taught path. If you are on an instructor-provided box, you are already done; skip to [What's next](#whats-next).
+
 
 ### 1. Clone the tutorial
 
@@ -124,87 +205,13 @@ gh auth login --with-token < your-token-file
 export GH_TOKEN=<your-token>
 ```
 
-Grant it **Contents**, **Pull requests**, and **Administration**, all write, on the repository you will push the rig to. Administration is the one that is easy to miss — [page 03](./03-branch-protection.md) needs it to install branch protection, and that failure lands an hour into day one. A fine-grained token also has to name a repository that already exists, and the rig's repository is created on [page 00.2](./00.2-setup-foundation.md), so either create it now or come back and re-scope the token then.
+Grant it **Contents**, **Pull requests**, and **Administration**, all write, on the repository you will push the rig to. Administration is the one that is easy to miss — [the branch-protection appendix](../appendix/03-branch-protection.md) needs it to install branch protection, and that failure lands an hour into day one. A fine-grained token also has to name a repository that already exists, and the rig's repository is created on [W3 Run Your Factory](./W3-run-your-factory.md), so either create it now or come back and re-scope the token then.
 
 **Either token needs one more command.** `--with-token` and `GH_TOKEN` both authenticate `gh` without telling `git` anything, so `git push` still fails with `could not read Username for 'https://github.com'`. The browser flow wires this up for you and the token routes do not:
 
 ```bash
 gh auth setup-git
 ```
-
-## Option B: Cloud-Hosted Factory Check
-
-
-Getting onto the box is its own page. [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) takes the four values your instructor sends you through to a running factory, and it is the one place those steps live. Work through it first, then come back here for the preflight run below.
-
-### Signing the box in with a token
-
-The box holds its own GitHub credential, separate from the one on your laptop, and [step 5 of the box guide](../CLOUD_BOX_GUIDE.md#step-5-the-first-run-login) is where it gets one. That step asks which way you would like to give it:
-
-```text
- GitHub sign-in. Two ways to give this box a credential:
-
-   1. Browser sign-in. gh prints a short one-time code and a URL; you open it
-      on any device, enter the code, and approve. Nothing is pasted back into
-      this terminal. This grants the GitHub CLI repo, read:org, gist and
-      workflow on your account.
-
-   2. Paste a token you mint yourself. Choose this if you would rather not
-      grant the CLI that access, or your organisation does not permit it. You
-      will be asked for the token on the next line, and it stays on this box.
-
- Which route? [1]
-```
-
-A bare Enter takes the browser grant, which is what the rest of the guide assumes and what most of the room will take. Answering `2` prompts for a token instead. It is read without echoing, checked against GitHub before anything is written, and stored readable only by the factory user. Both routes then check that the account can actually read the repositories the box provisions from, so a credential that authenticates but cannot reach them fails at the prompt rather than three minutes later inside a clone.
-
-So the choice about a broad grant is yours on a box, the same as it is on your laptop above. The only thing to arrange beforehand is the token itself. Mint it before you start step 5 and have it ready when the prompt appears.
-
-You will only meet that menu on a box that holds no credential yet. If step 5 tells you it is already authenticated as somebody, then someone has been here before you, and it names the `gh auth logout` that hands the choice back.
-
-If the paste comes back empty or GitHub rejects it, nothing is written and first-run stops there rather than carrying on without a credential. Resume with `sudo gas-city-login --from github`, which redoes the sign-in and continues through the steps that had not run yet. Reaching for `gas-city-set-token` on its own instead is the tempting mistake: it writes the token and leaves the box unprovisioned.
-
-`gas-city-set-token` is what replaces the box's credential later, and the order there is not obvious. It refuses to run while the box still holds a `gh` credential, because that credential wins over the token file and the token would be written and then ignored. So drop that one first:
-
-**Copy and paste**
-
-```bash
-ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" gh auth logout --hostname github.com
-ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" sudo gas-city-set-token
-ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" sudo gas-city-refresh
-```
-
-The first line is only needed if the box took the browser route at step 5; a box already on a pasted token has no `gh` credential to drop. The last line is the part that is easy to leave off, and the swap is not finished without it: the agents already running keep the old credential until the service restarts. `gas-city-refresh` rewrites the factory's environment from the stored token, restarts the service, and prints its status so you can see it came back.
-
-The way back is open too. `sudo gas-city-login github` on a box holding a pasted token offers the browser route and defaults to keeping the token, so a box is never stuck on whichever credential it was given first.
-
-This route needs no `gh auth setup-git`, unlike the laptop ones. The box wires `git` to a credential helper that asks for whichever credential the box currently holds, so it keeps working across a swap in either direction.
-
-On scopes, the two routes ask for the same thing. The browser grant yields `repo`, `read:org`, `gist` and `workflow`. The token prompt asks for a classic token with `repo`, plus `workflow` if any repository the agents touch carries GitHub Actions workflows, or a fine-grained one with contents and pull-requests read and write, plus workflows, on those repositories. Scope it for the whole two days rather than for the clone. A read-only token is enough to provision the box and then stops at the first push, which is a failure that arrives once the agents are already working.
-
-### Run preflight against the box
-
-**Copy and paste**
-
-```bash
-cd bootstrap
-./preflight.sh --cloud
-```
-
-`--cloud` runs every local check first and then adds a "Cloud path" section.
-
-**Expected output**
-
-```text
-Cloud path
-  [ ok ] sfbox: /path/to/sf-tutorial/participant-box-cli/sfbox
-  [ ok ] box credential: <boxId>
-  [ ok ] box reachable: ssh, gc and the Gas City service all answered
-
-PREFLIGHT: PASS
-```
-
-The reachability check delegates to `sfbox preflight`, which walks the three layers in order and stops at the first one that fails. That ordering is the useful part: it tells you whether the problem is SSH, a missing `gc`, or the Gas City service, so you know which of the three to fix instead of guessing.
 
 ## Troubleshooting
 
@@ -218,6 +225,6 @@ The reachability check delegates to `sfbox preflight`, which walks the three lay
 
 ## What's next
 
-You are set up. [Create a Factory](./00.1-setup-foundation.md) opens the teaching day: you build the `factory1` city and install the setup pack that gives it the polecat and refinery agents.
+You are set up. [W3](./W3-run-your-factory.md) is where the factory gets built: a city, a rig on GitHub, the base factory pack, and your first bead moving through it while you watch.
 
-« [previous: the curriculum structure](../README.md#curriculum-structure) | [next: 00.1 Create a Factory](./00.1-setup-foundation.md) »
+« [previous: W1 Vocabulary and Concepts](./W1-vocabulary-and-concepts.md) | [next: W3 Run Your Factory](./W3-run-your-factory.md) »

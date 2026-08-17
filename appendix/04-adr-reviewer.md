@@ -29,12 +29,12 @@ By the end of this exercise you will have an architecture-aware `architect` agen
 
 ## Prereqs
 
-- Page [03](./03-branch-protection.md) complete: branch protection on
+- Page [the branch-protection appendix](./03-branch-protection.md) complete: branch protection on
   `main` is live, the `epic/*` ruleset is active, `.github/CODEOWNERS`
   is on `main` with your handle, and `f.md` merged through the gate.
 - You're inside the rig directory. If you opened a fresh shell,
   re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and
-  `$ARTIFACTS_PATH` per [00.3](./00.3-setup-foundation.md), then
+  `$ARTIFACTS_PATH` per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then
   `cd "$ASCII_ART_PATH"`.
 - `gh` is authenticated and can create PRs against the rig's GitHub
   repo. Verify with `gh auth status` and `gh repo view`.
@@ -134,7 +134,7 @@ cd path/to/sf-tutorial/bootstrap
 
 The script reproduces every step up through this lesson — `architect-rig` is added at rig scope, `review-loop-rig` is removed from the rig's direct imports (still resolved transitively via `architect-rig`), and the city is restarted.
 
-After it finishes, re-export the four env vars per [00.3](./00.3-setup-foundation.md), then jump to [Try It](#try-it).
+After it finishes, re-export the four env vars per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then jump to [Try It](#try-it).
 
 ### Build Factory1 by Hand
 
@@ -744,11 +744,11 @@ Expect a single line for the rig's main checkout.
 
 ## What's next
 
-Continue to [Bead gate checks](./05.1-bead-gate-checks.md). Page 05.1
+Continue to [Bead gate checks](../hardening/06-bead-gate-checks.md). Page 05.1
 closes the upstream hole this page leaves open: the architect runs
 *after* the polecat has done work, so a malformed bead still wastes
 a polecat pass before getting caught. Page 05.1 introduces a pre-
 implementation `bead-reviewer` that checks each bead is well-formed
 before any polecat is allowed to claim it.
 
-« [previous: 03 Branch protection](./03-branch-protection.md) | [next: W-5 Requirement Gates](./05.1-bead-gate-checks.md) »
+« [previous: the branch-protection appendix](./03-branch-protection.md) | [next: the bead gate option](../hardening/06-bead-gate-checks.md) »

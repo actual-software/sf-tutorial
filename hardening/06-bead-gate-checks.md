@@ -17,6 +17,7 @@
   - [5. Unblock the bead by hand and re-sling](#5-unblock-the-bead-by-hand-and-re-sling)
   - [6. Demonstrate the test-generation gate](#6-demonstrate-the-test-generation-gate)
   - [7. Reflect](#7-reflect)
+- [Refining a bead so the gate passes it](#refining-a-bead-so-the-gate-passes-it)
 - [Verification](#verification)
 - [Troubleshooting](#troubleshooting)
 - [What's next](#whats-next)
@@ -27,17 +28,13 @@ By the end of this exercise you will have installed a `bead-gate-rig` pack that 
 
 ## Prereqs
 
-- Page [04](./04-adr-reviewer.md) complete: the `architect-rig` pack
-  is installed, `mol-refinery-architect-patrol` is the refinery's
-  active formula, and `g.md` merged through the architect/refinery
-  chain.
-- You're inside the rig directory. If you opened a fresh shell,
-  re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and
-  `$ARTIFACTS_PATH` per [00.3](./00.3-setup-foundation.md), then
-  `cd "$ASCII_ART_PATH"`.
+- [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on a rig, with the polecat, refinery and architect running.
+- You are inside the rig directory, with `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH` and `$ARTIFACTS_PATH` exported, then `cd "$ASCII_ART_PATH"`.
 - `gh` is authenticated and can create PRs against the rig's GitHub
   repo. Verify with `gh auth status` and `gh repo view`.
 - `jq` is installed (the new formula uses it).
+
+**This option needs no other option.** Its pack already imports the base factory's top node, so the architect and the refinery flow stay resolvable with nothing else installed.
 
 ## Context
 
@@ -100,7 +97,7 @@ cd path/to/sf-tutorial/bootstrap
 
 The script reproduces every step up through this lesson — `bead-gate-rig` is added at rig scope, `architect-rig` is removed from the rig's direct imports (still resolved transitively), and the city is restarted.
 
-After it finishes, re-export the four env vars per [00.3](./00.3-setup-foundation.md), then jump to [Try It](#try-it).
+After it finishes, re-export the four env vars per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then jump to [Try It](#try-it).
 
 ### Build Factory1 by Hand
 
@@ -204,12 +201,11 @@ direct `architect-rig` import. Run from the city directory.
 cd "$FACTORY_PATH"
 
 # Add the new pack at rig scope.
-gc import add --rig ascii-art packs/bead-gate-rig
+gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/bead-gate-rig"
 
-# Remove architect-rig from the rig's direct imports.
-# bead-gate-rig imports it, so the architect/refinery formulas
-# remain resolvable transitively.
-gc import remove --rig ascii-art architect-rig
+# Nothing is removed. This option sits alongside the base factory,
+# which keeps its orders and resolves the shared packs once.
+
 ```
 
 Verify the rig now imports `bead-gate-rig` and not `architect-rig`.
@@ -587,6 +583,58 @@ What's still missing:
   docs reviewers running in parallel, with the refinery checking
   approvals from all of them.
 
+## Refining a bead so the gate passes it
+
+The gate is mechanical: it reads what is on the bead and decides pass or fail. It does not write for you. So when a bead is vague — "implement X", no description, no `target_file` — the feedback is "your bead is vague, fix it", and you are left staring at `bd update`.
+
+That is the operator's half of the problem, and it has an operator-side fix that needs no change to the factory at all.
+
+**Grill Me**, by Matt Pocock, is a small productivity skill: a markdown file that teaches your local coding agent to interview you. Instead of sitting in front of a blank bead trying to remember what to fill in, you say "grill me on this bead" and the agent asks the missing questions one at a time. *What file does this write? What does done look like? Which decision record governs it?* Your one-line answers get composed into a bead the gate can pass.
+
+### Install it
+
+**Copy and paste**
+
+```bash
+# Clone (or pull) the skills repo somewhere outside the rig.
+git clone https://github.com/mattpocock/skills.git ~/grill-me-skill
+```
+
+For Claude Code, project-scoped, which is what this tutorial assumes:
+
+**Copy and paste**
+
+```bash
+cd "$ASCII_ART_PATH"
+mkdir -p .claude/skills/grill-me
+cp ~/grill-me-skill/skills/productivity/grill-me/SKILL.md \
+   .claude/skills/grill-me/SKILL.md
+```
+
+The skill is harness-agnostic — it is free-form markdown — so for any other agent, drop `SKILL.md` wherever that harness loads skills. If yours has no skills primitive, paste the file's contents at the start of a session. Crude, and it works.
+
+Confirm it loaded by asking your agent whether it has the Grill Me skill available.
+
+### Use it on a bead the gate rejected
+
+Take one of the beads the gate blocked above, and instead of guessing at the fix:
+
+> Grill me on this bead: `<the-bead-id>`. Read it with `bd show`, ask me what is missing one question at a time, then write the tightened title and description back with `bd update`.
+
+Then re-sling the gate and watch it pass.
+
+### Make it the default for your team
+
+A line in your rig's agent instructions has more leverage here than any pack patch, because every operator picks it up automatically:
+
+```text
+Before slinging a bead at the gate, run the Grill Me skill to fill in the
+obvious gaps: target file, deliverable, acceptance check, parent epic.
+```
+
+**What to notice.** Nothing in this section changed the factory. The gate is unchanged, no pack was installed, no city restarted. The factory does not know or care that you used a skill; it just sees a better-formed bead arrive. **Not every improvement to a software factory is a change to the software factory** — some of the highest-leverage ones are changes to how work reaches it.
+
+
 ## Verification
 
 The `mol-bead-review` formula is loaded — one row.
@@ -681,17 +729,8 @@ ls ascii/h.md
 
 ## What's next
 
-Continue to [H1 Bead-creation formula
-extensions](../hardening/01-bead-creation-formula-extensions.md), where
-a Design Lead, Test Lead and Doc Lead pour design, testing and docs
-context onto a bead before the project-manager sees it.
+This is one of six options, and they are a menu rather than a sequence. Every one installs on the base factory alone, so take them in whatever order solves a problem you actually have. The full list is in [the feature labs](../progression/L3-L5-feature-labs.md#the-six-options).
 
-[Page 05.2 — Grill Me](./05.2-bead-gate-checks.md) is a detour rather
-than a step, and it is worth coming back to on your own. It closes the
-operator-side hole this page leaves open: when a bead fails the
-project-manager, refining it by hand is tedious. It installs the
-Grill-Me skill in your local agent and walks through using it to
-refine one of the malformed beads from this page so the
-project-manager passes it on the next sling.
+Pairs naturally with the [bead creation Leads](./01-bead-creation-formula-extensions.md), whose specs this gate's checklist can then require before a polecat may claim the bead.
 
-« [previous: 04 Architect agent](./04-adr-reviewer.md) | [next: H1 Bead-creation formula extensions](../hardening/01-bead-creation-formula-extensions.md) »
+« [back to the feature labs](../progression/L3-L5-feature-labs.md) »

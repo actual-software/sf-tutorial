@@ -2,7 +2,7 @@
 
 A step-by-step for a participant with an SSH key and no AWS account. Your instructor sends you four values, you paste them in once, and everything after that is copy-paste.
 
-Running the two days on your own laptop instead? You don't need this page. Go straight to [`progression/00.0-preflight.md`](./progression/00.0-preflight.md).
+Running the two days on your own laptop instead? You don't need this page. Go straight to [`progression/00.0-preflight.md`](./progression/W2-cloud-box-and-preflight.md).
 
 **Step 5 needs a real terminal window.** It opens Claude Code's full-screen interface and asks you questions, so a web IDE, a notebook, or a chat tool can't drive it. Have Terminal, iTerm, or your editor's built-in terminal open before you start. It's the step that trips people up, and finding that out now is a good deal cheaper than finding it out live at step 5 with the rest of the room already moving on.
 
@@ -115,7 +115,7 @@ Include ~/.gascity/ssh_config
 
 **This one needs a real terminal window.** Terminal, iTerm, your editor's terminal, anything interactive. It can't run from a script, a notebook, or a chat tool, because it opens Claude Code's full-screen interface and asks you questions.
 
-The GitHub half asks which credential you want to give the box: a browser grant against your whole account, or a token you mint yourself and paste. A bare Enter takes the browser grant. If you'd rather not grant the CLI that much, mint the token before you start this step, and see [the preflight page](./progression/00.0-preflight.md#signing-the-box-in-with-a-token) for what to scope it for.
+The GitHub half asks which credential you want to give the box: a browser grant against your whole account, or a token you mint yourself and paste. A bare Enter takes the browser grant. If you'd rather not grant the CLI that much, mint the token before you start this step, and see [the preflight page](./progression/W2-cloud-box-and-preflight.md#signing-the-box-in-with-a-token) for what to scope it for.
 
 **Copy and paste**
 
@@ -155,7 +155,7 @@ No `WARNING:` or `ERROR:` line is the whole test. `sfbox preflight` reports a he
 
 The service line is the one to read rather than skim. `inactive — no city on this box yet` is the success case here: there is no factory for the service to supervise until you build one. If it says `waiting on first-run login` instead, step 5 did not get to the end — run it again. If it says `active`, you have a box that was provisioned with a factory already on it, which is fine and means the tutorial's setup lesson will have less to do.
 
-Start the tutorial from [`progression/00.0-preflight.md`](./progression/00.0-preflight.md).
+Start the tutorial from [`progression/00.0-preflight.md`](./progression/W2-cloud-box-and-preflight.md).
 
 ## When something looks wrong
 

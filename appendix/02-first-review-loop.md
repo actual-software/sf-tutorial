@@ -29,12 +29,12 @@ By the end of this exercise you will have installed the `review-loop-rig` pack a
 
 ## Prereqs
 
-- Page [01](./01-basic-flow.md) complete: `pr-gate-city` and
+- Page [the basic-flow appendix](./01-basic-flow.md) complete: `pr-gate-city` and
   `pr-gate-rig` are imported, `a.md`/`b.md`/`c.md` are merged via PR,
   the refinery is running on `mol-refinery-pr-patrol`.
 - You're inside the rig directory. If you opened a fresh shell,
   re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and
-  `$ARTIFACTS_PATH` per [00.3](./00.3-setup-foundation.md), then
+  `$ARTIFACTS_PATH` per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then
   `cd "$ASCII_ART_PATH"`.
 - `gh` is authenticated and can create PRs against the rig's GitHub
   repo. Verify with `gh auth status` and `gh repo view`.
@@ -86,7 +86,7 @@ cd path/to/sf-tutorial/bootstrap
 
 The script reproduces every step up through this lesson — `review-loop-rig` is added at rig scope, `pr-gate-rig` is removed from the rig's direct imports (still resolved transitively), and the city is restarted.
 
-After it finishes, re-export the four env vars per [00.3](./00.3-setup-foundation.md), then jump to [Try It](#try-it).
+After it finishes, re-export the four env vars per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then jump to [Try It](#try-it).
 
 ### Build Factory1 by Hand
 

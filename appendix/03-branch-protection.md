@@ -62,7 +62,7 @@ cd path/to/sf-tutorial/bootstrap
 
 The script reproduces every step up through this lesson — `.github/CODEOWNERS` is copied in, committed, and pushed to `main`, and `branch-protection.sh` runs against the rig's GitHub repo to install the `main` protection rule and the `epic/*` ruleset.
 
-After it finishes, re-export the four env vars per [00.3](./00.3-setup-foundation.md), then jump to [Try It](#try-it).
+After it finishes, re-export the four env vars per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then jump to [Try It](#try-it).
 
 ### Build Factory1 by Hand
 
@@ -436,4 +436,4 @@ block the merge regardless of approvals.
 
 Continue to [ADR reviewer](./04-adr-reviewer.md).
 
-« [previous: W-4 Review Loops](./02-first-review-loop.md) | [next: 04 Architect agent](./04-adr-reviewer.md) »
+« [previous: the review-loop appendix](./02-first-review-loop.md) | [next: the architect appendix](./04-adr-reviewer.md) »
