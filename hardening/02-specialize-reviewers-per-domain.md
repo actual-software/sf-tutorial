@@ -7,7 +7,7 @@
 - [Context](#context)
 - [Walkthrough](#walkthrough)
   - [1. Install the domain-reviewers-rig pack into factory1](#1-install-the-domain-reviewers-rig-pack-into-factory1)
-  - [2. Pick the next bead and run it through H1's pre-PM agents](#2-pick-the-next-bead-and-run-it-through-h1s-pre-pm-agents)
+  - [2. Pick the next bead and hand it to the polecat](#2-pick-the-next-bead-and-hand-it-to-the-polecat)
   - [3. Watch the polecat work and hand the bead to the refinery](#3-watch-the-polecat-work-and-hand-the-bead-to-the-refinery)
   - [4. Watch the refinery fan out to four reviewers in parallel](#4-watch-the-refinery-fan-out-to-four-reviewers-in-parallel)
   - [5. Watch the refinery aggregate and proceed](#5-watch-the-refinery-aggregate-and-proceed)
@@ -44,9 +44,10 @@ from all four lanes before letting a bead reach the inherited
 
 Agent workflow with the four reviewers in place:
 
-1. The **operator** drafts the bead, runs the three Leads from H1,
-   commits the spec files, and slings the project-manager. (Same
-   front-of-factory flow as Hardening 1.)
+1. The **operator** drafts the bead and slings the polecat, exactly
+   as on the base factory. (With the [bead builders](./01-bead-creation-formula-extensions.md)
+   option installed, the three Leads write their specs first and each
+   lane below cites one.)
 1. The **polecat** writes the file and reassigns to the refinery.
    (Unchanged from the base factory.)
 1. The **refinery's** first step on the patrol — `verify-reviewers`
@@ -58,9 +59,9 @@ Agent workflow with the four reviewers in place:
 1. The **four domain reviewers** run independently:
    - **`adr-reviewer`** reads `docs/decision-records/` and stamps
      `adr_approved` + `adr_feedback`.
-   - **`design-reviewer`** reads `metadata.design_doc` (the H1
-     design-lead's spec) and any `*DESIGN*` ADRs and stamps
-     `design_approved` + `design_feedback`.
+   - **`design-reviewer`** reads `metadata.design_doc` (the design
+     lead's spec, if the bead carries one) and any `*DESIGN*` ADRs
+     and stamps `design_approved` + `design_feedback`.
    - **`testing-reviewer`** reads `metadata.test_plan` and any
      `*TEST*` ADRs and stamps `testing_approved` +
      `testing_feedback`.
@@ -92,13 +93,11 @@ The reviewers do **not** push code, count cycles, force-approve, or
 close the bead. Each writes only its own lane's verdict. The
 refinery owns flow-control and the cap.
 
-You'll install the **domain-reviewers-rig** pack into the `ascii-art` rig
-(removing `bead-builders-rig` from the rig's direct imports — the
-new pack imports it transitively, so the Leads, project-manager,
-and earlier agents remain available). Restart so the four new
+You'll install the **domain-reviewers-rig** pack into the `ascii-art` rig.
+It imports the base factory directly, so the polecat, refinery and
+architect you already have keep working. Restart so the four new
 reviewer agents and the new refinery patrol take effect. Sling the
-next letter from `letters-a-m` through the H1 Leads, the
-project-manager, and the polecat as before. Watch the refinery
+next letter from `letters-a-m` at the polecat as before. Watch the refinery
 fan out to all four reviewers, see four independent verdicts land
 on the bead, then watch the refinery aggregate and proceed (or
 bounce). Optionally craft a deliberate violation in one lane to
@@ -112,15 +111,18 @@ principles with an append-only audit trail.
 
 ### 1. Install the domain-reviewers-rig pack into factory1
 
-The base factory's architect was a single reviewer with a single corpus
-(ADRs + `docs/current/`). H1 added three pre-PM Leads producing
-design / test / docs specs per bead — but the post-PM review side
-was still one agent reading everything. The natural next step is to
-split the architect into four parallel lanes, each citing the doc
-family it owns. ADR rule violations cite the ADR. Design-spec
-violations cite the design spec the design-lead wrote. Test-plan
-violations cite the test plan the test-lead wrote. Docs outline
-violations cite the outline the doc-lead wrote.
+The base factory's architect is a single reviewer with a single corpus
+(ADRs + `docs/current/`), so every kind of problem comes back in one
+undifferentiated verdict. This option splits it into four parallel
+lanes, each citing the doc family it owns. ADR rule violations cite
+the ADR. Design violations cite the `*DESIGN*` ADRs, and the design
+spec too if the bead carries one. Testing and docs violations work
+the same way against their own families.
+
+Each lane falls back to the corpus already in the repo when the bead
+has no matching spec, which is what lets this option stand alone. Add
+the [bead builders](./01-bead-creation-formula-extensions.md) option
+and each lane gains a per-bead spec to cite instead.
 
 This ships as a single rig-scoped pack, **`domain-reviewers-rig`**,
 that supersedes `architect-rig`'s single architect:
@@ -277,9 +279,10 @@ gc formula list \
 TBD: capture actual terminal output during smoke test
 ```
 
-### 2. Pick the next bead and run it through H1's pre-PM agents
+### 2. Pick the next bead and hand it to the polecat
 
-Same recipe as Hardening 1.
+Same recipe as the base factory: pick an open letter bead and sling
+the polecat at it.
 
 **Copy and paste**
 
@@ -288,22 +291,17 @@ cd "$ASCII_ART_PATH"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement k\.md$" | awk '{print $2}')
 
 cd $FACTORY_PATH
-# Run the three Leads (H1).
-gc sling ascii-art/domain-reviewers-rig.design-lead $BEAD_ID --on mol-design-spec
-gc sling ascii-art/domain-reviewers-rig.test-lead   $BEAD_ID --on mol-test-spec
-gc sling ascii-art/domain-reviewers-rig.doc-lead    $BEAD_ID --on mol-doc-spec
-
-cd $ASCII_ART_PATH
-git add docs/design docs/testing docs/outlines
-git commit -m "docs(specs): pre-PM specs for $BEAD_ID"
-git push origin main
-
-cd $FACTORY_PATH
-gc sling ascii-art/domain-reviewers-rig.project-manager $BEAD_ID --on mol-bead-review
+gc sling ascii-art/domain-reviewers-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
-Wait for the project-manager to PASS the bead. The polecat will
-pick it up next from the polecat pool.
+The polecat picks the bead up and starts work. The four reviewers
+you just installed are what changes downstream of it.
+
+If you also installed the [bead builders](./01-bead-creation-formula-extensions.md)
+option, run the three Leads first and commit their specs, and each
+reviewer will cite the matching spec instead of falling back to the
+ADR corpus. Without them the lanes still run; see the Prereqs note
+above on how each one defers.
 
 ### 3. Watch the polecat work and hand the bead to the refinery
 
@@ -387,9 +385,9 @@ gh pr merge "$PR" --merge
 ### 6. (Optional) Demonstrate single-lane rejection
 
 To exercise the bounce path on just one lane, briefly add a strict
-clause to one doc family that the polecat is likely to violate. For
-example, edit the design spec the design-lead wrote for the next
-bead (`l.md`).
+clause to one doc family that the polecat is likely to violate. The
+design lane treats any `*DESIGN*` ADR as a binding rule, so writing
+one is enough to arm the lane.
 
 **Copy and paste**
 
@@ -397,33 +395,37 @@ bead (`l.md`).
 cd $ASCII_ART_PATH
 export NEXT_BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement l\.md$" | awk '{print $2}')
 
-# Run the Leads first (so design-lead writes its spec).
+# Add a DESIGN ADR carrying a rule the polecat has no way to know about.
+cat > $ASCII_ART_PATH/docs/decision-records/0002.ADR.DESIGN.md <<'EOF'
+# 0002. Letter files carry a rendering attribution
+
+## Status
+Accepted
+
+## Decision
+Every letter file MUST include a 'Rendered by: <author>' line directly under the heading.
+EOF
+git -C $ASCII_ART_PATH add docs/decision-records && git -C $ASCII_ART_PATH commit -m "docs(adr): require a rendering attribution line" && git -C $ASCII_ART_PATH push
+
 cd $FACTORY_PATH
-gc sling ascii-art/domain-reviewers-rig.design-lead $NEXT_BEAD_ID --on mol-design-spec
-gc sling ascii-art/domain-reviewers-rig.test-lead   $NEXT_BEAD_ID --on mol-test-spec
-gc sling ascii-art/domain-reviewers-rig.doc-lead    $NEXT_BEAD_ID --on mol-doc-spec
-
-# Add a violating clause to the design spec.
-echo "" >> $ASCII_ART_PATH/docs/design/$NEXT_BEAD_ID.md
-echo "## Hard rule (testing this lane)" >> $ASCII_ART_PATH/docs/design/$NEXT_BEAD_ID.md
-echo "Every letter file MUST include a 'Rendered by: <author>' line directly under the heading." >> $ASCII_ART_PATH/docs/design/$NEXT_BEAD_ID.md
-git -C $ASCII_ART_PATH add docs/design && git -C $ASCII_ART_PATH commit -m "docs(specs): tighter design spec for $NEXT_BEAD_ID" && git -C $ASCII_ART_PATH push
-
-gc sling ascii-art/domain-reviewers-rig.project-manager $NEXT_BEAD_ID --on mol-bead-review
+gc sling ascii-art/domain-reviewers-rig.polecat $NEXT_BEAD_ID --on mol-polecat-pr
 ```
 
-The polecat won't include the "Rendered by" line (it's not in the
-ADR or anywhere else the polecat checks). Watch the design-reviewer
-post `design_approved=false` with `design_feedback` citing the
-clause; meanwhile the other three lanes approve. The refinery's
+The polecat won't include the "Rendered by" line. It never reads the
+decision records, which is exactly why this makes a clean probe: the
+rule is binding on the design lane and invisible to the implementer.
+Watch the design-reviewer post `design_approved=false` with
+`design_feedback` citing the clause; meanwhile the other three lanes
+approve. The refinery's
 `verify-reviewers` sees one rejection, increments `review_loops`,
 and bounces the bead to the polecat pool with the combined feedback
 (in this case, only the design lane's feedback is non-empty). The
 polecat picks the bead up, addresses the feedback, hands back to
 refinery; the cycle repeats up to 2 rejection rounds.
 
-Roll the strict clause back when you're done so future letters
-aren't blocked.
+Delete `docs/decision-records/0002.ADR.DESIGN.md` and commit when
+you're done, so future letters aren't blocked by a rule you only
+wanted for the demonstration.
 
 ### 7. Reflect
 
@@ -499,9 +501,10 @@ ls ascii/k.md
   refine the reviewer prompt to be more lenient on edge cases.
 - **`design_approved=true` despite no design spec on the bead.** The
   design-reviewer's defer branch fired — `metadata.design_doc` was
-  unset or pointed at a missing file. Run the Design Lead
-  (Hardening 1) and re-sling the project-manager, or accept that
-  this lane defers when there's nothing to review.
+  unset or pointed at a missing file. That is the expected reading on
+  the base factory. Add a `*DESIGN*` ADR to give the lane binding
+  rules, or install the [bead builders](./01-bead-creation-formula-extensions.md)
+  option so each bead arrives with a spec.
 - **Refinery loops three or more times in a single bead.** The cap
   should bound at 2 rejections. Check `metadata.review_loops` after
   each bounce; if it's not incrementing, the refinery's
