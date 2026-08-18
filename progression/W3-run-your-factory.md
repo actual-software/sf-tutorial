@@ -7,6 +7,11 @@
 - [Objective](#objective)
 - [Prereqs](#prereqs)
 - [Context](#context)
+- [Run it on your cloud box](#run-it-on-your-cloud-box)
+  - [1. Make your box the current one](#1-make-your-box-the-current-one)
+  - [2. Preflight before you build anything](#2-preflight-before-you-build-anything)
+  - [3. Open a shell on the box](#3-open-a-shell-on-the-box)
+- [Running on your own machine instead](#running-on-your-own-machine-instead)
 - [Setup](#setup)
   - [1. Create the city](#1-create-the-city)
   - [2. Read what `gc init` wrote](#2-read-what-gc-init-wrote)
@@ -22,28 +27,40 @@
   - [1. Sling your first bead](#1-sling-your-first-bead)
   - [2. Attach to a session and watch it move](#2-attach-to-a-session-and-watch-it-move)
   - [3. Watch the orders fire](#3-watch-the-orders-fire)
-  - [4. Reflect](#4-reflect)
+  - [4. Watch it from your laptop](#4-watch-it-from-your-laptop)
+  - [5. Reflect](#5-reflect)
 - [Verification](#verification)
 - [Troubleshooting](#troubleshooting)
 - [What's next](#whats-next)
 
 ## Objective
 
-By the end of this session you have a running software factory of your own: a city called `factory1`, a rig called `ascii-art` pushed to GitHub, the base factory pack installed, a seeded queue of work, and your first bead moving through the pipeline while you watch.
+By the end of this session you have a running software factory of your own, on your cloud box: a city called `factory1`, a rig called `ascii-art` pushed to GitHub, the base factory pack installed, a seeded queue of work, and your first bead moving through the pipeline while you watch it from a dashboard on your laptop.
 
 This is the factory you build on for the rest of the curriculum. Everything from here either tours it, observes it, or extends it.
 
 ## Prereqs
 
 - [W2](./W2-cloud-box-and-preflight.md) complete: `gc`, `bd` and `dolt` installed and preflight green, and `gh` signed in.
+- A cloud box saved with `sfbox`, per [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md), and `sfbox preflight` reporting ssh reachable and `gc` installed. Working on your own machine instead? None of this page's `sfbox` steps apply, so [skip to the alternate path](#running-on-your-own-machine-instead).
 
 ## Context
 
 You are not assembling a factory by hand today. The base factory arrives as one pack, and it already contains a worked example of every Gas City primitive, so the rest of Day 1 is spent reading a factory that runs rather than debugging one that half does. [W4](./W4-tour-the-factory.md) will walk through the pieces in more detail.
 
-Majority of these steps will be run your local `$SOFTWARE_FACTORY_INTENSIVE_PATH` directory. For cloud box users you will initialize your factory remotely but import the pack from local. For local users you will both initialize the factory and import the pack locally.
+Your factory runs on the cloud box, and you drive it from your laptop. The laptop holds the SSH key and the box id and nothing else; the box holds the city, the rig, the Dolt database and every agent session. Building the whole thing on your own machine works too, and that path is [further down this page](#running-on-your-own-machine-instead). Don't do both.
 
-**Directory tree**
+```mermaid
+flowchart TD
+    A["sfbox box use<br/>name the box you mean"] --> B["sfbox preflight<br/>ssh, then gc, then the service"]
+    B --> C["sfbox start-session<br/>a shell on the box, where Setup runs"]
+    C --> D["gc import add --rig<br/>the base factory, rig scope"]
+    D --> E["gc import add<br/>the mayor's pack, city scope"]
+    E --> F["gc reload<br/>pick both packs up now"]
+    F --> G["sfbox dashboard<br/>watch it from your laptop"]
+```
+
+**Directory tree**, on whichever machine you build the factory on
 
 ```text
 ~/
@@ -54,7 +71,91 @@ Majority of these steps will be run your local `$SOFTWARE_FACTORY_INTENSIVE_PATH
      └── <your projects>              # Your own work can live here too.
 ```
 
+## Run it on your cloud box
+
+Your box arrives carrying the toolchain, your GitHub sign-in and the agent CLIs, and no factory at all. The factory is the part you build in this session. Three commands get you to a shell on the box where the rest of the page runs, and each answers a different question, so run them in order rather than jumping to the shell.
+
+Not saved your box yet? [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) takes you from the values your instructor sent to a box `sfbox` can reach, and [W2](./W2-cloud-box-and-preflight.md) is where that fits in the running order.
+
+### 1. Make your box the current one
+
+Every `sfbox` command acts on the current box. Most participants have two, so it is worth naming the one you mean before you start changing it.
+
+**Copy and paste**
+
+```bash
+sfbox box list
+sfbox box use <boxId>
+sfbox box current
+```
+
+`box list` marks the current box with a `*`. Build today's factory on whichever box you are treating as Prod, and leave the other one alone: it is there for Day 2, when you will want to try a pack change somewhere you can afford to break it. To point a single command at the other box without switching, pass `--box <boxId>`.
+
+### 2. Preflight before you build anything
+
+**Copy and paste**
+
+```bash
+sfbox preflight
+```
+
+**Expected output**
+
+```text
+==> Checking 'alice-prod' (ubuntu@203.0.113.10) ...
+==>   ssh            reachable
+==>   gc             installed
+==>   gas-city.service  inactive — no city on this box yet
+==>   Nothing is broken. This box supplies the environment and you build the
+==>   city yourself, so the service stays down until there is one to run.
+```
+
+Preflight checks SSH, then `gc`, then the service, and stops at the first thing that fails. That ordering is what makes it worth running first: it separates a broken factory from a broken connection, and those two get mistaken for each other constantly. Reach for it every time something on the box looks wrong, before you go looking at the factory itself.
+
+An inactive service is the expected answer here rather than a fault. Building the city it is waiting for is the next step.
+
+### 3. Open a shell on the box
+
+**Copy and paste**
+
+```bash
+sfbox start-session
+```
+
+That is a shell on the box, and everything in [Setup](#setup) runs inside it. Set the workspace up once, the same shape W2 had you build on your laptop:
+
+**Copy and paste** (on the box)
+
+```bash
+mkdir -p ~/software-factory-intensive
+cd ~/software-factory-intensive
+export SOFTWARE_FACTORY_INTENSIVE_PATH="$(pwd)"
+cat <<EOF >> ~/.bashrc
+export SOFTWARE_FACTORY_INTENSIVE_PATH="$SOFTWARE_FACTORY_INTENSIVE_PATH"
+EOF
+gh repo clone <your-github-handle>/sf-tutorial
+```
+
+No `deps.sh` step here. The box already carries `gc`, `bd` and `dolt` at the pinned versions, which is what preflight confirmed a moment ago, and it signed in to GitHub during your first-run login, so the rig push in [step 6](#6-put-the-rig-on-github) needs nothing further from you.
+
+Leave that shell open. You come back to your laptop once, in [Try It](#4-watch-it-from-your-laptop), and it is marked where it happens.
+
+You do not have to hold a shell open to reach the box, though, and after today you mostly will not. `sfbox exec <command>` runs one command there and hands you its exit status, and `sfbox gc <args>` runs a `gc` command inside the city without you naming the path. Either works from your laptop at any point in this page:
+
+```bash
+sfbox exec systemctl is-active gas-city.service
+sfbox gc session list
+```
+
+## Running on your own machine instead
+
+Everything in [Setup](#setup) runs the same way in a terminal on your own laptop, with no `sfbox` in the picture. You already have the toolchain and the workspace directory from [W2](./W2-cloud-box-and-preflight.md), so start at [step 1](#1-create-the-city) and read past the lines marked for the box. One place differs, and it names the alternate inline: the dashboard in [Try It](#4-watch-it-from-your-laptop) needs no tunnel, because the supervisor is already on your machine.
+
+Pick one route and stay on it. Running half the session on each leaves you with a city on the box and a rig on your laptop, and nothing that can read both.
+
 ## Setup
+
+These steps run wherever you decided the factory lives: the box shell from [step 3](#3-open-a-shell-on-the-box), or a terminal on your own machine. The commands are the same either way, and where they genuinely differ the step says so.
 
 ### 1. Create the city
 
@@ -295,7 +396,7 @@ graph LR
     P --> S["setup<br/>polecat, refinery"]
 ```
 
-One more import goes in at **city** scope rather than rig scope, because it patches the mayor and the mayor belongs to the city:
+One more import goes in at **city** scope rather than rig scope, because it supplies the mayor and the mayor belongs to the city:
 
 **Copy and paste**
 
@@ -303,7 +404,9 @@ One more import goes in at **city** scope rather than rig scope, because it patc
 gc import add "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-city"
 ```
 
-Confirm both landed:
+Note which of those carried `--rig` and which did not. That flag is the whole difference between a pack the rig can see and a pack the city can see, and it is the first thing to check when a later page reports a pack missing.
+
+Confirm both landed. The rig import and the city import are separate lists, so ask for each one:
 
 **Copy and paste**
 
@@ -329,6 +432,8 @@ gc reload
 ```
 
 > **If `gc reload` prints `Reload request could not be accepted because the controller is busy`,** that is normal right after `gc start` while the controller is still adopting sessions. The imports are already persisted, so wait for the next tick and move on rather than retrying.
+
+Both imports and the reload run in the box shell you already have open. The same three commands work from your laptop if you would rather not hold a shell, as `sfbox gc import add ...`, `sfbox gc import list` and `sfbox gc reload`.
 
 ### 8. Run the factory checks
 
@@ -478,7 +583,21 @@ cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/FACTORY_LOG.md"
 
 `gc order check` prints which orders are due and, for the ones that are not, why not. `gc order run` fires one immediately instead of waiting for its trigger. Come back to that log later in the day: `pulse` lines arrive on the hour from a clock, and `closed` lines arrive whenever the factory closes a bead. Same file, two mechanisms.
 
-### 4. Reflect
+### 4. Watch it from your laptop
+
+The dashboard is embedded in the `gc` binary and served by the supervisor, so there is nothing to install and nothing to start. `sfbox` forwards it over SSH and prints you a local address.
+
+**Copy and paste** (on your laptop)
+
+```bash
+sfbox dashboard
+```
+
+Open the `http://127.0.0.1:8372` URL it prints, and leave the command running: `Ctrl-C` closes the tunnel. On your own machine, run `gc dashboard` from inside `factory1` instead, which opens the same page with no tunnel in the way.
+
+The tunnel is the design rather than an inconvenience. Your box opens port 22 and nothing else, and reaching the dashboard same-origin through the tunnel keeps it fully read-write. [W5](./W5-observability.md) is where you read the thing properly. For now, confirm it opens and that your beads are in it.
+
+### 5. Reflect
 
 You have a city, a rig on GitHub, a base factory carrying every primitive, 38 beads of real work, and at least one bead that moved through the pipeline while you watched. Nothing you build for the rest of the curriculum starts from scratch; it starts from here.
 
@@ -519,6 +638,22 @@ git ls-remote --heads origin
 ```
 
 ## Troubleshooting
+
+### `sfbox: command not found`
+
+The `PATH` export from the box guide did not take in this terminal. Run it again here, then put it in your shell profile so a new terminal keeps it. [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) has the line.
+
+### `sfbox gc` says it could not find a Gas City directory on the box
+
+It reads `gc cities` over SSH, and there is no city registered yet. Finish Setup steps 1 to 7 in the box shell first; `gc start` is what registers `factory1`. If the box carries more than one city, `sfbox` warns and takes the first it sees, so name the one you meant with `--city-path`.
+
+### `sfbox exec` runs the wrong thing when your command has a pipe in it
+
+Your arguments reach the box the way you typed them, which means `sfbox` never hands them to a shell unless you ask for one. Write `sfbox exec bash -lc 'gc session list | wc -l'` rather than quoting the pipeline on its own.
+
+### `git push` on the box asks for a username
+
+The box is signed in to GitHub, but nobody has told this shell's `git` to use that credential, which is a separate step from the sign-in and easy to miss. Run `gh auth setup-git` there, then push again.
 
 ### `gc status` shows `Controller: stopped` and `bd` reports Dolt unreachable
 
