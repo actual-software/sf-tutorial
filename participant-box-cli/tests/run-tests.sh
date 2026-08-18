@@ -23,9 +23,13 @@ trap 'rm -rf "$SFBOX_TEST_ROOT"' EXIT
 
 PASS=0
 FAIL=0
+SKIP=0
 
 ok()   { PASS=$((PASS + 1)); printf '  ok   %s\n' "$1"; }
 bad()  { FAIL=$((FAIL + 1)); printf '  FAIL %s\n' "$1"; printf '       %s\n' "$2"; }
+# A test that could not run is neither a pass nor a failure, and counting it as
+# either hides it. The summary reports these separately for the same reason.
+skip() { SKIP=$((SKIP + 1)); printf '  SKIP %s\n' "$1"; }
 
 is() { # actual expected label
   if [ "$1" = "$2" ]; then ok "$3"; else bad "$3" "want [$2], got [$1]"; fi
@@ -143,6 +147,103 @@ echo "flags that have to be numbers"
 rc_is 1 "get-box rejects a non-numeric --lines"        cmd_get_box --lines abc
 rc_is 1 "restart-factory rejects a non-numeric --wait" cmd_restart_factory --wait soon
 rc_is 1 "dashboard rejects a non-numeric --port"       cmd_dashboard --port http
+
+# -------------------------------------------------- dashboard local port ---
+
+# Two halves, tested apart. The policy is what the command decides once it knows
+# a port is busy, and a stubbed probe drives it here so the answers do not depend
+# on what happens to be listening on the machine running the suite. The probe is
+# the other half, and it goes against a real listener below.
+
+real_port_in_use="$(declare -f port_in_use)"
+busy_ports=""
+port_in_use() { case " $busy_ports " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
+
+echo "dashboard: a free port is used as asked"
+busy_ports=""
+is "$(dashboard_resolve_port 8372 '')"  "8372" "the default is left alone"
+is "$(dashboard_resolve_port 9999 yes)" "9999" "an explicit port is left alone"
+
+echo "dashboard: a busy default moves, and says where"
+busy_ports="8372"
+is "$(dashboard_resolve_port 8372 '' 2>/dev/null)" "8373" "moves to the next free port"
+out="$(dashboard_resolve_port 8372 '' 2>&1 >/dev/null)"
+contains "$out" "8372" "names the port that was busy"
+contains "$out" "8373" "names the port it moved to"
+
+busy_ports="8372 8373 8374"
+is "$(dashboard_resolve_port 8372 '' 2>/dev/null)" "8375" "walks past a run of busy ports"
+
+# The half of the ask that is easy to get backwards. Someone who typed a port
+# wants to hear it is taken, not to be moved off it without being told.
+echo "dashboard: an explicit port is never moved"
+busy_ports="8372"
+rc_is 1 "refuses rather than relocating" dashboard_resolve_port 8372 yes
+is "$(dashboard_resolve_port 8372 yes 2>/dev/null)" "" "offers no port to bind"
+out="$(dashboard_resolve_port 8372 yes 2>&1 >/dev/null)"
+contains "$out" "already in use" "says what is wrong"
+contains "$out" "--port 8373"    "points at the flag, with a port that is free"
+
+echo "dashboard: every port in the scan window is busy"
+saved_scan="$SFBOX_DASHBOARD_PORT_SCAN"
+SFBOX_DASHBOARD_PORT_SCAN=2
+busy_ports="8372 8373 8374"
+rc_is 1 "gives up rather than scanning on" dashboard_resolve_port 8372 ''
+contains "$(dashboard_resolve_port 8372 '' 2>&1 >/dev/null)" "8372" \
+  "names the port it started from"
+contains "$(dashboard_resolve_port 8372 yes 2>&1 >/dev/null)" "pass --port" \
+  "still gives advice when it has no port to suggest"
+SFBOX_DASHBOARD_PORT_SCAN="$saved_scan"
+
+echo "dashboard: the scan stays inside the port range"
+busy_ports="65535"
+is "$(dashboard_free_port 65535)" "" "never suggests a port above 65535"
+
+eval "$real_port_in_use"
+unset busy_ports
+
+# ---- the probe, against a real listener -------------------------------------
+#
+# The stubs above prove the decisions. This proves the one thing they cannot:
+# that /dev/tcp really does see a held port, which is the assumption the rest of
+# the feature rests on. python3 holds the port because the repo already depends
+# on it for scripts/check_links.py, and because nc's flags differ across the BSD
+# and GNU builds this suite has to run on.
+
+echo "dashboard: the probe against a real listener"
+if command -v python3 >/dev/null 2>&1; then
+  probe_port="$(dashboard_free_port 18372)"
+  spare_port=""
+  [ -n "$probe_port" ] && spare_port="$(dashboard_free_port "$((probe_port + 1))")"
+  if [ -n "$probe_port" ] && [ -n "$spare_port" ]; then
+    python3 -c 'import socket, sys, time
+s = socket.socket()
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind(("127.0.0.1", int(sys.argv[1])))
+s.listen(8)
+sys.stdout.write("up\n")
+sys.stdout.flush()
+time.sleep(30)' "$probe_port" >"$SFBOX_TEST_ROOT/listener" 2>/dev/null &
+    listener_pid=$!
+    waited=0
+    while [ "$waited" -lt 50 ] && ! grep -q up "$SFBOX_TEST_ROOT/listener" 2>/dev/null; do
+      sleep 0.1
+      waited=$((waited + 1))
+    done
+    if grep -q up "$SFBOX_TEST_ROOT/listener" 2>/dev/null; then
+      rc_is 0 "sees a port a listener is holding" port_in_use "$probe_port"
+      rc_is 1 "sees a port nothing is holding"    port_in_use "$spare_port"
+    else
+      skip "the test listener never came up"
+    fi
+    kill "$listener_pid" 2>/dev/null
+    wait "$listener_pid" 2>/dev/null
+  else
+    skip "no free local port to hold for the probe test"
+  fi
+else
+  skip "no python3, so the probe never met a real listener"
+fi
 
 # ------------------------------------------------------ size guardrail -----
 
@@ -1058,5 +1159,7 @@ is "$(wc -c <"$PROBE_LOG" | tr -d ' ')" "0" "never offers the key to a box that 
 # ------------------------------------------------------------------ done ---
 
 echo
-printf '%s passed, %s failed\n' "$PASS" "$FAIL"
+printf '%s passed, %s failed' "$PASS" "$FAIL"
+[ "$SKIP" = 0 ] || printf ', %s skipped' "$SKIP"
+printf '\n'
 [ "$FAIL" = 0 ] || exit 1

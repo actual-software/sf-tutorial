@@ -89,6 +89,8 @@ sfbox dashboard
 
 This just opens an SSH tunnel and prints a `127.0.0.1` URL. The dashboard's embedded in the `gc` binary and served by the supervisor, so nothing needs starting on the box. It'll run in the foreground until Ctrl-C.
 
+A busy port on the user's own laptop is the common snag here, and the command handles the two cases differently. If the default port is taken it moves to the next free one and says which, so read the port back off its output rather than assuming. If they passed `--port` and that port is taken, the command stops and names a free one to try. That's deliberate: ask them which port they want instead of choosing one for them.
+
 Never suggest binding the API port publicly, or opening it up in the security group. Only `:22` belongs there, really. Binding it non-loopback also drops the API to read-only unless mutations are explicitly enabled, and it'll leave reads open to anyone who finds the address.
 
 ## Restarting
