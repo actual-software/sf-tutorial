@@ -24,22 +24,20 @@ By the end of this session `./preflight.sh` prints `PREFLIGHT: PASS` wherever yo
 
 ## Prereqs
 
-- macOS or Linux, on amd64 or arm64.
-- A GitHub account, and a repository you can push to for the rig.
-- Roughly fifteen minutes, most of it waiting on downloads.
+- MacOS or Linux (or Windows with [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)) installed
+- A GitHub account with the ability to create new repositories.
 
 ## Context
 
-Nothing in the rest of the curriculum works until preflight passes, and the failures it catches are all cheaper to find now than at step nine of the next session.
+Nothing in the rest of the curriculum works until the preflight check passes, and the failures it catches are all cheaper to find now than at step nine of the next session.
 
-Most participants work on an instructor-provided cloud box, which is the path below. Your own machine works too, and that path is in the appendix at the end of this page. Do one of them, not both.
+Most participants should work on an instructor-provided cloud box, which is the path below. Your own machine works too, and that path is in the appendix at the end of this page. Do one of them, not both.
 
 ## The cloud box (recommended)
 
+Getting onto the box is its own page. [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) takes the four values your instructor sends you through to a running factory. Work through it first, then come back here for the preflight run below.
 
-Getting onto the box is its own page. [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) takes the four values your instructor sends you through to a running factory, and it is the one place those steps live. Work through it first, then come back here for the preflight run below.
-
-### Signing the box in with a token
+### Signing into the box with a token
 
 The box holds its own GitHub credential, separate from the one on your laptop, and [step 5 of the box guide](../CLOUD_BOX_GUIDE.md#step-5-the-first-run-login) is where it gets one. That step asks which way you would like to give it:
 
@@ -58,33 +56,25 @@ The box holds its own GitHub credential, separate from the one on your laptop, a
  Which route? [1]
 ```
 
-A bare Enter takes the browser grant, which is what the rest of the guide assumes and what most of the room will take. Answering `2` prompts for a token instead. It is read without echoing, checked against GitHub before anything is written, and stored readable only by the factory user. Both routes then check that the account can actually read the repositories the box provisions from, so a credential that authenticates but cannot reach them fails at the prompt rather than three minutes later inside a clone.
+A bare `Enter` takes the browser grant, which is what the rest of the guide assumes and what most of the room will take. Answering `2` prompts for a token instead. It is read without echoing, checked against GitHub before anything is written, and stored readable only by the factory user. Both routes then check that the account can actually read the repositories the box provisions from, so a credential that authenticates but cannot reach them fails at the prompt. If you would like to use a restricted grant token, be sure to mint it before you start step 5 and have it ready when the prompt appears.
 
-So the choice about a broad grant is yours on a box, the same as it is on your laptop above. The only thing to arrange beforehand is the token itself. Mint it before you start step 5 and have it ready when the prompt appears.
+If GitHub rejects it or you run into issues with the GitHub credential, nothing is written and first-run stops there rather than carrying on without a credential. Resume with `sudo gas-city-login --from github`, which redoes the sign-in and continues through the steps that had not run yet.
 
-You will only meet that menu on a box that holds no credential yet. If step 5 tells you it is already authenticated as somebody, then someone has been here before you, and it names the `gh auth logout` that hands the choice back.
+> [!NOTE]
+> If you would like to change the credential later, run the following (or else it will refuse to drop the existing `gh` credential):
+> ```bash
+> ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" gh auth logout --hostname github.com
+> ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" sudo gas-city-set-token
+> ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" sudo gas-city-refresh
+> ```
+> Alternatively, the following command on a box holding a pasted token offers the browser route and defaults to keeping the token:
+> ```bash
+> ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" sudo gas-city-login github
+> ```
 
-If the paste comes back empty or GitHub rejects it, nothing is written and first-run stops there rather than carrying on without a credential. Resume with `sudo gas-city-login --from github`, which redoes the sign-in and continues through the steps that had not run yet. Reaching for `gas-city-set-token` on its own instead is the tempting mistake: it writes the token and leaves the box unprovisioned.
+On scopes, the two routes ask for the same thing. The browser grant yields `repo`, `read:org`, `gist` and `workflow`. The token prompt asks for a classic token with `repo`, plus `workflow` if any repository the agents touch carries GitHub Actions workflows, or a fine-grained one with contents and pull-requests read and write, plus workflows, on those repositories.
 
-`gas-city-set-token` is what replaces the box's credential later, and the order there is not obvious. It refuses to run while the box still holds a `gh` credential, because that credential wins over the token file and the token would be written and then ignored. So drop that one first:
-
-**Copy and paste**
-
-```bash
-ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" gh auth logout --hostname github.com
-ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" sudo gas-city-set-token
-ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" sudo gas-city-refresh
-```
-
-The first line is only needed if the box took the browser route at step 5; a box already on a pasted token has no `gh` credential to drop. The last line is the part that is easy to leave off, and the swap is not finished without it: the agents already running keep the old credential until the service restarts. `gas-city-refresh` rewrites the factory's environment from the stored token, restarts the service, and prints its status so you can see it came back.
-
-The way back is open too. `sudo gas-city-login github` on a box holding a pasted token offers the browser route and defaults to keeping the token, so a box is never stuck on whichever credential it was given first.
-
-This route needs no `gh auth setup-git`, unlike the laptop ones. The box wires `git` to a credential helper that asks for whichever credential the box currently holds, so it keeps working across a swap in either direction.
-
-On scopes, the two routes ask for the same thing. The browser grant yields `repo`, `read:org`, `gist` and `workflow`. The token prompt asks for a classic token with `repo`, plus `workflow` if any repository the agents touch carries GitHub Actions workflows, or a fine-grained one with contents and pull-requests read and write, plus workflows, on those repositories. Scope it for the whole two days rather than for the clone. A read-only token is enough to provision the box and then stops at the first push, which is a failure that arrives once the agents are already working.
-
-### Run preflight against the box
+### Run preflight against the cloud box
 
 **Copy and paste**
 
@@ -106,12 +96,9 @@ Cloud path
 PREFLIGHT: PASS
 ```
 
-The reachability check delegates to `sfbox preflight`, which walks the three layers in order and stops at the first one that fails. That ordering is the useful part: it tells you whether the problem is SSH, a missing `gc`, or the Gas City service, so you know which of the three to fix instead of guessing.
-
 ## Appendix: running it on your own machine
 
-Everything below works, and it is the fallback rather than the taught path. If you are on an instructor-provided box, you are already done; skip to [What's next](#whats-next).
-
+Everything below is the fallback if you would like to run the curriculum on your local machine. If you are on an instructor-provided cloud box, skip to [What's next](#whats-next).
 
 ### 1. Clone the tutorial
 
@@ -148,7 +135,25 @@ Do what that last line says if you have not already:
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-Add it to `~/.zshrc` or `~/.bashrc` too so new session windows also contain it.
+Then, add the variables to `~/.zshrc` or `~/.bashrc` too so new session windows contain it:
+
+**Copy and paste** (macOS / zsh)
+
+```bash
+cat <<EOF >> ~/.zshrc
+export SOFTWARE_FACTORY_INTENSIVE_PATH="$SOFTWARE_FACTORY_INTENSIVE_PATH"
+export PATH="$HOME/.local/bin:$PATH"
+EOF
+```
+
+**Copy and paste** (Linux / bash)
+
+```bash
+cat <<EOF >> ~/.bashrc
+export SOFTWARE_FACTORY_INTENSIVE_PATH="$SOFTWARE_FACTORY_INTENSIVE_PATH"
+export PATH="$HOME/.local/bin:$PATH"
+EOF
+```
 
 ### 3. Run preflight
 
@@ -157,7 +162,6 @@ Add it to `~/.zshrc` or `~/.bashrc` too so new session windows also contain it.
 ```bash
 ./preflight.sh
 ```
-
 **Expected output**
 
 ```text
@@ -197,12 +201,6 @@ If you would rather not grant that, paste a personal access token instead. Both 
 
 ```bash
 gh auth login --with-token < your-token-file
-```
-
-**Fine-grained token.** This is the kind that scopes to individual repositories, so it is the one to reach for if the whole point is keeping the rest of your account out of reach. Do not pass it to `--with-token`: `gh` warns that the resource scoping causes confusing behaviour on commands that touch anything outside the token's repositories. Set the environment variable instead, and add it to your shell rc so a new terminal keeps it:
-
-```bash
-export GH_TOKEN=<your-token>
 ```
 
 Grant it **Contents**, **Pull requests**, and **Administration**, all write, on the repository you will push the rig to. Administration is the one that is easy to miss — [the branch-protection appendix](../appendix/03-branch-protection.md) needs it to install branch protection, and that failure lands an hour into day one. A fine-grained token also has to name a repository that already exists, and the rig's repository is created on [W3 Run Your Factory](./W3-run-your-factory.md), so either create it now or come back and re-scope the token then.
