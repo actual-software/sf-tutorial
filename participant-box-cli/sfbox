@@ -32,6 +32,13 @@ SFBOX_PROTECTED_IMPORTS="core bd"
 SFBOX_DEFAULT_USER="ubuntu"
 SFBOX_DEFAULT_PORT="22"
 SFBOX_DEFAULT_DASHBOARD_PORT="8372"
+
+# How far above a busy default the dashboard looks for a free local port before
+# it gives up and says so. Small on purpose: a participant reading a port number
+# off their own screen should not have to check it is the one in the room's
+# instructions plus fifty.
+SFBOX_DASHBOARD_PORT_SCAN=20
+
 SFBOX_SERVICE="gas-city.service"
 
 # ---------------------------------------------------------------- output ----
@@ -756,12 +763,77 @@ restart_factory() { # box wait_secs
   return 1
 }
 
+# ------------------------------------------------------------- dashboard ----
+
+# Is something already listening on this local port?
+#
+# /dev/tcp is a bash builtin rather than a device, which is what makes this the
+# portable check. lsof, ss and netstat are each absent from some stock macOS or
+# slim Linux, and this runs on whatever laptop a participant walked in with.
+#
+# A completed connect is the only answer trusted here. Refused, unreachable, and
+# a bash built without /dev/tcp all report free, so the worst this can do is hand
+# the participant the ssh bind error they would have got anyway. Guessing the
+# other way is the costlier mistake: it would refuse to tunnel over a port
+# nothing was holding.
+port_in_use() { # port -> 0 in use, 1 free or undetectable
+  ( exec 3<>"/dev/tcp/127.0.0.1/$1" ) >/dev/null 2>&1
+}
+
+# The first free port at or above the one given, within SFBOX_DASHBOARD_PORT_SCAN
+# tries. Prints nothing when they are all taken, which the caller reports rather
+# than searching further: someone holding that many consecutive ports is better
+# told than moved somewhere they would never think to look.
+dashboard_free_port() { # start -> prints a free port, or nothing
+  local p="$1" tried=0
+  while [ "$tried" -lt "$SFBOX_DASHBOARD_PORT_SCAN" ] && [ "$p" -le 65535 ]; do
+    port_in_use "$p" || { printf '%s' "$p"; return 0; }
+    p=$((p + 1))
+    tried=$((tried + 1))
+  done
+  return 1
+}
+
+# Settle which local port the tunnel binds.
+#
+# An explicit --port is never moved. The participant named that port, usually
+# because something else of theirs expects the dashboard there, so a collision is
+# theirs to see; moving them quietly would hide both the collision and the port
+# they ended up on. The default is moved, because someone who never chose a port
+# has no stake in which one they get, and the alternative is ssh's own "bind:
+# Address already in use", which names neither the port nor the flag that fixes it.
+dashboard_resolve_port() { # port explicit -> prints the port to bind
+  local port="$1" explicit="$2" free=""
+
+  port_in_use "$port" || { printf '%s' "$port"; return 0; }
+  free="$(dashboard_free_port "$((port + 1))")"
+
+  if [ -n "$explicit" ]; then
+    err "dashboard: local port $port is already in use on this machine."
+    if [ -n "$free" ]; then
+      err "Stop whatever is listening there, or use a free one: sfbox dashboard --port $free"
+    else
+      err "Stop whatever is listening there, or pass --port with a free port."
+    fi
+    return 1
+  fi
+
+  if [ -z "$free" ]; then
+    err "dashboard: local port $port is in use, and so are the next $SFBOX_DASHBOARD_PORT_SCAN."
+    err "Free one of them, or pass --port with a port you know is free."
+    return 1
+  fi
+
+  warn "local port $port is in use, so this tunnel uses $free instead."
+  printf '%s' "$free"
+}
+
 cmd_dashboard() {
-  local box_arg="" port="$SFBOX_DEFAULT_DASHBOARD_PORT"
+  local box_arg="" port="$SFBOX_DEFAULT_DASHBOARD_PORT" port_explicit=""
   while [ $# -gt 0 ]; do
     case "$1" in
       --box)  box_arg="${2:-}"; shift 2 || die "'$1' needs a value" ;;
-      --port) port="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --port) port="${2:-}"; port_explicit=yes; shift 2 || die "'$1' needs a value" ;;
       -h|--help) echo "usage: sfbox dashboard [--box <boxId>] [--port <local-port>]"; return 0 ;;
       *) die "dashboard: unknown argument '$1'" ;;
     esac
@@ -771,6 +843,7 @@ cmd_dashboard() {
   esac
   state_init
   local box; box="$(resolve_box "$box_arg")" || exit $?
+  port="$(dashboard_resolve_port "$port" "$port_explicit")" || exit 1
 
   say "Tunnelling the dashboard from '$box' to http://127.0.0.1:$port"
   say "The SPA is embedded in the gc binary and served by the supervisor, so there"

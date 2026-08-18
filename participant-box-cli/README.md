@@ -94,6 +94,8 @@ sfbox dashboard
 
 The dashboard's built into the `gc` binary and served by the supervisor, so there's nothing to deploy or start. `sfbox` forwards it over SSH and prints you a local URL. Leave the command running; Ctrl-C closes the tunnel.
 
+If the default port is already busy on your laptop, `sfbox` moves the tunnel to the next free one and tells you which it picked, so the URL it prints is always the one to open. Pass `--port <local-port>` to choose for yourself. A port you named is never moved: if it's taken the command stops and names a free one to try, because choosing a port usually means something else of yours expects the dashboard there.
+
 Tunnelling is the whole point. Your security group opens `:22` and nothing else, and because you're reaching the dashboard same-origin through the tunnel, it stays fully read-write. Bind it to a public interface instead and you'd leave reads open to anyone who found the address, plus the API would drop to read-only unless you'd explicitly switched mutations on.
 
 ## Where your state lives
