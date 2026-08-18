@@ -52,6 +52,10 @@ chmod 600 "$SFI_KEY"
 Clone the repo if you haven't already.
 
 ```bash
+```bash
+cd $HOME && mkdir software-factory-intensive
+cd software-factory-intensive
+export SOFTWARE_FACTORY_INTENSIVE_PATH="$(pwd)"
 git clone https://github.com/actual-software/sf-tutorial.git
 ```
 
@@ -72,6 +76,7 @@ Add both of these environment variables to your shell for future use:
 cat <<EOF >> ~/.zshrc
 export SFI_KEY=$HOME/Downloads/key.pem
 export PATH="$PWD/sf-tutorial/participant-box-cli:$PATH"
+export SOFTWARE_FACTORY_INTENSIVE_PATH="$(pwd)"
 EOF
 ```
 
@@ -81,6 +86,7 @@ EOF
 cat <<EOF >> ~/.bashrc
 export SFI_KEY=$HOME/Downloads/key.pem
 export PATH="$PWD/sf-tutorial/participant-box-cli:$PATH"
+export SOFTWARE_FACTORY_INTENSIVE_PATH="$(pwd)"
 EOF
 ```
 
@@ -125,20 +131,7 @@ You'll be walked through GitHub sign-in, which asks which credential you want to
 
 Then, you may choose to configure Claude Code (`claude`), Codex (`codex`), or Gemini CLI (`gemini`) by running the respective command. Note that the curriculum assumes Claude Code, so you will need to replace a provider string `claude` to your alternative choice when configuring the software factory. See an instructor for help if needed.
 
-**Your box has no custom factory on it when this finishes, and that is deliberate.** It arrives with the environment and nothing more: the `gc`, `bd` and `dolt` toolchain, your GitHub credential, and the Claude, Codex and Gemini CLIs. There is a `factory-packs` directory that clones this `sf-tutorial` repository but you should instead run the following commands to ensure you have the same setup as local-only participants:
-
-```bash
-cd $HOME && mkdir software-factory-intensive
-cd software-factory-intensive
-export SOFTWARE_FACTORY_INTENSIVE_PATH="$(pwd)"
-git clone https://github.com/actual-software/sf-tutorial.git
-
-cat <<EOF >> ~/.bashrc
-export SOFTWARE_FACTORY_INTENSIVE_PATH="$(pwd)"
-EOF
-```
-
-Then, 
+**Your box has no custom factory on it when this finishes, and that is deliberate.** It arrives with the environment and nothing more: the `gc`, `bd` and `dolt` toolchain, your GitHub credential, and the Claude, Codex and Gemini CLIs. There is a `factory-packs` directory that clones this `sf-tutorial` repository but we will use your custom `sf-tutorial` branches instead.
 
 ## Step 6: check it worked
 
