@@ -245,6 +245,28 @@ else
   skip "no python3, so the probe never met a real listener"
 fi
 
+# ---- the flag reaches the policy --------------------------------------------
+#
+# The policy tests above pass the explicit flag themselves, so they stay green
+# even if cmd_dashboard stops setting it, and the failure that hides is the one
+# the participant must never see: being moved off a port they named. This drives
+# the flag through cmd_dashboard instead, and records what the policy was told.
+
+echo "dashboard: the flag reaches the policy"
+real_resolve_box="$(declare -f resolve_box)"
+real_resolve_port="$(declare -f dashboard_resolve_port)"
+resolve_box() { printf 'box-1'; }
+dashboard_resolve_port() { printf 'explicit=[%s]' "$2" >"$SFBOX_TEST_ROOT/resolve-args"; return 1; }
+
+rc_is 1 "a refused port stops the command before it tunnels" cmd_dashboard --port 8372
+is "$(cat "$SFBOX_TEST_ROOT/resolve-args")" "explicit=[yes]" "--port arrives as chosen"
+rc_is 1 "a refused default stops it too" cmd_dashboard
+is "$(cat "$SFBOX_TEST_ROOT/resolve-args")" "explicit=[]" "the default arrives as not chosen"
+
+eval "$real_resolve_box"
+eval "$real_resolve_port"
+unset real_resolve_box real_resolve_port
+
 # ------------------------------------------------------ size guardrail -----
 
 echo "prompt-size guardrail"
