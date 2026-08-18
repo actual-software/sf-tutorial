@@ -50,7 +50,7 @@ The dashboard is a single-page app embedded in the `gc` binary and served by the
 **Copy and paste**
 
 ```bash
-cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
+cd "$SFI_PATH/factory1"
 gc dashboard
 ```
 
@@ -74,7 +74,7 @@ A bead is not just a title and a status. Every field on it is either something a
 **Copy and paste**
 
 ```bash
-cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art"
+cd "$SFI_PATH/ascii-art"
 BEAD=$(bd list --status open --limit 1 --json | jq -r '.[0].id')
 bd show "$BEAD" --json | jq '.[0]'
 ```
@@ -117,7 +117,7 @@ From the command line you get the recipe and the wreckage rather than the run it
 **Copy and paste**
 
 ```bash
-cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
+cd "$SFI_PATH/factory1"
 gc formula list
 gc formula show mol-polecat-pr --rig ascii-art          # the compiled recipe, steps and all
 ```
@@ -159,7 +159,7 @@ gc order history
 **What to notice.** `bead.closed` is the event your `bead-closed-log` order is subscribed to. You can see the event that fired the order, then read the line the order wrote:
 
 ```bash
-cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/FACTORY_LOG.md"
+cat "$SFI_PATH/ascii-art/FACTORY_LOG.md"
 ```
 
 That is the whole traceability chain in one screen: an agent closed a bead, the runtime emitted an event, an order was waiting on that event, and the order left an artifact. Every arrow in that sentence is separately inspectable, which is what "traceable" means in practice.

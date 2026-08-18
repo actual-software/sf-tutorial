@@ -51,10 +51,10 @@ Two failure shapes follow from that table and they are worth memorising now. *Th
 **Copy and paste**
 
 ```bash
-cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
+cd "$SFI_PATH/factory1"
 gc import list --rig ascii-art
 gc import list
-cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/base-factory/pack.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/base-factory/pack.toml"
 ```
 
 **What to notice.** Note that `[imports.architect-rig]` pulls its own chain behind it:
@@ -74,7 +74,7 @@ Two things about that are important for later. Each pack is a *layer* that adds 
 
 ```bash
 gc agent list --rig ascii-art
-cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/agents/architect/agent.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/architect-rig/agents/architect/agent.toml"
 ```
 
 **What to notice.** An agent definition is short, and every field in it is a decision:
@@ -91,7 +91,7 @@ The architect is a persona rather than a script: it reads a diff against your de
 **Copy and paste**
 
 ```bash
-sed -n '1,60p' "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/agents/architect/prompt.template.md"
+sed -n '1,60p' "$SFI_PATH/sf-tutorial/artifacts/packs/architect-rig/agents/architect/prompt.template.md"
 ```
 
 This is the whole persona: what the agent is, what it reads, what it writes, and when it stops. It is prose a human can argue with, which is the point.
@@ -101,8 +101,8 @@ Now look at how a pack changes an agent it did not define:
 **Copy and paste**
 
 ```bash
-grep -A4 'patches.agent' "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/pack.toml"
-sed -n '1,40p' "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/prompts/refinery.template.md"
+grep -A4 'patches.agent' "$SFI_PATH/sf-tutorial/artifacts/packs/architect-rig/pack.toml"
+sed -n '1,40p' "$SFI_PATH/sf-tutorial/artifacts/packs/architect-rig/prompts/refinery.template.md"
 ```
 
 **What to notice.** `architect-rig` does not redefine the refinery. It **patches** it, replacing only the `prompt_template` and inheriting everything else. That is what lets a capability arrive as a layer instead of a fork.
@@ -124,7 +124,7 @@ packs/<pack>/
 ```bash
 gc formula list
 gc formula show mol-polecat-pr --rig ascii-art
-cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-rig/formulas/mol-polecat-pr.formula.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/pr-gate-rig/formulas/mol-polecat-pr.formula.toml"
 ```
 
 **What to notice.** Three things in that file are the whole idea.
@@ -143,8 +143,8 @@ Your factory has two, and they were chosen to differ in exactly one way.
 
 ```bash
 gc order list
-cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/base-factory/orders/factory-pulse.toml"
-cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/base-factory/orders/bead-closed-log.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/base-factory/orders/factory-pulse.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/base-factory/orders/bead-closed-log.toml"
 gc order check
 ```
 
@@ -171,7 +171,7 @@ The other split is the action. An order runs **either** a formula, which routes 
 ```bash
 gc order run factory-pulse
 gc order history
-cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/FACTORY_LOG.md"
+cat "$SFI_PATH/ascii-art/FACTORY_LOG.md"
 ```
 
 Both orders write to that one file on purpose. By the end of the day it carries `pulse` lines from the clock and `closed` lines from the event, interleaved, which is the shortest demonstration that they are different mechanisms.
@@ -181,7 +181,7 @@ Both orders write to that one file on purpose. By the end of the day it carries 
 **Copy and paste**
 
 ```bash
-cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
+cd "$SFI_PATH/factory1"
 gc mail send mayor -s "Priority note" -m "Prefer beads from the letters-a-m epic for the rest of the session."
 gc mail inbox mayor
 ```
@@ -233,8 +233,8 @@ Every other agent in your factory is ephemeral and single-purpose: spawn, do one
 Where did the mayor learn about pull requests? From a pack, not from an edit:
 
 ```bash
-cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-city/pack.toml"
-sed -n '1,60p' "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-city/agents/mayor/prompt.template.md"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/pr-gate-city/pack.toml"
+sed -n '1,60p' "$SFI_PATH/sf-tutorial/artifacts/packs/pr-gate-city/agents/mayor/prompt.template.md"
 ```
 
 The mayor's behavior is configuration that packs contribute to, which means a capability you install can teach the coordinator about itself.
@@ -246,8 +246,8 @@ You have now used all five channels. Decide, in writing, which one carries which
 **Copy and paste**
 
 ```bash
-cp "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/docs/coordination-channels.template.md" "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/current/coordination-channels.md"
-nano "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/current/coordination-channels.md"
+cp "$SFI_PATH/sf-tutorial/artifacts/docs/coordination-channels.template.md" "$SFI_PATH/ascii-art/docs/current/coordination-channels.md"
+nano "$SFI_PATH/ascii-art/docs/current/coordination-channels.md"
 ```
 
 `nano` ships with the box and is not modal: `Ctrl-O` then `Enter` saves, `Ctrl-X` exits. Use a different editor if you prefer one.
@@ -267,7 +267,7 @@ Fill in the handoff table. Every handoff gets a primary channel and a fallback:
 Those are defaults rather than answers. Change at least one and be able to say why. Then commit it:
 
 ```bash
-cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art"
+cd "$SFI_PATH/ascii-art"
 git add docs/current/coordination-channels.md
 git commit -m "Record coordination channel preferences"
 ```
@@ -290,7 +290,7 @@ gc formula show mol-polecat-pr | head -5
 gc order check
 gc order history
 gc mail inbox mayor
-test -f "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/current/coordination-channels.md" && echo "channel doc: present"
+test -f "$SFI_PATH/ascii-art/docs/current/coordination-channels.md" && echo "channel doc: present"
 ```
 
 **Expected output**

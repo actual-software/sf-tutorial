@@ -129,9 +129,9 @@ That is a shell on the box, and everything in [Setup](#setup) runs inside it. Se
 ```bash
 mkdir -p ~/software-factory-intensive
 cd ~/software-factory-intensive
-export SOFTWARE_FACTORY_INTENSIVE_PATH="$(pwd)"
+export SFI_PATH="$(pwd)"
 cat <<EOF >> ~/.bashrc
-export SOFTWARE_FACTORY_INTENSIVE_PATH="$SOFTWARE_FACTORY_INTENSIVE_PATH"
+export SFI_PATH="$SFI_PATH"
 EOF
 gh repo clone <your-github-handle>/sf-tutorial
 ```
@@ -164,7 +164,7 @@ Create the `factory1/` directory with an auto-generated `city.toml` and `pack.to
 **Copy and paste**
 
 ```bash
-cd $SOFTWARE_FACTORY_INTENSIVE_PATH
+cd $SFI_PATH
 gc init factory1
 ```
 
@@ -295,7 +295,7 @@ Register the rig as a **sibling** of the city rather than a child. This is the p
 **Copy and paste**
 
 ```bash
-cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
+cd $SFI_PATH/factory1
 
 mkdir ../ascii-art
 gc rig add ../ascii-art ascii-art
@@ -321,14 +321,14 @@ provider = "claude"
 base = "builtin:claude"
 ready_delay_ms = 0
 
-Rigs in $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1:
+Rigs in $SFI_PATH/factory1:
 
   factory1 (HQ):
     Prefix: fa
     Beads:  initialized
 
   ascii-art:
-    Path:   $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
+    Path:   $SFI_PATH/ascii-art
     Prefix: aa
     Beads:  initialized
 ```
@@ -339,14 +339,14 @@ Rigs in $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1:
 
 ```bash
 cd ../sf-tutorial
-mkdir -p "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/future" \
-         "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/current" \
-         "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/decision-records"
+mkdir -p "$SFI_PATH/ascii-art/docs/future" \
+         "$SFI_PATH/ascii-art/docs/current" \
+         "$SFI_PATH/ascii-art/docs/decision-records"
 
-cp "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/docs/decision-records/0001.ADR.ASCII.md" \
-   "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/decision-records/"
-cp "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/docs/future/0002.ADR.TESTING.md" \
-   "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/future/"
+cp "$SFI_PATH/sf-tutorial/artifacts/docs/decision-records/0001.ADR.ASCII.md" \
+   "$SFI_PATH/ascii-art/docs/decision-records/"
+cp "$SFI_PATH/sf-tutorial/artifacts/docs/future/0002.ADR.TESTING.md" \
+   "$SFI_PATH/ascii-art/docs/future/"
 ```
 
 Those two decision records are what the architect reviews against once the factory starts working. `docs/current/` stays empty for now.
@@ -358,7 +358,7 @@ The base factory publishes its work as pull requests, so the rig needs an upstre
 **Copy and paste**
 
 ```bash
-cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art"
+cd "$SFI_PATH/ascii-art"
 git init -b main
 git commit --allow-empty -m 'first commit'
 git add docs/ .gitignore
@@ -383,8 +383,8 @@ This is the step the whole session is built around. One import brings a complete
 **Copy and paste**
 
 ```bash
-cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
-gc import add --rig ascii-art "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/base-factory"
+cd "$SFI_PATH/factory1"
+gc import add --rig ascii-art "$SFI_PATH/sf-tutorial/artifacts/packs/base-factory"
 ```
 
 That single command installs four packs:
@@ -401,7 +401,7 @@ One more import goes in at **city** scope rather than rig scope, because it supp
 **Copy and paste**
 
 ```bash
-gc import add "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-city"
+gc import add "$SFI_PATH/sf-tutorial/artifacts/packs/pr-gate-city"
 ```
 
 That import makes the pack's mayor available. It does not yet run it, and this is the step that is easy to miss.
@@ -413,7 +413,7 @@ Hand the role over. Delete the city's mayor, then point the always-on session at
 **Copy and paste**
 
 ```bash
-cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
+cd "$SFI_PATH/factory1"
 rm -rf agents/mayor
 
 sed '/^\[\[named_session\]\]/,/^[[:space:]]*mode = /d' pack.toml > pack.toml.tmp
@@ -482,7 +482,7 @@ Four commands, one per thing that could be wrong. Run them in order and read eac
 **Copy and paste**
 
 ```bash
-cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
+cd "$SFI_PATH/factory1"
 gc doctor
 ```
 
@@ -515,7 +515,7 @@ This is also the moment to see that the factory carries all five Gas City primit
 **Copy and paste**
 
 ```bash
-cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
+cd $SFI_PATH/ascii-art
 bd status
 ```
 
@@ -536,7 +536,7 @@ Summary:
 **Copy and paste**
 
 ```bash
-cp "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/beads/seed-epics.sh" ./seed-epics.sh
+cp "$SFI_PATH/sf-tutorial/artifacts/beads/seed-epics.sh" ./seed-epics.sh
 chmod +x ./seed-epics.sh
 ./seed-epics.sh
 ```
@@ -559,11 +559,11 @@ To start work by hand you *sling* a bead at an agent. Two equivalent forms:
 **Copy and paste**
 
 ```bash
-cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
+cd $SFI_PATH/ascii-art
 bd list --type=epic                 # find the epic for numbers 1-10
 bd list --parent=<epic-id>          # find its child tasks
 
-cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
+cd $SFI_PATH/factory1
 
 # Name the rig and the agent. This form always works.
 gc sling --rig ascii-art polecat <id-for-1>
@@ -589,7 +589,7 @@ The mayor is your factory's always-on assistant, running in a `tmux` session you
 **Copy and paste**
 
 ```bash
-cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
+cd $SFI_PATH/factory1
 gc session attach mayor
 ```
 
@@ -618,7 +618,7 @@ The two orders in the base pack write to one file, so you can see both trigger s
 gc order list
 gc order check
 gc order run factory-pulse
-cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/FACTORY_LOG.md"
+cat "$SFI_PATH/ascii-art/FACTORY_LOG.md"
 ```
 
 `gc order check` prints which orders are due and, for the ones that are not, why not. `gc order run` fires one immediately instead of waiting for its trigger. Come back to that log later in the day: `pulse` lines arrive on the hour from a clock, and `closed` lines arrive whenever the factory closes a bead. Same file, two mechanisms.
@@ -646,7 +646,7 @@ You have a city, a rig on GitHub, a base factory carrying every primitive, 38 be
 **Copy and paste**
 
 ```bash
-cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
+cd $SFI_PATH/factory1
 gc cities
 gc rig list
 gc import list --rig ascii-art
@@ -665,7 +665,7 @@ factory-pulse and bead-closed-log among the orders
 **Copy and paste**
 
 ```bash
-cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
+cd $SFI_PATH/ascii-art
 bd list --type=epic
 git ls-remote --heads origin
 ```
