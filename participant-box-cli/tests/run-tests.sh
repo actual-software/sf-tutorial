@@ -1032,7 +1032,7 @@ is "$(parse_remote "$CAPTURED" 3)" \
 # --rig and structurally could not pass one, so rig-scoped installs had no route
 # at all. Here the flag is just another argument.
 cmd_gc --box sfi-test-1 import add 'https://github.com/acme/packs/tree/main/f' --rig myrig
-contains "$(parse_remote "$CAPTURED" 3)" -- "--rig myrig" "a gc flag after the command reaches gc"
+contains "$(parse_remote "$CAPTURED" 3)" "--rig myrig" "a gc flag after the command reaches gc"
 
 rc_is 2 "gc with no arguments prints usage" cmd_gc --box sfi-test-1
 rc_is 1 "gc --city-path with no value"      cmd_gc --city-path
