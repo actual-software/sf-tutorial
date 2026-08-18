@@ -121,7 +121,7 @@ rig, `pr-gate-rig` is removed from the rig's direct imports — the new
 pack imports it transitively, so `mol-polecat-pr` and the inherited
 patrol steps remain resolvable.
 
-`pr-gate-city` (the mayor patch) stays in place. Its dispatch guidance
+`pr-gate-city` (the pack that supplies the mayor) stays in place. Its dispatch guidance
 (`gc sling <rig>/polecat <bead> --on mol-polecat-pr`) is unchanged.
 
 Inspect the pack before installing:

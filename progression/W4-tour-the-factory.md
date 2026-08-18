@@ -66,7 +66,7 @@ graph LR
     P --> S["setup<br/>polecat, refinery"]
 ```
 
-Two things about that are important for later. Each pack is a *layer* that adds or overrides one concern, so a Day 2 option is a pack you drop on top rather than an edit you make. And **scope is a property of the import, not the pack**: `base-factory` went in with `--rig` and `pr-gate-city` without it, because the mayor is city-scoped and a patch can only target agents in the same composition pass. Installing at the wrong scope is the usual reason an agent "does not appear" or otherwise "collides".
+Two things about that are important for later. Each pack is a *layer* that adds or overrides one concern, so a Day 2 option is a pack you drop on top rather than an edit you make. And **scope is a property of the import, not the pack**: `base-factory` went in with `--rig` and `pr-gate-city` without it, because the mayor is city-scoped and the pack that supplies it has to compose at the same scope. Installing at the wrong scope is the usual reason an agent "does not appear" or otherwise "collides".
 
 ### 2. Agents: a persona is a prompt plus bounds
 
