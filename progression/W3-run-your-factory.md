@@ -133,7 +133,7 @@ export SFI_PATH="$(pwd)"
 cat <<EOF >> ~/.bashrc
 export SFI_PATH="$SFI_PATH"
 EOF
-gh repo clone <your-github-handle>/sf-tutorial
+git clone https://github.com/actual-software/sf-tutorial
 ```
 
 No `deps.sh` step here. The box already carries `gc`, `bd` and `dolt` at the pinned versions, which is what preflight confirmed a moment ago, and it signed in to GitHub during your first-run login, so the rig push in [step 6](#6-put-the-rig-on-github) needs nothing further from you.
