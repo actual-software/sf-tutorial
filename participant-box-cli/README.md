@@ -49,12 +49,21 @@ Point it at any public GitHub path:
 sfbox deploy-factory https://github.com/actual-software/actual-factory-demo/tree/main/factory
 ```
 
-Your pack becomes the top-level factory, so whatever imports you've already got on the box are replaced, with the single exception of Gas City's own `core` and `bd` imports, which get left alone because pulling those would break the city rather than swap the factory. You'll see the whole plan first. Nothing changes until you confirm it.
+Or at the pack you're editing right now, without pushing it anywhere first:
+
+```bash
+cd ~/my-factory/packs/mine
+sfbox deploy-factory .
+```
+
+Either way your pack becomes the top-level factory, so whatever imports you've already got on the box are replaced, with the single exception of Gas City's own `core` and `bd` imports, which get left alone because pulling those would break the city rather than swap the factory. You'll see the whole plan first. Nothing changes until you confirm it.
 
 ```mermaid
 flowchart TD
-    A[resolve the ref to a commit] --> B[gc import add]
-    B --> C[gc import remove existing]
+    A[a GitHub URL] --> B[resolve the ref to a commit]
+    A2[a directory here] --> B2[copy it to the box, without .git]
+    B --> C[gc import add, then remove the others]
+    B2 --> C
     C --> D[gc import install]
     D --> E{every rendered agent prompt<br/>under 131,072 bytes?}
     E -- yes --> F[restart gas-city.service]
@@ -63,7 +72,28 @@ flowchart TD
     G --> I[refused, old factory still running]
 ```
 
-That size check is the step worth understanding, and it's the reason the restart is deliberately the very last thing to happen: everything before it can be undone, so the one irreversible step waits until the check has already passed.
+That size check is the step worth understanding, and it's the reason the restart is deliberately the very last thing to happen: everything before it can be undone, so the one irreversible step waits until the check has already passed. A local pack is more likely to trip it than a published one, not less, so it matters more here rather than less.
+
+## Deploying the directory you're working in
+
+The argument is a directory when it isn't a URL, and `.` counts. Point it at the pack directory itself, the one holding `pack.toml`, which is the same directory a GitHub tree URL points at. If there's no `pack.toml` there you'll be told so before anything is copied.
+
+Uncommitted work goes up too. That's the whole point of taking a directory: you edit a prompt, redeploy, and watch what changed, without a commit and a push in between. The plan names the branch and counts your modified files before you confirm, so you can see what you're about to send.
+
+```
+==> Pack:    /home/you/my-factory/packs/mine (git prompt-trim, 3 uncommitted file(s), which go too)
+==> Version: none, since a directory has no commit to pin
+```
+
+Your pack lands in `~/.sfbox/packs/<name>` on the box, one directory per pack, and a redeploy replaces that directory rather than merging into it. So a file you delete locally disappears from the box on the next deploy. The copy goes over `rsync` when both machines have it and over `tar` otherwise, and either way it's the same result.
+
+Two details are worth knowing, because between them they're what makes a second deploy actually change anything.
+
+`.git` is left behind on purpose. Gas City reads a pack that sits inside a git worktree as a source pinned to the commit at `HEAD`, and a pin has exactly one version it can resolve to, so your next deploy of uncommitted work would quietly resolve to the copy already installed. Every step would print success and the box would go on running the old pack. Without the `.git` directory the box holds a plain path instead, which Gas City reads live, so the copy you just sent is the one that renders.
+
+And `sfbox` checks that afterwards rather than assuming it. Once the import is added it reads the import list back off the box and confirms the pack really is an unpinned path. If it comes back pinned, the deploy is refused and rolled back, because an import that can never move is worse than no deploy at all: it looks like it worked.
+
+`--version` pins a commit, so it only applies to a GitHub URL. Pass it with a directory and you'll get told why it doesn't fit rather than having it ignored.
 
 ## Why a deploy can be refused
 

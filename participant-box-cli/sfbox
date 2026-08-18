@@ -41,6 +41,16 @@ SFBOX_DASHBOARD_PORT_SCAN=20
 
 SFBOX_SERVICE="gas-city.service"
 
+# Where a local pack directory lands on the box: one stable directory per pack,
+# so a redeploy replaces the last copy instead of piling up beside it. Relative
+# paths are read from the box user's home.
+#
+# It sits outside any git worktree on purpose. gc reads a path inside one as a
+# file:// source pinned to HEAD, and a pin has exactly one satisfying version,
+# so a later deploy of uncommitted work would resolve to the copy already
+# installed while every step printed success.
+SFBOX_BOX_PACKS_DIR="${SFBOX_BOX_PACKS_DIR:-.sfbox/packs}"
+
 # ---------------------------------------------------------------- output ----
 
 say()  { printf '==> %s\n' "$*"; }
@@ -216,6 +226,7 @@ report_include_hint() {
 ssh_cli()     { command ssh "$@"; }
 keyscan_cli() { command ssh-keyscan "$@"; }
 keygen_cli()  { command ssh-keygen "$@"; }
+rsync_cli()   { command rsync "$@"; }
 
 box_ssh() { # box [args...]
   local box="$1"; shift
@@ -893,6 +904,160 @@ resolve_commit_sha() { # org repo ref
     | head -1
 }
 
+# ----------------------------------------------------------- local packs ----
+
+# Which kind of pack source is this?
+#
+# The shape decides, so there is no mode flag to remember and nothing
+# URL-shaped changes hands: anything carrying a scheme stays on the GitHub
+# path with the error it already had, and everything else is read as a
+# directory on this machine.
+classify_pack_source() { # arg -> prints "github" or "local"
+  case "$1" in
+    *://*|git@*) printf 'github\n' ;;
+    *)           printf 'local\n' ;;
+  esac
+}
+
+# A local pack directory has to exist and hold a pack.toml. Checking here means
+# a typo fails on your laptop in a second, rather than on the box after an
+# upload and an import.
+resolve_local_pack_dir() { # arg -> prints the absolute path
+  local arg="$1" abs
+  [ -d "$arg" ] || die "not a GitHub URL, and not a directory: $arg
+Pass either https://github.com/<org>/<repo>/tree/<ref>/<subdir>, or the path to
+a pack directory on this machine — '.' for the one you are standing in."
+  abs="$(cd "$arg" 2>/dev/null && pwd)" || die "cannot read the directory: $arg"
+  [ -f "$abs/pack.toml" ] || die "no pack.toml in $abs
+deploy-factory wants the pack directory itself, the one holding pack.toml. It is
+the same directory a GitHub tree URL points at."
+  printf '%s' "$abs"
+}
+
+# What is actually about to be deployed, said out loud before you confirm.
+#
+# Uncommitted work deploys on purpose, because iterating on it is the reason
+# this takes a directory at all. So the plan names the branch and counts the
+# dirty files instead of refusing them. Outside a git repo this prints nothing.
+describe_worktree_state() { # dir -> prints a short suffix
+  local dir="$1" branch dirty
+  command -v git >/dev/null 2>&1 || return 0
+  git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
+  branch="$(git -C "$dir" rev-parse --abbrev-ref HEAD 2>/dev/null)"
+  dirty="$(git -C "$dir" status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "${dirty:-0}" -gt 0 ]; then
+    printf ' (git %s, %s uncommitted file(s), which go too)' "${branch:-detached}" "$dirty"
+  else
+    printf ' (git %s, clean)' "${branch:-detached}"
+  fi
+}
+
+# Make the landing directory on the box and print where it actually is.
+#
+# The path is resolved on the box rather than guessed here, because the import
+# gc records is an absolute path on that machine and a wrong one fails much
+# later, as a pack that renders empty.
+remote_pack_dest() { # box pack_name -> prints the absolute destination
+  local box="$1" name="$2" out
+  out="$(box_ssh_login "$box" "
+d=$(rq "$SFBOX_BOX_PACKS_DIR")/$(rq "$name")
+case \"\$d\" in /*) ;; *) d=\"\$HOME/\$d\" ;; esac
+mkdir -p \"\$d\" && cd \"\$d\" && pwd")" || return 1
+  out="$(printf '%s' "$out" | tail -1)"
+  # The tar fallback empties this directory, so refuse anything that is not the
+  # per-pack path we asked for. A destination that resolved oddly is a deletion
+  # somewhere else on the participant's box.
+  case "$out" in
+    */"$name") printf '%s' "$out" ;;
+    *) return 1 ;;
+  esac
+}
+
+# The directory's own name becomes the gc import binding name and the last
+# segment of the remote path, so it has to survive both. Refusing the awkward
+# characters here is a one-line message about a folder name; letting them
+# through is a remote path that needs quoting rsync cannot portably give it,
+# and an import name gc has to carry in TOML.
+check_local_pack_name() { # name
+  case "$1" in
+    ""|*[!A-Za-z0-9._-]*)
+      die "'$1' will not work as a pack name.
+gc binds the import to the directory's own name, so it needs to be letters,
+digits, dots, dashes or underscores. Rename the directory, or point at a copy
+that is named acceptably." ;;
+  esac
+}
+
+# Copy a local pack directory to the box.
+#
+# .git is excluded rather than merely skipped as noise. gc reads a path inside a
+# git worktree as a file:// source pinned to the commit at HEAD, and an exact
+# pin has one satisfying version, so every later deploy of uncommitted work
+# would resolve to the copy already installed. Without the .git directory the
+# destination is a plain path, which gc stores with no lock entry and reads live.
+#
+# rsync goes first, so a redeploy sends only what changed. tar is the fallback
+# because a machine without rsync still has tar, and both ends need rsync for
+# the fast path. The box is probed through a non-login shell, which is the PATH
+# rsync will actually be found on when rsync itself invokes it.
+upload_pack_dir() { # box src dest -> 0 uploaded, 1 failed
+  local box="$1" src="$2" dest="$3"
+
+  if command -v rsync >/dev/null 2>&1 && box_ssh "$box" 'command -v rsync' >/dev/null 2>&1; then
+    say "Copying $src to $box:$dest with rsync ..."
+    if rsync_cli -rlpt --delete --exclude '.git' \
+                 -e "ssh -F $SFBOX_SSH_CONFIG -o ConnectTimeout=15 -o BatchMode=yes" \
+                 "$src/" "$box:$dest/"; then
+      return 0
+    fi
+    warn "rsync did not finish; falling back to tar over ssh"
+  else
+    say "rsync is not on both ends, so this goes over tar instead."
+  fi
+
+  say "Copying $src to $box:$dest ..."
+  # --delete has no tar equivalent, so the destination is emptied first. That is
+  # what keeps a redeploy a replacement rather than a merge with whatever the
+  # last one left behind.
+  if tar czf - --exclude '.git' -C "$src" . \
+     | box_ssh "$box" "rm -rf $(rq "$dest") && mkdir -p $(rq "$dest") && tar xzf - -C $(rq "$dest")"; then
+    return 0
+  fi
+  err "could not copy the pack to '$box'."
+  return 1
+}
+
+# Prove the box is pointing at the directory we uploaded, instead of trusting
+# the success line gc prints either way.
+#
+# This guards the quiet failure. A destination that turned out to sit inside a
+# git worktree is pinned to a commit rather than read from the path, and then
+# every redeploy re-resolves to that pin: the participant edits their pack, each
+# step reports success, and the box goes on running the copy from the first
+# deploy.
+verify_path_import() { # box city pack_name dest -> 0 live path import, 1 not
+  local box="$1" city="$2" name="$3" dest="$4" listing row source version
+  listing="$(box_gc "$box" "$city" import list 2>/dev/null)" || {
+    err "could not read the imports back from '$box' to confirm the deploy."
+    return 1
+  }
+  row="$(printf '%s\n' "$listing" | awk -F'\t' -v n="$name" '$1 == n {print; exit}')"
+  [ -n "$row" ] || { err "'$name' is not in the import list on '$box' after adding it."; return 1; }
+  source="$(printf '%s' "$row" | cut -f2)"
+  version="$(printf '%s' "$row" | cut -f3)"
+  if [ "$source" != "$dest" ] || [ -n "$version" ]; then
+    err "'$name' was not imported as a live directory."
+    err "  wanted: $dest, with no version"
+    err "  got:    ${source:-<empty source>} ${version:-<no version>}"
+    err "A pinned import cannot move, so your next deploy would leave the box"
+    err "running this exact copy while every step reported success. Refusing"
+    err "rather than installing something that cannot be updated."
+    return 1
+  fi
+  say "Import '$name' reads $dest live, so your next deploy will move the box."
+  return 0
+}
+
 # The highest-value guardrail. Render every agent on the box and refuse if any
 # rendered prompt is too large to exec.
 #
@@ -1013,22 +1178,44 @@ cmd_deploy_factory() {
   state_init
   local box; box="$(resolve_box "$box_arg")" || exit $?
 
-  local parsed org repo ref subdir
-  parsed="$(parse_github_url "$pack_url")" || die "not a GitHub URL: $pack_url
-Expected something like https://github.com/<org>/<repo>/tree/<ref>/<subdir>"
-  read -r org repo ref subdir <<<"$parsed"
+  local source_kind pack_name local_dir="" dest="" dest_display=""
+  source_kind="$(classify_pack_source "$pack_url")"
 
-  # gc pins by commit, so resolve the ref unless the caller already pinned it.
-  if [ -z "$version" ]; then
-    say "Resolving ${ref:-default branch} of $org/$repo to a commit ..."
-    local sha
-    sha="$(resolve_commit_sha "$org" "$repo" "$ref")"
-    [ -n "$sha" ] || die "could not resolve $org/$repo@${ref:-HEAD} to a commit.
+  if [ "$source_kind" = github ]; then
+    local parsed org repo ref subdir
+    parsed="$(parse_github_url "$pack_url")" || die "not a GitHub URL: $pack_url
+Expected something like https://github.com/<org>/<repo>/tree/<ref>/<subdir>"
+    read -r org repo ref subdir <<<"$parsed"
+
+    # gc pins by commit, so resolve the ref unless the caller already pinned it.
+    if [ -z "$version" ]; then
+      say "Resolving ${ref:-default branch} of $org/$repo to a commit ..."
+      local sha
+      sha="$(resolve_commit_sha "$org" "$repo" "$ref")"
+      [ -n "$sha" ] || die "could not resolve $org/$repo@${ref:-HEAD} to a commit.
 Pass it yourself with --version sha:<commit>."
-    version="sha:$sha"
+      version="sha:$sha"
+    fi
+    pack_name="$repo"
+    [ -n "$subdir" ] && pack_name="$(basename "$subdir")"
+    say "Pack:    $pack_url"
+    say "Version: $version"
+  else
+    # A directory has no commit to pin, and gc takes no version for one.
+    [ -z "$version" ] || die "--version pins a commit, and a directory has none.
+Deploy the directory without it, or pass a GitHub URL instead."
+    local_dir="$(resolve_local_pack_dir "$pack_url")" || exit 1
+    pack_name="$(basename "$local_dir")"
+    check_local_pack_name "$pack_name"
+    # The tilde here is display text for the plan, never a path anything opens.
+    # shellcheck disable=SC2088
+    case "$SFBOX_BOX_PACKS_DIR" in
+      /*) dest_display="$SFBOX_BOX_PACKS_DIR/$pack_name" ;;
+      *)  dest_display="~/$SFBOX_BOX_PACKS_DIR/$pack_name" ;;
+    esac
+    say "Pack:    $local_dir$(describe_worktree_state "$local_dir")"
+    say "Version: none, since a directory has no commit to pin"
   fi
-  say "Pack:    $pack_url"
-  say "Version: $version"
 
   say "Checking connectivity to '$box' first ..."
   box_ssh "$box" 'echo ok' >/dev/null 2>&1 \
@@ -1044,11 +1231,21 @@ Pass it yourself with --version sha:<commit>."
   snapshot="$(box_gc "$box" "$city" import list 2>/dev/null)" \
     || die "could not read the current imports on '$box'"
 
+  # gc refuses to bind a name it already holds, so a second deploy of the same
+  # pack would die on the add and report that nothing changed. The old binding
+  # is dropped just before the add instead, which is what makes redeploying the
+  # directory you are iterating on work at all.
+  local replacing=0
+  if printf '%s\n' "$snapshot" | cut -f1 | grep -qxF "$pack_name"; then
+    replacing=1
+  fi
+
   local to_remove=""
   if [ "$keep_existing" = 0 ]; then
     local name
     while IFS="$(printf '\t')" read -r name _rest; do
       [ -n "$name" ] || continue
+      [ "$name" = "$pack_name" ] && continue
       case " $SFBOX_PROTECTED_IMPORTS " in
         *" $name "*) continue ;;
       esac
@@ -1058,15 +1255,22 @@ Pass it yourself with --version sha:<commit>."
 
   echo
   say "Plan for '$box':"
-  say "  1. add     $pack_url ($version)"
-  if [ -n "$to_remove" ]; then
-    say "  2. remove ${to_remove# } (so the new pack is the top-level one)"
+  local step=1
+  if [ "$source_kind" = local ]; then
+    say "  $((step++)). copy    $local_dir to $box:$dest_display"
+    say "  $((step++)). add     that directory, unpinned, so your next deploy moves the box"
   else
-    say "  2. remove nothing"
+    say "  $((step++)). add     $pack_url ($version)"
   fi
-  say "  3. install"
-  say "  4. check every rendered agent prompt fits in $SFBOX_MAX_PROMPT_BYTES bytes"
-  say "  5. restart $SFBOX_SERVICE — only if step 4 passes"
+  [ "$replacing" = 1 ] && say "          (replacing the '$pack_name' import already on the box)"
+  if [ -n "$to_remove" ]; then
+    say "  $((step++)). remove ${to_remove# } (so the new pack is the top-level one)"
+  else
+    say "  $((step++)). remove nothing"
+  fi
+  say "  $((step++)). install"
+  say "  $((step++)). check every rendered agent prompt fits in $SFBOX_MAX_PROMPT_BYTES bytes"
+  say "  $((step++)). restart $SFBOX_SERVICE — only if that check passes"
   echo
   if [ "$assume_yes" = 0 ]; then
     printf '==> Continue? [y/N] '
@@ -1074,12 +1278,37 @@ Pass it yourself with --version sha:<commit>."
     case "$reply" in y|Y|yes|YES) ;; *) say "Nothing changed."; return 0 ;; esac
   fi
 
-  local pack_name="$repo"
-  [ -n "$subdir" ] && pack_name="$(basename "$subdir")"
+  if [ "$source_kind" = local ]; then
+    dest="$(remote_pack_dest "$box" "$pack_name")" \
+      || die "could not create $dest_display on '$box' — nothing changed"
+    upload_pack_dir "$box" "$local_dir" "$dest" \
+      || die "nothing was imported, so the box is still running what it was"
+  fi
+
+  if [ "$replacing" = 1 ]; then
+    say "Dropping the old '$pack_name' import ..."
+    box_gc "$box" "$city" import remove "$pack_name" >/dev/null 2>&1 \
+      || warn "could not remove the old '$pack_name'; continuing"
+  fi
 
   say "Adding the import ..."
-  box_gc "$box" "$city" import add "$pack_url" --version "$version" \
-    || die "gc import add failed — nothing changed on the box"
+  local added=1
+  if [ "$source_kind" = local ]; then
+    box_gc "$box" "$city" import add "$dest" || added=0
+  else
+    box_gc "$box" "$city" import add "$pack_url" --version "$version" || added=0
+  fi
+  if [ "$added" = 0 ]; then
+    err "gc import add failed."
+    rollback_imports "$box" "$city" "$snapshot" "$pack_name"
+    exit 1
+  fi
+
+  # Prove the import is the shape we asked for before anything else is touched.
+  if [ "$source_kind" = local ] && ! verify_path_import "$box" "$city" "$pack_name" "$dest"; then
+    rollback_imports "$box" "$city" "$snapshot" "$pack_name"
+    exit 1
+  fi
 
   local n
   for n in $to_remove; do
@@ -1843,13 +2072,17 @@ EOF
 
 usage_deploy_factory() {
   cat <<'EOF'
-usage: sfbox deploy-factory <github-url> [--box <boxId>] [--version sha:<commit>]
-                            [--city-path <path>] [--keep-existing] [--yes]
+usage: sfbox deploy-factory <github-url|directory> [--box <boxId>]
+                            [--version sha:<commit>] [--city-path <path>]
+                            [--keep-existing] [--yes]
 
 Makes a pack the top-level factory on your box, then restarts it.
 
   <github-url>   https://github.com/<org>/<repo>/tree/<ref>/<subdir>
-  --version      Pin a commit yourself. Otherwise the ref is resolved for you.
+  <directory>    A pack directory on this machine, '.' included. It is copied to
+                 the box, uncommitted work and all, and imported unpinned so your
+                 next deploy moves the box again.
+  --version      Pin a commit yourself. GitHub URLs only; a directory has none.
   --keep-existing  Leave the current imports in place instead of replacing them.
 
 Before restarting, every agent prompt is rendered and measured. If one is too
@@ -1874,7 +2107,7 @@ Setting up
 
 Working
   start-session     Open a shell on the box
-  deploy-factory    Install a pack as the top-level factory and restart
+  deploy-factory    Install a pack, from GitHub or from a directory here, and restart
   restart-factory   Restart the Gas City service
   dashboard         Tunnel the dashboard to your browser
   get-box           Service state, sessions and recent log

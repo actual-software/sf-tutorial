@@ -1178,6 +1178,297 @@ is "$rc" "4"                          "a host key mismatch refuses first"
 contains "$out" "HOST KEY MISMATCH"   "says which check failed"
 is "$(wc -c <"$PROBE_LOG" | tr -d ' ')" "0" "never offers the key to a box that failed the pin"
 
+# --------------------------------------------------- local pack directories -
+#
+# These come last because they replace box_ssh, box_ssh_login, box_gc and
+# rsync_cli, and nothing above them should inherit those stubs.
+
+echo "pack source: which kind of argument is this"
+is "$(classify_pack_source 'https://github.com/acme/packs/tree/main/factory')" "github" \
+   "a tree URL is a GitHub source"
+is "$(classify_pack_source 'https://github.com/acme/packs')" "github" \
+   "a bare repo URL is a GitHub source"
+is "$(classify_pack_source 'https://gitlab.com/acme/packs')" "github" \
+   "any URL stays on the URL path, so it keeps the error it already had"
+is "$(classify_pack_source 'git@github.com:acme/packs.git')" "github" \
+   "an ssh remote is a URL, not a directory"
+is "$(classify_pack_source '.')" "local" "a dot is the directory you are standing in"
+is "$(classify_pack_source '/home/me/factory')" "local" "an absolute path is a directory"
+is "$(classify_pack_source '../packs/mine')" "local" "a relative path is a directory"
+
+echo "local pack: it has to exist and hold a pack.toml"
+PACKDIR="$SFBOX_TEST_ROOT/my-pack"
+mkdir -p "$PACKDIR"
+PACKDIR_REAL="$(cd "$PACKDIR" && pwd)"
+rc_is 1 "refuses a directory with no pack.toml" resolve_local_pack_dir "$PACKDIR"
+contains "$(resolve_local_pack_dir "$PACKDIR" 2>&1)" "no pack.toml" "says what is missing"
+printf '[pack]\nname = "my-pack"\n' >"$PACKDIR/pack.toml"
+is "$(resolve_local_pack_dir "$PACKDIR")" "$PACKDIR_REAL" "accepts a pack directory and absolutises it"
+rc_is 1 "refuses a path that is not there" resolve_local_pack_dir "$SFBOX_TEST_ROOT/nope"
+contains "$(resolve_local_pack_dir "$SFBOX_TEST_ROOT/nope" 2>&1)" \
+   "not a GitHub URL, and not a directory" "names both accepted forms"
+
+echo "local pack: the directory name has to work as an import name"
+rc_is 0 "accepts a plain name"          check_local_pack_name "my-pack"
+rc_is 0 "accepts dots and underscores"  check_local_pack_name "my_pack.v2"
+rc_is 1 "refuses a space"               check_local_pack_name "my pack"
+rc_is 1 "refuses shell punctuation"     check_local_pack_name 'my$pack'
+rc_is 1 "refuses an empty name"         check_local_pack_name ""
+
+echo "local pack: what the plan says about uncommitted work"
+is "$(describe_worktree_state "$PACKDIR")" "" "says nothing outside a git repo"
+if command -v git >/dev/null 2>&1; then
+  GITPACK="$SFBOX_TEST_ROOT/git-pack"
+  mkdir -p "$GITPACK"
+  (
+    cd "$GITPACK" || exit 1
+    git init -q . && git config user.email t@example.com && git config user.name tester
+    printf '[pack]\nname = "git-pack"\n' >pack.toml
+    git add pack.toml && git commit -qm init && git checkout -q -b trunk
+  ) >/dev/null 2>&1
+  is "$(describe_worktree_state "$GITPACK")" " (git trunk, clean)" \
+     "names the branch when nothing is modified"
+  printf '# edited\n' >>"$GITPACK/pack.toml"
+  contains "$(describe_worktree_state "$GITPACK")" "1 uncommitted file(s), which go too" \
+     "counts the dirty files rather than refusing them"
+else
+  skip "describe_worktree_state inside a repo (git is not installed here)"
+fi
+
+echo "local pack: where it lands on the box"
+box_ssh_login() { printf '/home/ubuntu/.sfbox/packs/my-pack\n'; }
+is "$(remote_pack_dest sfi-test-1 my-pack)" "/home/ubuntu/.sfbox/packs/my-pack" \
+   "uses the path the box resolved, not one guessed here"
+box_ssh_login() { printf 'a chatty login shell\n/home/ubuntu/.sfbox/packs/my-pack\n'; }
+is "$(remote_pack_dest sfi-test-1 my-pack)" "/home/ubuntu/.sfbox/packs/my-pack" \
+   "reads the last line, so a motd does not become the path"
+box_ssh_login() { printf '/home/ubuntu\n'; }
+rc_is 1 "refuses a destination that is not the per-pack directory" \
+   remote_pack_dest sfi-test-1 my-pack
+box_ssh_login() { return 1; }
+rc_is 1 "refuses when the box could not make the directory" \
+   remote_pack_dest sfi-test-1 my-pack
+
+echo "local pack: copying it to the box"
+UP_LOG="$SFBOX_TEST_ROOT/upload.log"
+UP_DEST="$SFBOX_TEST_ROOT/box-dest"
+SRCPACK="$SFBOX_TEST_ROOT/src-pack"
+BOX_HAS_RSYNC=127
+
+# Stand in for the box by running the remote command string locally, so the tar
+# fallback is exercised end to end rather than only inspected as a string.
+box_ssh() {
+  local box="$1"; shift
+  local cmd="$*"
+  printf '%s\n' "$cmd" >>"$UP_LOG"
+  case "$cmd" in
+    'command -v rsync') return "$BOX_HAS_RSYNC" ;;
+    *) bash -c "$cmd" ;;
+  esac
+}
+
+mkdir -p "$SRCPACK/agents/one" "$SRCPACK/assets/scripts" "$SRCPACK/.git"
+printf '[pack]\nname = "src-pack"\n' >"$SRCPACK/pack.toml"
+printf 'AAAA\n' >"$SRCPACK/agents/one/prompt.template.md"
+printf '#!/bin/sh\necho hi\n' >"$SRCPACK/assets/scripts/run.sh"
+chmod 755 "$SRCPACK/assets/scripts/run.sh"
+printf 'ref: refs/heads/main\n' >"$SRCPACK/.git/HEAD"
+
+: >"$UP_LOG"; rm -rf "$UP_DEST"
+rc_is 0 "the tar fallback copies the pack" upload_pack_dir sfi-test-1 "$SRCPACK" "$UP_DEST"
+is "$(head -1 "$UP_DEST/pack.toml" 2>/dev/null)" "[pack]" "the pack.toml arrives"
+is "$(cat "$UP_DEST/agents/one/prompt.template.md" 2>/dev/null)" "AAAA" "nested files arrive"
+if [ -x "$UP_DEST/assets/scripts/run.sh" ]; then
+  ok "keeps the executable bit, which pack scripts need"
+else
+  bad "keeps the executable bit, which pack scripts need" "arrived without it"
+fi
+# The whole feature turns on this one. A .git on the box makes gc read the pack
+# as a commit-pinned file:// source, and a pin cannot move, so every later
+# deploy would leave the box running this first copy.
+if [ -e "$UP_DEST/.git" ]; then
+  bad ".git never reaches the box" "it did, so gc would pin the pack to a commit"
+else
+  ok ".git never reaches the box"
+fi
+contains "$(cat "$UP_LOG")" "rm -rf" "empties the destination first"
+
+echo "local pack: a redeploy replaces rather than accumulates"
+printf 'BBBB\n' >"$SRCPACK/agents/one/prompt.template.md"
+: >"$UP_DEST/stale-from-the-last-deploy.md"
+rc_is 0 "a second copy succeeds" upload_pack_dir sfi-test-1 "$SRCPACK" "$UP_DEST"
+is "$(cat "$UP_DEST/agents/one/prompt.template.md" 2>/dev/null)" "BBBB" "the edit reaches the box"
+if [ -e "$UP_DEST/stale-from-the-last-deploy.md" ]; then
+  bad "a file dropped from the pack disappears from the box" "the stale file survived"
+else
+  ok "a file dropped from the pack disappears from the box"
+fi
+
+echo "local pack: rsync is preferred, and a failed rsync still delivers"
+RSYNC_LOG="$SFBOX_TEST_ROOT/rsync.log"
+BOX_HAS_RSYNC=0
+rsync_cli() { printf '%s\n' "$*" >"$RSYNC_LOG"; return 0; }
+rc_is 0 "rsync is used when both ends have it" upload_pack_dir sfi-test-1 "$SRCPACK" "$UP_DEST"
+contains "$(cat "$RSYNC_LOG")" "--exclude .git" "excludes .git, so gc reads a path and not a pin"
+contains "$(cat "$RSYNC_LOG")" "--delete"       "replaces rather than merges"
+contains "$(cat "$RSYNC_LOG")" "$SRCPACK/ sfi-test-1:$UP_DEST/" "sends the contents to the per-pack directory"
+rsync_cli() { return 23; }
+rm -rf "$UP_DEST"
+rc_is 0 "a failed rsync falls back to tar" upload_pack_dir sfi-test-1 "$SRCPACK" "$UP_DEST"
+is "$(cat "$UP_DEST/agents/one/prompt.template.md" 2>/dev/null)" "BBBB" "the fallback still delivers the pack"
+
+echo "local pack: proving the import can actually move"
+VP_LIST=""
+box_gc() { printf '%s\n' "$VP_LIST"; }
+VP_DEST="/home/ubuntu/.sfbox/packs/my-pack"
+VP_LIST="$(printf 'core\thttps://github.com/gastownhall/gascity.git//x\tsha:abc\tsha:abc\nmy-pack\t%s\t\t(path)\n' "$VP_DEST")"
+rc_is 0 "accepts an unpinned path import" verify_path_import b c my-pack "$VP_DEST"
+VP_LIST="$(printf 'my-pack\tfile://%s\tsha:abc123\tsha:abc123\n' "$VP_DEST")"
+rc_is 1 "refuses a commit-pinned import, which could never move again" \
+   verify_path_import b c my-pack "$VP_DEST"
+contains "$(verify_path_import b c my-pack "$VP_DEST" 2>&1)" "cannot move" \
+   "says why a pin is refused"
+VP_LIST="$(printf 'core\tx\ty\tz\n')"
+rc_is 1 "refuses when the import is not there at all" verify_path_import b c my-pack "$VP_DEST"
+VP_LIST="$(printf 'my-pack\t/somewhere/else\t\t(path)\n')"
+rc_is 1 "refuses a path that is not the one we uploaded" verify_path_import b c my-pack "$VP_DEST"
+box_gc() { return 1; }
+rc_is 1 "refuses when the import list cannot be read" verify_path_import b c my-pack "$VP_DEST"
+
+echo "deploy-factory: a directory takes no --version"
+fresh_state
+state_put sfi-test-1 host 203.0.113.20
+state_put sfi-test-1 user ubuntu
+state_put sfi-test-1 port 22
+state_set_current sfi-test-1
+rc_is 1 "refuses --version on a directory, which has no commit to pin" \
+   cmd_deploy_factory --box sfi-test-1 --version sha:abc "$PACKDIR"
+contains "$(cmd_deploy_factory --box sfi-test-1 --version sha:abc "$PACKDIR" 2>&1)" \
+   "a directory has none" "explains why the flag does not apply"
+
+echo "deploy-factory: a local directory, from the argument to the restart"
+fresh_state
+state_put sfi-test-1 host 203.0.113.20
+state_put sfi-test-1 user ubuntu
+state_put sfi-test-1 port 22
+state_put sfi-test-1 city_path /home/ubuntu/city
+state_set_current sfi-test-1
+
+E2E_LOG="$SFBOX_TEST_ROOT/e2e.log"
+E2E_DEST="$SFBOX_TEST_ROOT/e2e-dest/my-pack"
+E2E_ADDED=0
+E2E_BEFORE="$(printf 'core\thttps://gc/core\tsha:a\tsha:a\nbd\thttps://gc/bd\tsha:b\tsha:b\nmy-pack\t%s\t\t(path)\nold-thing\thttps://z/old\tsha:c\tsha:c' "$E2E_DEST")"
+E2E_AFTER="$(printf 'core\thttps://gc/core\tsha:a\tsha:a\nmy-pack\t%s\t\t(path)' "$E2E_DEST")"
+
+box_ssh() {
+  local box="$1"; shift
+  local cmd="$*"
+  printf 'ssh %s\n' "$cmd" >>"$E2E_LOG"
+  case "$cmd" in
+    'echo ok')          printf 'ok\n' ;;
+    'command -v rsync') return 127 ;;
+    *) bash -c "$cmd" ;;
+  esac
+}
+box_ssh_login() { printf '%s\n' "$E2E_DEST"; }
+box_gc() {
+  local box="$1" city="$2"; shift 2
+  printf 'gc %s\n' "$*" >>"$E2E_LOG"
+  case "$1 ${2:-}" in
+    "import list") if [ "$E2E_ADDED" = 1 ]; then printf '%s\n' "$E2E_AFTER"; else printf '%s\n' "$E2E_BEFORE"; fi ;;
+    "import add")  E2E_ADDED=1 ;;
+  esac
+  return 0
+}
+check_prompt_sizes() { printf 'prompt-size-check\n' >>"$E2E_LOG"; return 0; }
+restart_factory()    { printf 'restart\n' >>"$E2E_LOG"; return 0; }
+
+# The runs that only fill the log go in a subshell, because a refusal exits
+# rather than returns and would otherwise take the whole test run with it.
+#
+# Where in the log did this show up? The order is the contract: nothing is
+# imported before the copy lands, and nothing restarts before the guardrail.
+line_of() { grep -n -m1 -F "$2" <<<"$1" | cut -d: -f1; }
+before() { # log first second label
+  local a b
+  a="$(line_of "$1" "$2")"; b="$(line_of "$1" "$3")"
+  if [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ]; then ok "$4"
+  else bad "$4" "[$2] at line ${a:-none}, [$3] at line ${b:-none}"; fi
+}
+
+: >"$E2E_LOG"; rm -rf "$E2E_DEST"; E2E_ADDED=0
+rc_is 0 "a local directory deploys" cmd_deploy_factory --box sfi-test-1 --yes "$PACKDIR"
+E2E_ADDED=0; : >"$E2E_LOG"; rm -rf "$E2E_DEST"
+( cmd_deploy_factory --box sfi-test-1 --yes "$PACKDIR" ) >/dev/null 2>&1
+log="$(cat "$E2E_LOG")"
+
+is "$(head -1 "$E2E_DEST/pack.toml" 2>/dev/null)" "[pack]" "the directory really arrives on the box"
+contains "$log" "gc import remove my-pack" "drops the old binding, which gc would otherwise refuse to re-add"
+contains "$log" "gc import add $E2E_DEST"  "imports the copy on the box, not the path on the laptop"
+contains "$log" "gc import remove old-thing" "still makes the new pack the top-level one"
+contains "$log" "gc import install"        "installs"
+before "$log" "rm -rf"             "gc import add"   "copies before it imports"
+before "$log" "gc import add"      "gc import install" "imports before it installs"
+before "$log" "gc import install"  "prompt-size-check" "installs before it measures the prompts"
+before "$log" "prompt-size-check"  "restart"           "measures before it restarts"
+case "$log" in
+  *"import remove core"*|*"import remove bd"*) bad "never removes Gas City's own imports" "it did" ;;
+  *) ok "never removes Gas City's own imports" ;;
+esac
+case "$log" in
+  *"--version"*) bad "a directory import carries no version" "it passed one" ;;
+  *) ok "a directory import carries no version" ;;
+esac
+
+echo "deploy-factory: an import that came back pinned is refused, not restarted"
+E2E_ADDED=0; : >"$E2E_LOG"; rm -rf "$E2E_DEST"
+E2E_AFTER="$(printf 'my-pack\tfile://%s\tsha:deadbeef\tsha:deadbeef' "$E2E_DEST")"
+rc_is 1 "refuses an import gc pinned to a commit" cmd_deploy_factory --box sfi-test-1 --yes "$PACKDIR"
+E2E_ADDED=0; : >"$E2E_LOG"
+( cmd_deploy_factory --box sfi-test-1 --yes "$PACKDIR" ) >/dev/null 2>&1
+log="$(cat "$E2E_LOG")"
+case "$log" in
+  *restart*) bad "a pinned import never reaches a restart" "it restarted anyway" ;;
+  *) ok "a pinned import never reaches a restart" ;;
+esac
+case "$log" in
+  *prompt-size-check*) bad "a pinned import stops before the guardrail" "it got that far" ;;
+  *) ok "a pinned import stops before the guardrail" ;;
+esac
+contains "$log" "gc import add https://z/old" "rolls the previous imports back"
+
+E2E_AFTER="$(printf 'core\thttps://gc/core\tsha:a\tsha:a\nmy-pack\t%s\t\t(path)' "$E2E_DEST")"
+
+echo "deploy-factory: a GitHub URL still takes the path it always took"
+E2E_ADDED=0; : >"$E2E_LOG"
+GH_URL="https://github.com/acme/packs/tree/main/factory"
+resolve_commit_sha() { printf 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n'; }
+E2E_BEFORE="$(printf 'core\thttps://gc/core\tsha:a\tsha:a\nbd\thttps://gc/bd\tsha:b\tsha:b\nold-thing\thttps://z/old\tsha:c\tsha:c')"
+( cmd_deploy_factory --box sfi-test-1 --yes "$GH_URL" ) >/dev/null 2>&1
+log="$(cat "$E2E_LOG")"
+contains "$log" "gc import add $GH_URL --version sha:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+   "still adds the URL pinned to the resolved commit"
+contains "$log" "gc import remove old-thing" "still replaces the other imports"
+contains "$log" "restart"                    "still restarts once the guardrail passes"
+case "$log" in
+  *"rm -rf"*|*"tar xzf"*) bad "copies nothing for a URL" "it tried to upload something" ;;
+  *) ok "copies nothing for a URL" ;;
+esac
+
+# The one shared change the local case forced. gc refuses to bind a name it
+# already holds, so before this a second deploy of the same pack died on the
+# add and reported that nothing had changed — for GitHub packs too.
+echo "deploy-factory: redeploying the same pack replaces it instead of failing"
+E2E_ADDED=0; : >"$E2E_LOG"
+E2E_BEFORE="$(printf 'core\thttps://gc/core\tsha:a\tsha:a\nfactory\t%s\tsha:old\tsha:old' "$GH_URL")"
+rc_is 0 "a second deploy of the same pack succeeds" cmd_deploy_factory --box sfi-test-1 --yes "$GH_URL"
+E2E_ADDED=0; : >"$E2E_LOG"
+( cmd_deploy_factory --box sfi-test-1 --yes "$GH_URL" ) >/dev/null 2>&1
+log="$(cat "$E2E_LOG")"
+before "$log" "gc import remove factory" "gc import add $GH_URL" \
+   "drops the old binding before adding the new one"
+contains "$log" "restart" "and gets all the way to the restart"
+
 # ------------------------------------------------------------------ done ---
 
 echo

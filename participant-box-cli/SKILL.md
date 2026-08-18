@@ -44,11 +44,16 @@ When someone says "my test box" or "the other one", don't guess which id they me
 
 ```
 sfbox deploy-factory https://github.com/<org>/<repo>/tree/<ref>/<subdir>
+sfbox deploy-factory .
 ```
 
 The pack becomes the top-level factory, which means the imports already sitting on the box get removed, and that's worth spelling out before the user agrees to it, because a workshop box usually has a factory on it they'd rather not lose by accident. `sfbox` prints the plan and asks before touching anything, so read that plan back to the user if they're unsure. Gas City's own `core` and `bd` imports are never removed, though.
 
 The ref gets resolved to a commit for you. Pass `--version sha:<commit>` when the user's after a particular one.
+
+The second form takes a directory rather than a URL, and it's the one to reach for when the user is iterating on their own pack. Point it at the directory holding `pack.toml`. Their uncommitted work goes up with it, deliberately, so don't suggest they commit and push first. The plan names their branch and counts their modified files before they confirm.
+
+That form copies the pack to `~/.sfbox/packs/<name>` on the box and imports it unpinned, so the next deploy moves the box again. `--version` has nothing to pin in that case and is refused rather than ignored. If the user reports that their edits aren't showing up, check the deploy output for the line confirming the import reads the directory live: `sfbox` refuses a pinned one rather than installing something that can never change.
 
 ## When a deploy is refused for size
 

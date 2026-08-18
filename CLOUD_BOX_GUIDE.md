@@ -183,7 +183,7 @@ Every command acts on your current box. Switch which one that is with `sfbox box
 | `sfbox get-box` | Service state, running sessions, and recent log | Seeing what the box is actually doing |
 | `sfbox start-session` | Opens a shell on the box | Running something on the box by hand |
 | `sfbox dashboard` | Tunnels the dashboard to `http://127.0.0.1:8372` | Watching your factory work in a browser |
-| `sfbox deploy-factory <url>` | Installs a pack as the top-level factory and restarts | Putting your own factory on the box |
+| `sfbox deploy-factory <url\|dir>` | Installs a pack as the top-level factory and restarts | Putting your own factory on the box, from GitHub or straight from a directory here |
 | `sfbox restart-factory` | Restarts the Gas City service | After a config change, or when the service is stopped |
 
 `sfbox` keeps its state in `~/.gascity`, which it owns: your boxes, your keys at mode 0600, the host keys it pinned, and the SSH config you included in step 4.
