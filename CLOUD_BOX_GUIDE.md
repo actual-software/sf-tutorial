@@ -54,7 +54,7 @@ Put `sfbox` on your `PATH`, from the directory holding your clone.
 **Copy and paste**
 
 ```bash
-export PATH="$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/participant-box-cli:$PATH"
+export PATH="$SFI_PATH/sf-tutorial/participant-box-cli:$PATH"
 sfbox --help
 ```
 

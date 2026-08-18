@@ -49,7 +49,7 @@ Thirty minutes at the end of Day 1 to get the rows down, and thirty on Day 2 mor
 **Copy and paste**
 
 ```bash
-cp "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/docs/capability-map.template.md" "$MY_RIG_PATH/docs/current/capability-map.md"
+cp "$SFI_PATH/sf-tutorial/artifacts/docs/capability-map.template.md" "$MY_RIG_PATH/docs/current/capability-map.md"
 nano "$MY_RIG_PATH/docs/current/capability-map.md"
 ```
 

@@ -45,7 +45,7 @@ Regardless of whether you choose to run the factory in our instructor-provided c
 ```bash
 cd $HOME && mkdir software-factory-intensive
 cd software-factory-intensive
-export SOFTWARE_FACTORY_INTENSIVE_PATH="$(pwd)"
+export SFI_PATH="$(pwd)"
 gh repo fork https://github.com/actual-software/sf-tutorial.git --clone
 cd sf-tutorial/bootstrap
 ```
@@ -87,7 +87,7 @@ Then, add the variables to `~/.zshrc` or `~/.bashrc` too so new session windows 
 
 ```bash
 cat <<EOF >> ~/.zshrc
-export SOFTWARE_FACTORY_INTENSIVE_PATH="$SOFTWARE_FACTORY_INTENSIVE_PATH"
+export SFI_PATH="$SFI_PATH"
 export PATH="$HOME/.local/bin:$PATH"
 EOF
 ```
@@ -96,7 +96,7 @@ EOF
 
 ```bash
 cat <<EOF >> ~/.bashrc
-export SOFTWARE_FACTORY_INTENSIVE_PATH="$SOFTWARE_FACTORY_INTENSIVE_PATH"
+export SFI_PATH="$SFI_PATH"
 export PATH="$HOME/.local/bin:$PATH"
 EOF
 ```
