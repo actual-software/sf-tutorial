@@ -10,7 +10,7 @@
 - [The cloud box (recommended)](#the-cloud-box-recommended)
   - [Signing the box in with a token](#signing-the-box-in-with-a-token)
   - [Run preflight against the box](#run-preflight-against-the-box)
-- [Appendix: running it on your own machine](#appendix-running-it-on-your-own-machine)
+- [Running on your own machine (alternative)](#running-on-your-own-machine-alternative)
   - [1. Clone the tutorial](#1-clone-the-tutorial)
   - [2. Install the pinned dependencies](#2-install-the-pinned-dependencies)
   - [3. Run preflight](#3-run-preflight)
@@ -96,7 +96,7 @@ Cloud path
 PREFLIGHT: PASS
 ```
 
-## Appendix: running it on your own machine
+## Running on your own machine (alternative)
 
 Everything below is the fallback if you would like to run the curriculum on your local machine. If you are on an instructor-provided cloud box, skip to [What's next](#whats-next).
 
