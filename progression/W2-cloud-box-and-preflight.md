@@ -7,12 +7,13 @@
 - [Objective](#objective)
 - [Prereqs](#prereqs)
 - [Context](#context)
-- [The cloud box (recommended)](#the-cloud-box-recommended)
-- [Running on your own machine (alternative)](#running-on-your-own-machine-alternative)
+- [Shared setup](#shared-setup)
   - [1. Clone the tutorial](#1-clone-the-tutorial)
   - [2. Install the pinned dependencies](#2-install-the-pinned-dependencies)
   - [3. Run preflight](#3-run-preflight)
-  - [4. Sign in to GitHub](#4-sign-in-to-github)
+- [The cloud box (recommended)](#the-cloud-box-recommended)
+- [Running on your own machine (alternative)](#running-on-your-own-machine-alternative)
+  - [1. Sign in to GitHub](#4-sign-in-to-github)
 - [Troubleshooting](#troubleshooting)
 - [What's next](#whats-next)
 
@@ -31,32 +32,9 @@ Nothing in the rest of the curriculum works until the preflight check passes, an
 
 Most participants should work on an instructor-provided cloud box, which is the path below. Your own machine works too, and that path is in the appendix at the end of this page. Do one of them, not both.
 
-## The cloud box (recommended)
+## Shared setup
 
-Getting onto the box is its own page. [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) takes the four values your instructor sends you through to a running factory. Work through it first, then come back here for the preflight run below.
-
-### Run preflight against the cloud box
-
-**Copy and paste**
-
-```bash
-sfbox preflight
-```
-
-**Expected output**
-
-```text
-==> Checking 'factory-cloud-aborn-2' (ubuntu@34.200.237.69) ...
-==>   ssh            reachable
-==>   gc             installed
-==>   gas-city.service  inactive — no city on this box yet
-==>   Nothing is broken. This box supplies the environment and you build the
-==>   city yourself, so the service stays down until there is one to run.
-```
-
-## Running on your own machine (alternative)
-
-Everything below is the fallback if you would like to run the curriculum on your local machine. If you are on an instructor-provided cloud box, skip to [What's next](#whats-next).
+Regardless of whether you choose to run the factory in our instructor-provided cloud box or your local machine, you will need to have gas city dependencies installed locally to build the factory packs and run checks correctly.
 
 ### 1. Clone the tutorial
 
@@ -95,7 +73,7 @@ bd version 1.1.0 (8e4e59d39)
 dolt version 2.2.2
 ```
 
-Do what that last line says if you have not already:
+Export the `$PATH` variable for the local `gc` runtime:
 
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
@@ -159,7 +137,32 @@ Local path
 PREFLIGHT: PASS
 ```
 
-### 4. Sign in to GitHub
+## The cloud box (recommended)
+
+Follow [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) from here once you have cloud box credentials from the instructor.
+
+### Run preflight locally once complete
+
+**Copy and paste**
+
+```bash
+sfbox preflight
+```
+
+**Expected output**
+
+```text
+==> Checking 'factory-cloud-aborn-2' (ubuntu@34.200.237.69) ...
+==>   ssh            reachable
+==>   gc             installed
+==>   gas-city.service  inactive — no city on this box yet
+==>   Nothing is broken. This box supplies the environment and you build the
+==>   city yourself, so the service stays down until there is one to run.
+```
+
+## Running on your own machine (alternative)
+
+### 1. Sign in to GitHub
 
 If you are not currently logged into GitHub, you will need to grant your software factory access to configure repos and push code.`gh auth login`, picking HTTPS, is the shortest route to login if necessary. It opens a browser and authorizes the GitHub CLI against your whole account.
 
