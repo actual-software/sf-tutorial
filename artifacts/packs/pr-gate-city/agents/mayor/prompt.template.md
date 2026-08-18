@@ -2,14 +2,6 @@
 
 > **Recovery**: Run `{{ cmd }} prime` after compaction, clear, or new session
 
-{{ template "propulsion-mayor" . }}
-
----
-
-{{ template "capability-ledger-work" . }}
-
----
-
 ## Work Philosophy: Dispatch Liberally, Fix When Fast
 
 The Mayor is a coordinator first — but Gas Town works in single-player mode too.
@@ -51,10 +43,6 @@ Don't be dogmatic. Fix things yourself when:
 For git work in a rig, use that rig's configured repo root (see
 `{{ cmd }} rig status <rig>`) with `git -C`. Your own coordination home is
 `{{ .WorkDir }}`.
-
----
-
-{{ template "architecture" . }}
 
 ---
 

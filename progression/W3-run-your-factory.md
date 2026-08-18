@@ -295,13 +295,55 @@ graph LR
     P --> S["setup<br/>polecat, refinery"]
 ```
 
-One more import goes in at **city** scope rather than rig scope, because it patches the mayor and the mayor belongs to the city:
+One more import goes in at **city** scope rather than rig scope, because it carries the mayor and the mayor belongs to the city:
 
 **Copy and paste**
 
 ```bash
 gc import add "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-city"
 ```
+
+That import makes the pack's mayor available. It does not yet run it, and this is the step that is easy to miss.
+
+`gc init` gave the city a mayor of its own, in `agents/mayor/`, and the `[[named_session]]` block you read in step 2 is what runs it. The pack ships a mayor too. Leave both in place and the factory comes up with two: the stock one, and the one that knows about the PR gate.
+
+Hand the role over. Delete the city's mayor, then point the always-on session at the pack's:
+
+**Copy and paste**
+
+```bash
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
+rm -rf agents/mayor
+
+sed '/^\[\[named_session\]\]/,/^[[:space:]]*mode = /d' pack.toml > pack.toml.tmp
+cat >> pack.toml.tmp <<'EOF'
+[[named_session]]
+name = "mayor"
+template = "pr-gate-city.mayor"
+mode = "always"
+EOF
+mv pack.toml.tmp pack.toml
+```
+
+Keeping `name = "mayor"` preserves the session's alias, so `gc session attach mayor` later on this page still works. The template has to name the binding, because a bare `mayor` stops resolving the moment the city's own agent directory is gone, and a named session whose template does not resolve is disabled quietly rather than reported as an error.
+
+Confirm the city now has one mayor, and that it is the one carrying the gate:
+
+**Copy and paste**
+
+```bash
+gc config show | grep -A1 '^\[\[agent\]\]' | grep -c '^name = "mayor"'
+gc prime mayor | grep -q 'mol-polecat-pr' && echo "mayor knows the PR gate"
+```
+
+**Expected output**
+
+```text
+1
+mayor knows the PR gate
+```
+
+Both lines matter. The first is the count, and `2` here is the two-mayor problem rather than a cosmetic duplicate. The second says the mayor you kept is the one that knows to dispatch with `--on mol-polecat-pr`, which a count on its own would not tell you.
 
 Confirm both landed:
 

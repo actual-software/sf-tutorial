@@ -192,7 +192,7 @@ formula can `extends = ["mol-refinery-pr-patrol"]`, and so `setup`
 is reachable transitively for the refinery agent patch). It does
 **not** import `review-loop-rig` — the review-loop concept has moved
 into the architect, not the refinery, so that pack is superseded.
-`pr-gate-city` (the mayor patch) stays in place at city scope. Its
+`pr-gate-city` (the pack that supplies the mayor) stays in place at city scope. Its
 dispatch guidance (`gc sling <rig>/polecat <bead> --on
 mol-polecat-pr`) is unchanged — the polecat still hands work to the
 refinery; the refinery now hands it to the architect.

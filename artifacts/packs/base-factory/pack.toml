@@ -43,7 +43,7 @@
 #   gc import add --rig <rig-name> artifacts/packs/base-factory
 #
 # THE ONE THING THIS PACK CANNOT BRING is the mayor's half of the PR gate.
-# `pr-gate-city` patches the mayor, the mayor is city-scoped, and a pack
+# `pr-gate-city` supplies the mayor, the mayor is city-scoped, and a pack
 # composes at one scope, so it stays a separate city-scoped import:
 #
 #   gc import add artifacts/packs/pr-gate-city
