@@ -1,0 +1,9 @@
+# Mayor — city-scoped persona that carries the PR gate.
+#
+# `scope = "city"` is load-bearing. A pack agent with no scope is projected
+# at BOTH city scope and into every rig, so without this file the pack's
+# mayor lands twice (once as `mayor`, once as `ascii-art/mayor`) on top of
+# the city's own agents/mayor/ — three mayors where W3 expects one.
+
+scope = "city"
+prompt_template = "agents/mayor/prompt.template.md"
