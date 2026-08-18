@@ -83,7 +83,7 @@ cd path/to/sf-tutorial/bootstrap
 ./bootstrap.sh 01-basic-flow
 ```
 
-The script reproduces every step up through this lesson — `pr-gate-city` and `pr-gate-rig` are imported, the city's `mayor` agent directory is removed (the new pack patches the mayor), and the city is restarted.
+The script reproduces every step up through this lesson — `pr-gate-city` and `pr-gate-rig` are imported, the city's `mayor` agent directory is removed so the new pack's mayor takes the role, and the city is restarted.
 
 After it finishes, re-export the four env vars per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then jump to [Try It](#try-it).
 
@@ -108,10 +108,11 @@ rig-scoped, so each scope needs its own pack.
 
 **`pr-gate-city`** delivers:
 
-- A `[[patches.agent]]` block that overrides the mayor's
-  prompt template in place — teaching the mayor the new dispatch
+- The city's `mayor` agent, teaching the mayor the new dispatch
   recipe (`--on mol-polecat-pr`) and how to triage beads blocked at
-  the gate.
+  the gate. It replaces the mayor `gc init` wrote rather than amending
+  it, because a pack patch can only reach agents the pack itself
+  declares or imports, and the stock mayor is neither.
 
 **`pr-gate-rig`** delivers:
 
@@ -145,8 +146,8 @@ cat "$ARTIFACTS_PATH/packs/pr-gate-rig/formulas/mol-polecat-pr.formula.toml"
 cat "$ARTIFACTS_PATH/packs/pr-gate-rig/formulas/mol-refinery-pr-patrol.formula.toml"
 ```
 
-`pr-gate-city/` contains `pack.toml` and a `prompts/` directory with
-the mayor template. `pr-gate-rig/` contains `pack.toml`, a `prompts/`
+`pr-gate-city/` contains `pack.toml` and an `agents/mayor/` directory
+holding the mayor template. `pr-gate-rig/` contains `pack.toml`, a `prompts/`
 directory with the refinery template, and a `formulas/` directory
 with two `.formula.toml` files.
 
@@ -192,14 +193,14 @@ city directory:
 ```bash
 cd "$FACTORY_PATH"
 
-# City scope — pr-gate-city patches the city-scoped mayor agent.
+# City scope — pr-gate-city supplies the city-scoped mayor agent.
 gc import add packs/pr-gate-city
 
 # Rig scope — pr-gate-rig patches the rig-scoped refinery agent and
 # loads the polecat/refinery formulas. Bound to the ascii-art rig.
 gc import add --rig ascii-art packs/pr-gate-rig
 
-# Remove setup pack since pr-gate-city transitively imports it now.
+# Remove setup pack since pr-gate-rig transitively imports it now.
 gc import remove --rig ascii-art setup
 ```
 
@@ -219,22 +220,24 @@ city-scoped: pr-gate-city
 rig-scoped:  pr-gate-rig
 ```
 
-Now remove the existing `mayor` agent from the city so the new pack can take over the mayor's role.
+Now hand the mayor's role to the pack. Remove the city's own `mayor` agent, then point the always-on session at the pack's mayor.
 
 **Copy and paste**
 
 ```bash
 rm -rf "$FACTORY_PATH/agents/mayor"
+
+sed '/^\[\[named_session\]\]/,/^[[:space:]]*mode = /d' "$FACTORY_PATH/pack.toml" > "$FACTORY_PATH/pack.toml.tmp"
+cat >> "$FACTORY_PATH/pack.toml.tmp" <<'EOF'
+[[named_session]]
+name = "mayor"
+template = "pr-gate-city.mayor"
+mode = "always"
+EOF
+mv "$FACTORY_PATH/pack.toml.tmp" "$FACTORY_PATH/pack.toml"
 ```
 
-Also remove the named session block from the city pack.toml.
-
-**Copy and paste**
-
-```bash
-sed '/\[named_session\]/,/\[named_session\]/d' "$FACTORY_PATH/pack.toml" > "$FACTORY_PATH/pack.toml.tmp" \
-  && mv "$FACTORY_PATH/pack.toml.tmp" "$FACTORY_PATH/pack.toml"
-```
+Keeping `name = "mayor"` preserves the session's alias, so `gc session attach mayor` still works. The template names the binding, because a bare `mayor` stops resolving once the city's own agent directory is gone.
 
 > **Why not `sed -i`?** GNU `sed` on Linux and BSD `sed` on macOS disagree about the argument `-i` takes, so no single `sed -i` spelling runs on both. Writing to a temp file and moving it back behaves identically everywhere. The same idiom appears wherever this tutorial edits a file in place.
 
@@ -598,7 +601,7 @@ all three paths print without error.
   packs/pr-gate-rig` command from step 1 and restart.
 - **`gc restart` errors with `agent "mayor" not found in pack`** (or
   the equivalent for `refinery`). You imported one of the pr-gate
-  packs at the wrong scope. `pr-gate-city` patches the city-scoped
+  packs at the wrong scope. `pr-gate-city` supplies the city-scoped
   mayor and must be imported at city scope (no `--rig` flag);
   `pr-gate-rig` patches the rig-scoped refinery and must be imported
   with `--rig <rig-name>`. Run `gc import remove pr-gate-city` (or

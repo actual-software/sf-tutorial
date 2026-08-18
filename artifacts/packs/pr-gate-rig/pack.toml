@@ -1,10 +1,11 @@
-# pr-gate-rig — rig-scoped half of the pr-gate pair installed in
-# Progression page 01.
+# pr-gate-rig — rig-scoped half of the pr-gate pair, installed in W3 as
+# part of base-factory's import chain.
 #
-# Pairs with pr-gate-city. Two packs because pack-v2 patches can only
-# target agents in the same composition pass: refinery is rig-scoped,
-# so its prompt patch and the polecat/refinery formulas live here;
-# mayor's prompt patch lives in pr-gate-city.
+# Pairs with pr-gate-city. Two packs because a pack composes at one
+# scope: refinery is rig-scoped, so its prompt patch and the
+# polecat/refinery formulas live here; the mayor is city-scoped, so
+# the mayor's half lives in pr-gate-city, which supplies the mayor
+# rather than patching one.
 #
 # What this pack contributes:
 #   1. `mol-polecat-pr` — polecat formula that stamps

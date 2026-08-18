@@ -512,7 +512,17 @@ gc import add packs/pr-gate-city
 gc import add --rig ascii-art packs/pr-gate-rig
 gc import remove --rig ascii-art setup
 rm -rf "$FACTORY_PATH/agents/mayor"
-sed "${SED_I[@]}" '/\[named_session\]/,/\[named_session\]/d' "$FACTORY_PATH/pack.toml"
+# Point the always-on mayor session at the pack's mayor. Deleting the block
+# outright would leave the city with no mayor at all, because pr-gate-city
+# deliberately declares no named_session of its own.
+sed '/^\[\[named_session\]\]/,/^[[:space:]]*mode = /d' "$FACTORY_PATH/pack.toml" > "$FACTORY_PATH/pack.toml.tmp"
+cat >> "$FACTORY_PATH/pack.toml.tmp" <<'EOF'
+[[named_session]]
+name = "mayor"
+template = "pr-gate-city.mayor"
+mode = "always"
+EOF
+mv "$FACTORY_PATH/pack.toml.tmp" "$FACTORY_PATH/pack.toml"
 
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   git add .
