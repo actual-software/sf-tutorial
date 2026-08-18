@@ -1,0 +1,39 @@
+# factory-pulse — the scheduled half of the orders pair.
+#
+# An order pairs a trigger with an action. This one's trigger is a clock, and
+# the five fields below are the whole contract, so read them as a set rather
+# than one at a time.
+#
+# `trigger = "cron"` selects the clock. Trigger evaluation is a switch on the
+# trigger type, so exactly one branch runs and only the fields that branch reads
+# have any effect. A cron order never consults `interval`, and a cooldown order
+# never consults `schedule`. Setting the wrong one is not an error, it is
+# silence.
+#
+# `schedule` is five-field cron in the city's timezone. Hourly on the hour is a
+# deliberate choice for a taught factory: a daily pulse would fire once, at an
+# hour nobody is watching, and a participant would finish the day never having
+# seen the order do anything. Hourly means the log has several lines in it by
+# the afternoon. Change it to `0 9 * * *` once the factory is yours.
+#
+# `exec` is the action. An order runs either an exec or a formula, and
+# validation treats the two as mutually exclusive, so a file that names both is
+# rejected rather than silently preferring one. The exec form is right here
+# because the work is a shell one-liner's worth; reach for the formula form when
+# the action needs an agent's judgement.
+#
+# `timeout` bounds the exec. A cron order that hangs holds nothing else up, but
+# it does keep reporting as running, which makes `gc order history` harder to
+# read than it should be.
+#
+# WATCHING IT. `gc order check` prints which orders are due and why not for the
+# ones that are not. `gc order run factory-pulse` fires it immediately without
+# waiting for the hour, which is the fastest way to see the mechanism.
+# `gc order history` shows what has fired.
+
+[order]
+description = "Hourly snapshot of the rig's bead counts, appended to FACTORY_LOG.md"
+trigger = "cron"
+schedule = "0 * * * *"
+exec = "$PACK_DIR/assets/scripts/factory_pulse.sh"
+timeout = "60s"

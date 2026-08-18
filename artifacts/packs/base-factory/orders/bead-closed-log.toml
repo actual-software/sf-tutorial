@@ -1,0 +1,33 @@
+# bead-closed-log — the event half of the orders pair.
+#
+# Same two-part shape as factory-pulse, with a different trigger. This one waits
+# on something the factory does rather than on the clock, which is the reason
+# both orders ship: read the two files side by side and the trigger is the only
+# thing that differs.
+#
+# `trigger = "event"` with `on = "bead.closed"` fires the exec whenever a bead
+# transitions to closed. Every agent in the base chain closes beads, so this
+# order fires for real within minutes of the first bead you sling, which is the
+# point of choosing this event over a rarer one.
+#
+# THE EVENT DOES NOT TELL THE SCRIPT WHICH BEAD. An exec order is handed the
+# rig's environment, not the event payload, so `bead_closed_log.sh` asks `bd`
+# what is closed and skips whatever it has already written down. That is worth
+# knowing before you write your own event order: the trigger is a wake-up, and
+# the script still has to go and look.
+#
+# EVENTS ARE READ FROM A CURSOR, so an order that has been off for an hour does
+# not replay the hour when it comes back, and a burst of closes is one firing
+# rather than one per bead. That is also why the script is written to be
+# idempotent: one firing may have several new beads behind it, and re-running it
+# by hand must not double up the log.
+#
+# WATCHING IT. `gc order run bead-closed-log` fires it by hand.
+# `gc events --type bead.closed` shows the events that would have fired it.
+
+[order]
+description = "Append each bead the factory closes to FACTORY_LOG.md, next to the scheduled pulse lines"
+trigger = "event"
+on = "bead.closed"
+exec = "$PACK_DIR/assets/scripts/bead_closed_log.sh"
+timeout = "60s"

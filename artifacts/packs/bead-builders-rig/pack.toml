@@ -22,22 +22,28 @@
 #      `mol-doc-spec` — one per Lead, each a 3-step formula
 #      (load-context → draft-spec → drain).
 #
-# Install (sits on top of bead-gate-rig):
-#   gc import add --rig <rig-name> packs/bead-builders-rig
-#   gc import remove --rig <rig-name> bead-gate-rig
+# Install (sits directly on the base factory):
+#   gc import add --rig <rig-name> artifacts/packs/bead-builders-rig
 #
-# bead-builders-rig imports bead-gate-rig, so the project-manager,
-# architect, and refinery flow remain resolvable transitively.
+# bead-builders-rig imports architect-rig, which is the base factory's
+# top node, so the architect and the polecat / refinery flow remain
+# resolvable transitively. It does not import any other option, and no
+# other option has to be installed first.
 #
 # These agents are "light-side" — they help the operator shape
 # higher-quality work with less effort. They are slung explicitly
-# (`gc sling <rig>/design-lead <bead> --on mol-design-spec`); the
-# project-manager's checklist (extended in this hardening) requires
-# their outputs to be present on the bead.
+# (`gc sling <rig>/design-lead <bead> --on mol-design-spec`), so they
+# work on the base factory with nothing else added.
+#
+# WITH THE BEAD GATE OPTION INSTALLED TOO, the project-manager's
+# checklist can require these specs to be present before a polecat may
+# claim the bead. That pairing is a bonus rather than a prerequisite:
+# without it the Leads still write their specs and the reviewers still
+# read them.
 
 [pack]
 name = "bead-builders-rig"
 schema = 1
 
-[imports.bead-gate-rig]
-source = "../bead-gate-rig"
+[imports.architect-rig]
+source = "../architect-rig"

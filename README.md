@@ -11,21 +11,18 @@
 - [Community & Support](#community--support)
 - [Prerequisites](#prerequisites)
 - [Curriculum Structure](#curriculum-structure)
-  - [Day 1: Run and Explore Standard Software Factory](#day-1-run-and-explore-standard-software-factory)
-  - [Day 2: Build Your Own Software Factory](#day-2-build-your-own-software-factory)
+  - [Day 1: run and explore a standard software factory](#day-1-run-and-explore-a-standard-software-factory)
+  - [Day 2: build your own software factory](#day-2-build-your-own-software-factory)
+  - [Six Enhancement Ideas](#six-enhancement-ideas)
+  - [The Base Factory](#the-base-factory)
 
 ## Overview
 
 This is a multi-step software factory intensive to give participants tools and principles to configure complete software factories for their use case. Participants will learn how to think about the dimensions of configurations for software factories and how to elevate their software development infrastructure above individual coding agents.
 
-You'll start with out-of-the-box examples that ship with Gas City and two reference implementation agents from Gas Town, `mol-polecat-work` and `mol-refinery-patrol`. And you'll evolve a multi-agent workflow. You'll start with a simple **implement -> review** workflow. Then as the tutorials progress you'll layer on:
+The curriculum runs over two days. Day 1 stands up a working factory and takes it apart to see how it is made: packs, agents, formulas, orders, and the five ways agents coordinate. Day 2 points that machinery at a project of your own and extends it, from a menu of options you choose between rather than a fixed sequence.
 
-- GitHub pull requests
-- Opinionated quality gates
-- Specialized reviewer agents
-- An architecture-best-practices loop
-- A multi-model `code-review-loop`
-- Etc.
+You start from a base factory that already works, built on the out-of-the-box examples that ship with Gas City and two reference agents from Gas Town, `mol-polecat-work` and `mol-refinery-patrol`. What you layer on top is your choice: GitHub pull requests and quality gates are already in the base, and the options add specialized reviewer agents, an architecture-best-practices loop, a multi-model review, a gate at the front of the queue, and a loop that lets the factory propose changes to itself.
 
 ## About Gas City
 
@@ -62,36 +59,52 @@ You’ll need at least one coding agent subscription (or API key) to run the wor
 
 To prepare for the workshop, please install the [Actual Factory Demo](https://github.com/actual-software/actual-factory-demo) and follow the instructions to get it running. This proves your machine is ready to go and gives you a hands-on understanding of the basics of Gas City.
 
-### Running on a cloud box (optional)
-
-Doing the intensive on instructor-provided cloud boxes instead of your own laptop? Start at [`CLOUD_BOX_GUIDE.md`](./CLOUD_BOX_GUIDE.md). It takes the four values your instructor sends you through to a running factory, and it ends with the commands you'll use across the two days. No AWS account needed.
-
-The CLI it drives, plus an optional agent skill, is documented in [`participant-box-cli/`](./participant-box-cli/README.md): deploy a factory pack, restart the service, read box state, and tunnel the dashboard to your browser.
-
 ## Curriculum Structure
 
-### Day 1: Run and Explore Standard Software Factory
+Two days. Workshops (**W**) are instructor-led, while labs (**L**) are participant-led.
 
-| Session | Type | Duration | Title | Session Pages |
-|----|------|----------|-------|-------------|
-| W1 | Workshop | 60 min | Preflight Setup | [`Preflight Setup`](./progression/00.0-preflight.md) |
-| W2 | Workshop | 60 min | Run a Software Factory | [`Create a Factory`](./progression/00.1-setup-foundation.md), [`Add ASCII Art Rig`](./progression/00.2-setup-foundation.md), [`Env Vars for Fresh Shells`](./progression/00.3-setup-foundation.md), [`Basic Flow`](./progression/01-basic-flow.md) |
-| W3 | Workshop | 60 min | Review Loops | [`First Review Loop`](./progression/02-first-review-loop.md), [`Branch Protection`](./progression/03-branch-protection.md), [`Architect Agent`](./progression/04-adr-reviewer.md) |
-| W4 | Workshop | 60 min | Requirement Gates | [`Bead Gate Checks`](./progression/05.1-bead-gate-checks.md), [`Bead Gate Checks — Grill Me`](./progression/05.2-bead-gate-checks.md), [`Bead Creation Formula Extensions`](./hardening/01-bead-creation-formula-extensions.md) |
-| W5 | Workshop | 30 min | Coordination Channels | [`Coordination Channels`](./progression/06-coordination-channels.md) |
-| L1 | Lab | 60 min | Plan Your Factory | [`Plan Your Factory`](./progression/07-plan-your-factory.md) |
+### Day 1: run and explore a standard software factory
 
-### Day 2: Build Your Own Software Factory
+| Session | Type | Duration | Title | Page |
+|----|------|----------|-------|------|
+| W1 | Workshop | 30 min | Vocabulary and Concepts | [`W1`](./progression/W1-vocabulary-and-concepts.md) |
+| W2 | Workshop | 45 min | Cloud Box and Preflight | [`W2`](./progression/W2-cloud-box-and-preflight.md) |
+| W3 | Workshop | 60 min | Run Your Factory | [`W3`](./progression/W3-run-your-factory.md) |
+| W4 | Workshop | 60 min | Tour the Factory | [`W4`](./progression/W4-tour-the-factory.md) |
+| W5 | Workshop | 30 min | Observability and Traceability | [`W5`](./progression/W5-observability.md) |
+| L1 | Lab | 45 min | Point the Factory at Your Own Project | [`L1`](./progression/L1-plan-your-factory.md) |
+| L2 | Lab | 30 min | Capability Map (starts) | [`L2`](./progression/L2-capability-map.md) |
 
-| Session | Type | Duration | Title | Session Pages |
-|----|------|----------|-------|-------------|
-| W6 | Workshop | 45 min | The Mayor and Workflows | [`The Mayor and Workflows`](./progression/08-mayor-and-workflows.md) |
-| L2 | Lab | 45 min | Retargeting the Rig | [`Specialized Domain Reviewers`](./hardening/02-specialize-reviewers-per-domain.md) |
-| L3 | Lab | 90 min | Hardening | [`Architecture Best-Practices Loop`](./hardening/03-architecture-best-practices-loop.md), [`Strengthen the Review System`](./hardening/04-strengthen-review-system.md) |
-| L4 | Lab | 45 min | Self-Improvement Loop | [`Self-Improvement Loop`](./hardening/05-self-improvement-loop.md) |
-| L5 | Lab | 90 min | Implement a Feature | [`Implement a Feature`](./progression/09-implement-a-feature.md) |
-| W7 | Workshop | 30 min | Sharing Your Factory | [`Sharing Your Factory`](./progression/10-sharing-your-factory.md) |
+### Day 2: build your own software factory
+
+| Session | Type | Duration | Title | Page |
+|----|------|----------|-------|------|
+| L2 | Lab | 30 min | Capability Map (finishes) | [`L2`](./progression/L2-capability-map.md) |
+| L3 | Lab | 45 min | First enhancement — one of the six options | [`L3-L5`](./progression/L3-L5-feature-labs.md) |
+| W6 | Workshop | 60 min | Advanced Concepts | [`W6`](./progression/W6-advanced-concepts.md) |
+| L4 | Lab | 60 min | Second enhancement | [`L3-L5`](./progression/L3-L5-feature-labs.md) |
+| W7 | Workshop | 45 min | Sharing Your Factory | [`W7`](./progression/W7-sharing-your-factory.md) |
+| L5 | Lab | 45 min | Third enhancement | [`L3-L5`](./progression/L3-L5-feature-labs.md) |
+
+### Six Enhancement Ideas
+
+The three feature labs draw on the same menu of options. In **L3** you pick one of these six, then in **L4** and **L5** you can either choose one you have not used yet, or a feature of your own from your capability map.
+
+| Option | Solves |
+|---|---|
+| [Bead creation formula extensions](./hardening/01-bead-creation-formula-extensions.md) | Beads arrive with no design, test or docs thinking attached |
+| [Specialized domain reviewers](./hardening/02-specialize-reviewers-per-domain.md) | One reviewer judging everything reviews nothing well |
+| [Architecture best-practices loop](./hardening/03-architecture-best-practices-loop.md) | Reviews are opinions rather than scores against named principles |
+| [Strengthen the review system](./hardening/04-strengthen-review-system.md) | One model is one point of view, and it is confidently wrong sometimes |
+| [Self-improvement loop](./hardening/05-self-improvement-loop.md) | The factory produces evidence about itself and nobody reads it |
+| [Bead gate checks](./hardening/06-bead-gate-checks.md) | Work reaches an implementer under-specified and it has to guess |
+
+### The Base Factory
+
+W3 installs one pack, [`base-factory`](./artifacts/packs/base-factory/README.md), and gets a working multi-agent factory with an example of every Gas City primitive already running in it: formulas, an agent persona, orders, a rig, and mail. Day 2 extends it.
+
+The four [appendix pages](./appendix/README.md) assemble that same factory by hand, step by step. They are off the taught path and worth reading when you want to know why a layer exists rather than what it does.
 
 ---
 
-Ready? Head to [Preflight Setup](./progression/00.0-preflight.md).
+Ready? Start at [W1 Vocabulary and Concepts](./progression/W1-vocabulary-and-concepts.md).

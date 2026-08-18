@@ -1,7 +1,7 @@
 # bead-gate-rig — rig-scoped pack that places a `project-manager`
 # agent at the front of the factory. The project-manager runs
 # conformity checks on each bead BEFORE any polecat is allowed to
-# claim it. Installed in Progression page 05.1.
+# claim it. Installed in the bead gate checks hardening option.
 #
 # What this pack contributes:
 #   1. `project-manager` — a new rig-scoped agent (scope = "rig",

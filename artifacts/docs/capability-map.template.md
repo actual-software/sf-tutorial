@@ -1,6 +1,6 @@
 # Capability map
 
-Changes I want to make to my factory, ranked. Written in L-1 on day one, built from in L-5 on day two.
+Changes I want to make to my factory, ranked. Started in L2 on Day 1, finished on Day 2 morning, and built from in the three feature labs.
 
 ## The layer each change touches
 
@@ -24,7 +24,7 @@ If a change does not fit any of the three, it is probably a change to your *proj
 | 4 | | | | | |
 | 5 | | | | | |
 
-Five to eight rows. Rank honestly rather than ambitiously: one finished change beats three half-finished ones, and L-5 is ninety minutes.
+Five to eight rows. Rank honestly rather than ambitiously: one finished change beats three half-finished ones, and each feature lab is one slot.
 
 The "how I will know it worked" column is not optional. A change you cannot verify is a change you cannot tell has regressed.
 

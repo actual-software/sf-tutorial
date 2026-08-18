@@ -62,7 +62,7 @@ cd path/to/sf-tutorial/bootstrap
 
 The script reproduces every step up through this lesson — `.github/CODEOWNERS` is copied in, committed, and pushed to `main`, and `branch-protection.sh` runs against the rig's GitHub repo to install the `main` protection rule and the `epic/*` ruleset.
 
-After it finishes, re-export the four env vars per [00.3](./00.3-setup-foundation.md), then jump to [Try It](#try-it).
+After it finishes, re-export the four env vars per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then jump to [Try It](#try-it).
 
 ### Build Factory1 by Hand
 
@@ -342,7 +342,7 @@ guard.
 
 **What's still missing.** Two things. First, there is no automated check
 for ADR adherence — a human has to remember to compare every diff against
-`0001.ADR.ASCII.md`, and humans forget. **Page 04 — ADR reviewer** adds
+`0001.ADR.ASCII.md`, and humans forget. **The base factory's architect — ADR reviewer** adds
 an AI reviewer that runs `gh pr review` automatically against that ADR,
 so every PR receives a structured ADR check before the human looks.
 Second, no CI status check is required. A reviewer could approve a PR
@@ -417,7 +417,7 @@ block the merge regardless of approvals.
   last resort for a solo learner, temporarily set `MIN_APPROVALS=0` and
   re-run the script for this one merge, then re-tighten immediately. The
   third option defeats the gate — only use it to unblock the exercise.
-  Page 04's AI reviewer does not solve this either; GitHub also refuses
+  The base factory's architect's AI reviewer does not solve this either; GitHub also refuses
   reviews from the PR-author identity. Plan for a separate approver
   identity before relying on this gate in real work.
 
@@ -436,4 +436,4 @@ block the merge regardless of approvals.
 
 Continue to [ADR reviewer](./04-adr-reviewer.md).
 
-« [previous: W-4 Review Loops](./02-first-review-loop.md) | [next: 04 Architect agent](./04-adr-reviewer.md) »
+« [previous: the review-loop appendix](./02-first-review-loop.md) | [next: the architect appendix](./04-adr-reviewer.md) »

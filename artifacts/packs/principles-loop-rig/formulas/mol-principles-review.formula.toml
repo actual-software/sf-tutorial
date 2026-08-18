@@ -1,7 +1,7 @@
 description = """
 Per-principle architecture review of a polecat's feature branch.
 
-Replaces `mol-adr-review` as the formula the adr-reviewer pours.
+Replaces `mol-architect-review` as the formula the architect pours.
 Scores the diff against 23 canonical Gas City architecture
 principles, appends one row per principle to a per-bead
 append-only YAML audit trail, and decides PASS / CONTINUE /
@@ -33,9 +33,9 @@ floor: every principle must score >= 3 in its latest row.
 
 | aggregate-score.sh exit | meaning                                 | action                                                            |
 |-------------------------|-----------------------------------------|-------------------------------------------------------------------|
-| 0 (PASS)                | aggregate >= 0.9 AND every floor >= 3   | stamp adr_approved=true, principles_review_passed=true; reassign  |
+| 0 (PASS)                | aggregate >= 0.9 AND every floor >= 3   | stamp architect_approved=true, principles_review_passed=true; reassign  |
 | 1 (CONTINUE)            | aggregate < 0.9 or some floor < 3       | self-pour with iteration+=1 (cap at 3 = ESCALATE)                 |
-| 2 (ESCALATE)            | malformed YAML, missing principle, etc. | mail operator, stamp adr_approved=false, escalate                 |
+| 2 (ESCALATE)            | malformed YAML, missing principle, etc. | mail operator, stamp architect_approved=false, escalate                 |
 """
 
 formula = "mol-principles-review"
@@ -145,9 +145,9 @@ RC=$?
 **RC=0 (PASS):**
 ```bash
 gc bd update {{issue}} \\
-  --set-metadata adr_approved=true \\
+  --set-metadata architect_approved=true \\
   --set-metadata principles_review_passed=true
-gc bd note {{issue}} \"adr-reviewer: PRINCIPLES PASS at iteration {{iteration}}.\"
+gc bd note {{issue}} \"architect: PRINCIPLES PASS at iteration {{iteration}}.\"
 
 REFINERY_TARGET=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery\"
 gc bd update {{issue}} --status=open --assignee=\"$REFINERY_TARGET\" \\
@@ -161,10 +161,10 @@ exit 0
 ITER={{iteration}}
 if [ \"$ITER\" -ge 3 ]; then
   gc bd update {{issue}} \\
-    --set-metadata adr_approved=false \\
+    --set-metadata architect_approved=false \\
     --set-metadata principles_review_passed=false \\
-    --set-metadata adr_feedback=\"Principles loop exhausted at iteration $ITER without convergence.\"
-  gc bd note {{issue}} \"adr-reviewer: PRINCIPLES ESCALATED — cap reached at iteration $ITER.\"
+    --set-metadata architect_feedback=\"Principles loop exhausted at iteration $ITER without convergence.\"
+  gc bd note {{issue}} \"architect: PRINCIPLES ESCALATED — cap reached at iteration $ITER.\"
   gc mail send mayor/ -s \"Principles loop exhausted: {{issue}}\" -m \"Bead: {{issue}}
 Iteration cap reached without aggregate >= {{target}} and floor >= {{min_per_principle}}.
 Inspect docs/reviews/principles.{{issue}}.yaml and the per-principle findings.\"
@@ -176,17 +176,17 @@ Inspect docs/reviews/principles.{{issue}}.yaml and the per-principle findings.\"
 fi
 
 NEXT=$((ITER + 1))
-gc bd note {{issue}} \"adr-reviewer: PRINCIPLES CONTINUE — re-pouring iteration $NEXT.\"
-gc sling \"${GC_RIG:+$GC_RIG/}{{binding_prefix}}adr-reviewer\" {{issue}} --on mol-principles-review --var iteration=\"$NEXT\"
+gc bd note {{issue}} \"architect: PRINCIPLES CONTINUE — re-pouring iteration $NEXT.\"
+gc sling \"${GC_RIG:+$GC_RIG/}{{binding_prefix}}architect\" {{issue}} --on mol-principles-review --var iteration=\"$NEXT\"
 ```
 
 **RC=2 (ESCALATE):**
 ```bash
 gc bd update {{issue}} \\
-  --set-metadata adr_approved=false \\
+  --set-metadata architect_approved=false \\
   --set-metadata principles_review_passed=false \\
-  --set-metadata adr_feedback=\"Principles aggregator escalated (malformed YAML or rule violation).\"
-gc bd note {{issue}} \"adr-reviewer: PRINCIPLES ESCALATED — aggregator returned 2.\"
+  --set-metadata architect_feedback=\"Principles aggregator escalated (malformed YAML or rule violation).\"
+gc bd note {{issue}} \"architect: PRINCIPLES ESCALATED — aggregator returned 2.\"
 gc mail send mayor/ -s \"Principles aggregator escalated: {{issue}}\" -m \"Bead: {{issue}}
 The aggregator returned 2. Inspect docs/reviews/principles.{{issue}}.yaml for malformed rows or non-canonical principle names.\"
 
@@ -195,7 +195,7 @@ gc bd update {{issue}} --status=open --assignee=\"$REFINERY_TARGET\" \\
   --set-metadata gc.routed_to=\"$REFINERY_TARGET\"
 ```
 
-**Exit criterion:** adr_approved set to true or false; on CONTINUE,
+**Exit criterion:** architect_approved set to true or false; on CONTINUE,
 the next iteration has been slung."""
 
 [[steps]]

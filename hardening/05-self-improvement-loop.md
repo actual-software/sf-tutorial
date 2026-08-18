@@ -25,13 +25,15 @@ Close the loop: your factory reads a signal it already produces, proposes a chan
 
 ## Prereqs
 
-- [L-3](./03-architecture-best-practices-loop.md) complete, on either track. Track A's audit trail makes the best signal, but any of them work.
-- [W-7](../progression/08-mayor-and-workflows.md) complete, because the proposal will land in one of the three layers and you need to be able to name which.
-- Your capability map from [L-1](../progression/07-plan-your-factory.md) open.
+- [W3](../progression/W3-run-your-factory.md) complete, and a factory that has been running long enough to have produced some evidence about itself.
+- [W4](../progression/W4-tour-the-factory.md) complete, because the proposal will land in one of the layers and you need to be able to name which.
+- Your [capability map](../progression/L2-capability-map.md) open.
+
+**This option needs no other option.** It is a loop rather than a pack: nothing to install, and the signals it reads are ones your base factory already writes. Any other option you have installed gives it a richer signal, and none of them is required.
 
 ## Context: improving the config, not the artifact
 
-Every loop you have built so far improves an **artifact**. The review loop in [W-4](../progression/02-first-review-loop.md) improves a diff. The scoring loop in [`hardening/03`](../hardening/03-architecture-best-practices-loop.md) iterates until the diff scores well. Both are loops, both are useful, and both leave the factory exactly as they found it. Run the same bad prompt through them a hundred times and it stays a bad prompt.
+Every loop you have built so far improves an **artifact**. The review loop in [the review-loop appendix](../appendix/02-first-review-loop.md) improves a diff. The scoring loop in [`hardening/03`](../hardening/03-architecture-best-practices-loop.md) iterates until the diff scores well. Both are loops, both are useful, and both leave the factory exactly as they found it. Run the same bad prompt through them a hundred times and it stays a bad prompt.
 
 This block changes the target. The thing being improved is the **configuration** — an agent's prompt, a formula's steps, an order's trigger — and the evidence is what the factory already wrote down about its own behaviour.
 
@@ -53,10 +55,10 @@ You do not need new instrumentation. Your factory has been writing evidence abou
 
 ```bash
 cd "$MY_RIG_PATH"
-ls -la docs/reviews/ 2>/dev/null                 # L-3 Track A: per-principle scores
+ls -la docs/reviews/ 2>/dev/null                 # per-principle scores, if you took that option
 bd list --status blocked --json | jq -r '.[] | "\(.id)  \(.metadata.bead_review_feedback // .metadata.blocker_reason // "")"'
 cd "$FACTORY_PATH"
-gc order history --limit 20
+gc order history
 gc costs 2>/dev/null | head -20
 ```
 
@@ -101,35 +103,37 @@ Risk: <what this makes worse>." \
   --type task --priority 3
 ```
 
-**What to notice.** Writing the proposal as a bead is not bookkeeping. It puts the proposal into the same system every other piece of work goes through, which means the gate you built in [W-5](../progression/05.1-bead-gate-checks.md) will now judge it. A proposal that cannot survive your own front gate is not ready to change your factory.
+**What to notice.** Writing the proposal as a bead is not bookkeeping. It puts the proposal into the same system every other piece of work goes through, so whatever gate stands in front of your beads now judges it too. A proposal that cannot survive your own front gate is not ready to change your factory.
 
 ### 4. Put a gate in front of the proposal
 
 This is the step that makes the loop safe, and it is the one people skip.
 
+The gate that always applies is a named person. A config change gets one whatever else you have installed, and the mechanism you already have for that is branch protection from [the branch-protection appendix](../appendix/03-branch-protection.md): your factory's configuration lives in files, those files live in a repo, and a change to them is a pull request somebody approves.
+
+If you also installed the [bead gate](./06-bead-gate-checks.md) option, run the proposal through its project-manager first and the bead has to clear your own front gate before it reaches that person:
+
 **Copy and paste**
 
 ```bash
 cd "$FACTORY_PATH"
-gc sling project-manager <the-proposal-bead-id>
+gc sling ascii-art/bead-gate-rig.project-manager <the-proposal-bead-id> --on mol-bead-review
 bd show <the-proposal-bead-id> --json | jq -r '.[0] | .status, (.metadata.bead_review_feedback // "passed")'
 ```
-
-Then add the human. Whatever the verdict, a config change gets a named person, and the mechanism you already have for that is branch protection from [`03`](../progression/03-branch-protection.md): your factory's configuration lives in files, those files live in a repo, and a change to them is a pull request somebody approves.
 
 Say the rule out loud and write it into your capability map:
 
 > A proposal my factory generates may become a pull request automatically. It may not become a merge automatically.
 
-**What to notice.** That sentence is the whole safety model, and it is the same one from [W-4](../progression/02-first-review-loop.md) applied to a new target. A consequential decision needs either a deterministic gate or a named human. "The factory changed its own prompt because it decided to" has neither.
+**What to notice.** That sentence is the whole safety model, and it is the same one from [the review-loop appendix](../appendix/02-first-review-loop.md) applied to a new target. A consequential decision needs either a deterministic gate or a named human. "The factory changed its own prompt because it decided to" has neither.
 
 ### 5. Reflect
 
 You now have a loop where the factory's own output is an input to its configuration, with a human at the point of effect.
 
-The honest caveat is worth stating: this loop is only as good as the signal. A factory that emits nothing but pass verdicts has nothing to learn from, which is a decent argument for keeping the failure paths noisy. Everything you built in [W-5](../progression/05.1-bead-gate-checks.md) and [L-3](./03-architecture-best-practices-loop.md) is what makes this block possible, because those are the blocks that made the factory write down when it was unhappy.
+The honest caveat is worth stating: this loop is only as good as the signal. A factory that emits nothing but pass verdicts has nothing to learn from, which is a decent argument for keeping the failure paths noisy. Any option that makes the factory write down when it is unhappy feeds this one, and the [bead gate](./06-bead-gate-checks.md) and the [principles loop](./03-architecture-best-practices-loop.md) are the two that produce the most signal.
 
-Add one row to your capability map: the signal you wish your factory emitted and does not. That is usually an order-layer change, and [L-5](../progression/09-implement-a-feature.md) is right after this.
+Add one row to your capability map: the signal you wish your factory emitted and does not. That is usually an order-layer change, and [L3-L5 Feature Labs](../progression/L3-L5-feature-labs.md) is right after this.
 
 ## Deliverable
 
@@ -171,13 +175,15 @@ The part worth reading even if you never install it is the order file. It gates 
 
 ## Troubleshooting
 
-- **The mayor has no useful pattern to report.** Your factory has not run enough work to have a signal yet. Use `ascii-art`'s history instead — the mechanism is the lesson, and the blocked beads from [W-5](../progression/05.1-bead-gate-checks.md) are real evidence about a real gate.
+- **The mayor has no useful pattern to report.** Your factory has not run enough work to have a signal yet. Use `ascii-art`'s history instead — the mechanism is the lesson, and the blocked beads from [the bead gate option](./06-bead-gate-checks.md) are real evidence about a real gate.
 - **The proposal bead fails your own front gate.** That is the system working. Read the feedback and rewrite the proposal; a proposal with no observable outcome is exactly what the test-generation check exists to catch.
 - **`gc costs` returns nothing.** Cost reporting depends on the provider and may not be populated for this city. Pick another signal rather than chasing it.
 - **You want the factory to apply the change directly.** Do not, today. Get the loop working with a human at the point of effect first, and note the automation as a capability-map row with its risk column filled in.
 
 ## What's next
 
-[L-5 Implement a Feature](../progression/09-implement-a-feature.md) is where the capability map stops being a document.
+This is one of six options, and they are a menu rather than a sequence. Every one installs on the base factory alone, so take them in whatever order solves a problem you actually have. The full list is in [the feature labs](../progression/L3-L5-feature-labs.md#the-six-options).
 
-« [previous: L-3 Hardening — Track B, multi-vendor](./04-strengthen-review-system.md) | [next: L-5 Implement a Feature](../progression/09-implement-a-feature.md) »
+Every other option makes this one better, because each adds a signal the loop can read. None of them is required.
+
+« [back to the feature labs](../progression/L3-L5-feature-labs.md) »
