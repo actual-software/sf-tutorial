@@ -29,8 +29,6 @@ You installed a factory an hour ago with one command. This session opens it up. 
 ## Prereqs
 
 - [W3](./W3-run-your-factory.md) complete: `factory1` running, `ascii-art` rig registered and pushed, base factory installed, beads seeded.
-- The four env vars exported in your current shell.
-- `jq` installed.
 
 ## Context
 
@@ -48,20 +46,18 @@ Two failure shapes follow from that table and they are worth memorising now. *Th
 
 ## Try It
 
-Most of this session is reading. Steps 9 and 10 are yours.
-
 ### 1. Packs: what one import brought
 
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
 gc import list --rig ascii-art
 gc import list
-cat "$ARTIFACTS_PATH/packs/base-factory/pack.toml"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/base-factory/pack.toml"
 ```
 
-**What to notice.** The rig imports one pack and you got four, because `[imports.architect-rig]` pulls its own chain behind it:
+**What to notice.** Note that `[imports.architect-rig]` pulls its own chain behind it:
 
 ```mermaid
 graph LR
@@ -70,7 +66,7 @@ graph LR
     P --> S["setup<br/>polecat, refinery"]
 ```
 
-Two things about that are load-bearing later. Each pack is a *layer* that adds or overrides one concern, so a Day 2 option is a pack you drop on top rather than an edit you make. And **scope is a property of the import, not the pack**: `base-factory` went in with `--rig` and `pr-gate-city` without it, because the mayor is city-scoped and a patch can only target agents in the same composition pass. Installing at the wrong scope is the usual reason an agent "does not appear".
+Two things about that are important for later. Each pack is a *layer* that adds or overrides one concern, so a Day 2 option is a pack you drop on top rather than an edit you make. And **scope is a property of the import, not the pack**: `base-factory` went in with `--rig` and `pr-gate-city` without it, because the mayor is city-scoped and a patch can only target agents in the same composition pass. Installing at the wrong scope is the usual reason an agent "does not appear" or otherwise "collides".
 
 ### 2. Agents: a persona is a prompt plus bounds
 
@@ -78,7 +74,7 @@ Two things about that are load-bearing later. Each pack is a *layer* that adds o
 
 ```bash
 gc agent list --rig ascii-art
-cat "$ARTIFACTS_PATH/packs/architect-rig/agents/architect/agent.toml"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/agents/architect/agent.toml"
 ```
 
 **What to notice.** An agent definition is short, and every field in it is a decision:
@@ -95,7 +91,7 @@ The architect is a persona rather than a script: it reads a diff against your de
 **Copy and paste**
 
 ```bash
-sed -n '1,60p' "$ARTIFACTS_PATH/packs/architect-rig/agents/architect/prompt.template.md"
+sed -n '1,60p' "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/agents/architect/prompt.template.md"
 ```
 
 This is the whole persona: what the agent is, what it reads, what it writes, and when it stops. It is prose a human can argue with, which is the point.
@@ -105,8 +101,8 @@ Now look at how a pack changes an agent it did not define:
 **Copy and paste**
 
 ```bash
-grep -A4 'patches.agent' "$ARTIFACTS_PATH/packs/architect-rig/pack.toml"
-sed -n '1,40p' "$ARTIFACTS_PATH/packs/architect-rig/prompts/refinery.template.md"
+grep -A4 'patches.agent' "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/pack.toml"
+sed -n '1,40p' "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/prompts/refinery.template.md"
 ```
 
 **What to notice.** `architect-rig` does not redefine the refinery. It **patches** it, replacing only the `prompt_template` and inheriting everything else. That is what lets a capability arrive as a layer instead of a fork.
@@ -127,17 +123,17 @@ packs/<pack>/
 
 ```bash
 gc formula list
-gc formula show mol-polecat-pr
-cat "$ARTIFACTS_PATH/packs/pr-gate-rig/formulas/mol-polecat-pr.formula.toml"
+gc formula show mol-polecat-pr --rig ascii-art
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-rig/formulas/mol-polecat-pr.formula.toml"
 ```
 
 **What to notice.** Three things in that file are the whole idea.
 
 `extends = ["mol-polecat-work"]` makes this formula a diff against another one. It replaces exactly one step and inherits the rest, which is why the file is short and why the base formula stays the single source of truth.
 
-`[[steps]]` with `id` and `needs` is a dependency graph rather than a script. Steps declare what they need, not what order to run in, and **no step names an agent** — the pool is resolved per step at dispatch. That is what makes a formula reusable across factories with different agents in them.
+`[[steps]]` with `id` and `needs` is a dependency graph rather than a script. Steps declare what they need, not what order to run in. In this formula no step names an agent, but rather the pool is resolved per step at dispatch. That is what makes a formula reusable across factories with different agents in them.
 
-The step body is a prompt. It is instructions an agent reads, not commands a runner executes, which is why the file reads like documentation with commands in it. This is the thing that surprises people arriving from CI YAML.
+The step body is a prompt. It is a set of instructions an agent reads, which is why the file reads like documentation with commands in it.
 
 ### 5. Orders: the trigger
 
@@ -147,8 +143,8 @@ Your factory has two, and they were chosen to differ in exactly one way.
 
 ```bash
 gc order list
-cat "$ARTIFACTS_PATH/packs/base-factory/orders/factory-pulse.toml"
-cat "$ARTIFACTS_PATH/packs/base-factory/orders/bead-closed-log.toml"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/base-factory/orders/factory-pulse.toml"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/base-factory/orders/bead-closed-log.toml"
 gc order check
 ```
 
@@ -175,7 +171,7 @@ The other split is the action. An order runs **either** a formula, which routes 
 ```bash
 gc order run factory-pulse
 gc order history
-cat "$ASCII_ART_PATH/FACTORY_LOG.md"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/FACTORY_LOG.md"
 ```
 
 Both orders write to that one file on purpose. By the end of the day it carries `pulse` lines from the clock and `closed` lines from the event, interleaved, which is the shortest demonstration that they are different mechanisms.
@@ -185,7 +181,7 @@ Both orders write to that one file on purpose. By the end of the day it carries 
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
 gc mail send mayor -s "Priority note" -m "Prefer beads from the letters-a-m epic for the rest of the session."
 gc mail inbox mayor
 ```
@@ -228,7 +224,7 @@ gc session attach mayor
 
 Ask it three things in your own words: what the factory's state is, which agents are available, and what it would work on next if you left it alone. Then detach with `Ctrl-b` then `d`.
 
-> **Detach with `Ctrl-b` then `d`.** `Ctrl-c` kills the mayor's session.
+> **Detach with `Ctrl-b` then `d`.** `Ctrl-c` kills the mayor's session. If this happens, you may need to restart your factory or wait for the supervisor to start up a new session for it.
 
 **What to notice.** You asked in sentences and got answers about a system rather than about a bead. Nothing you said created work.
 
@@ -237,11 +233,11 @@ Every other agent in your factory is ephemeral and single-purpose: spawn, do one
 Where did the mayor learn about pull requests? From a pack, not from an edit:
 
 ```bash
-cat "$ARTIFACTS_PATH/packs/pr-gate-city/pack.toml"
-sed -n '1,60p' "$ARTIFACTS_PATH/packs/pr-gate-city/agents/mayor/prompt.template.md"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-city/pack.toml"
+sed -n '1,60p' "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-city/agents/mayor/prompt.template.md"
 ```
 
-The mayor's behaviour is configuration that packs contribute to, which means a capability you install can teach the coordinator about itself.
+The mayor's behavior is configuration that packs contribute to, which means a capability you install can teach the coordinator about itself.
 
 ### 9. Write the channel document
 
@@ -250,8 +246,8 @@ You have now used all five channels. Decide, in writing, which one carries which
 **Copy and paste**
 
 ```bash
-cp "$ARTIFACTS_PATH/docs/coordination-channels.template.md" "$ASCII_ART_PATH/docs/current/coordination-channels.md"
-nano "$ASCII_ART_PATH/docs/current/coordination-channels.md"
+cp "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/docs/coordination-channels.template.md" "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/current/coordination-channels.md"
+nano "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/current/coordination-channels.md"
 ```
 
 `nano` ships with the box and is not modal: `Ctrl-O` then `Enter` saves, `Ctrl-X` exits. Use a different editor if you prefer one.
@@ -271,7 +267,7 @@ Fill in the handoff table. Every handoff gets a primary channel and a fallback:
 Those are defaults rather than answers. Change at least one and be able to say why. Then commit it:
 
 ```bash
-cd "$ASCII_ART_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art"
 git add docs/current/coordination-channels.md
 git commit -m "Record coordination channel preferences"
 ```
@@ -294,7 +290,7 @@ gc formula show mol-polecat-pr | head -5
 gc order check
 gc order history
 gc mail inbox mayor
-test -f "$ASCII_ART_PATH/docs/current/coordination-channels.md" && echo "channel doc: present"
+test -f "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/current/coordination-channels.md" && echo "channel doc: present"
 ```
 
 **Expected output**
