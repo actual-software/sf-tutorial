@@ -24,7 +24,7 @@ By the end of this session `./preflight.sh` prints `PREFLIGHT: PASS` wherever yo
 
 ## Prereqs
 
-- MacOS or Linux (or Windows with [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)) installed
+- MacOS or Linux (or Windows with [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)) installed if running the software factory locally (the cloud box is preconfigured for Linux)
 - A GitHub account with the ability to create new repositories.
 
 ## Context
