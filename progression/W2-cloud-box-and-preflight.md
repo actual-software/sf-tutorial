@@ -8,8 +8,6 @@
 - [Prereqs](#prereqs)
 - [Context](#context)
 - [The cloud box (recommended)](#the-cloud-box-recommended)
-  - [Signing the box in with a token](#signing-the-box-in-with-a-token)
-  - [Run preflight against the box](#run-preflight-against-the-box)
 - [Running on your own machine (alternative)](#running-on-your-own-machine-alternative)
   - [1. Clone the tutorial](#1-clone-the-tutorial)
   - [2. Install the pinned dependencies](#2-install-the-pinned-dependencies)
@@ -36,43 +34,6 @@ Most participants should work on an instructor-provided cloud box, which is the 
 ## The cloud box (recommended)
 
 Getting onto the box is its own page. [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) takes the four values your instructor sends you through to a running factory. Work through it first, then come back here for the preflight run below.
-
-### Signing into the box with a token
-
-The box holds its own GitHub credential, separate from the one on your laptop, and [step 5 of the box guide](../CLOUD_BOX_GUIDE.md#step-5-the-first-run-login) is where it gets one. That step asks which way you would like to give it:
-
-```text
- GitHub sign-in. Two ways to give this box a credential:
-
-   1. Browser sign-in. gh prints a short one-time code and a URL; you open it
-      on any device, enter the code, and approve. Nothing is pasted back into
-      this terminal. This grants the GitHub CLI repo, read:org, gist and
-      workflow on your account.
-
-   2. Paste a token you mint yourself. Choose this if you would rather not
-      grant the CLI that access, or your organisation does not permit it. You
-      will be asked for the token on the next line, and it stays on this box.
-
- Which route? [1]
-```
-
-A bare `Enter` takes the browser grant, which is what the rest of the guide assumes and what most of the room will take. Answering `2` prompts for a token instead. It is read without echoing, checked against GitHub before anything is written, and stored readable only by the factory user. Both routes then check that the account can actually read the repositories the box provisions from, so a credential that authenticates but cannot reach them fails at the prompt. If you would like to use a restricted grant token, be sure to mint it before you start step 5 and have it ready when the prompt appears.
-
-If GitHub rejects it or you run into issues with the GitHub credential, nothing is written and first-run stops there rather than carrying on without a credential. Resume with `sudo gas-city-login --from github`, which redoes the sign-in and continues through the steps that had not run yet.
-
-> [!NOTE]
-> If you would like to change the credential later, run the following (or else it will refuse to drop the existing `gh` credential):
-> ```bash
-> ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" gh auth logout --hostname github.com
-> ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" sudo gas-city-set-token
-> ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" sudo gas-city-refresh
-> ```
-> Alternatively, the following command on a box holding a pasted token offers the browser route and defaults to keeping the token:
-> ```bash
-> ssh -t -F ~/.gascity/ssh_config "$SFI_BOX" sudo gas-city-login github
-> ```
-
-On scopes, the two routes ask for the same thing. The browser grant yields `repo`, `read:org`, `gist` and `workflow`. The token prompt asks for a classic token with `repo`, plus `workflow` if any repository the agents touch carries GitHub Actions workflows, or a fine-grained one with contents and pull-requests read and write, plus workflows, on those repositories.
 
 ### Run preflight against the cloud box
 
@@ -126,7 +87,15 @@ chmod +x deps.sh preflight.sh
 **Expected output**
 
 ```text
-three version lines, then: Installed to <your-home>/.local/bin. Ensure it's on your PATH:
+beads_1.1.0_darwin_arm64.tar.gz: OK
+Building gc 1.4.0 from gastownhall/gascity at a7297c511. This takes a few minutes.
+go build -ldflags "-X main.version=1.4.0 -X main.commit=a7297c511 -X main.date=2026-08-18T07:39:52Z" -o bin/gc ./cmd/gc
+No stable macOS signing identity found; leaving Go linker signature unchanged for gc.
+Set GC_SIGN_IDENTITY='<certificate name>' for persistent local TCC grants.
+Symlinked /Users/austin/.local/bin/gc -> /Users/austin/go/bin/gc
+Installed gc to /Users/austin/go/bin/gc
+bd version 1.1.0 (8e4e59d39)
+dolt version 2.2.2
 ```
 
 Do what that last line says if you have not already:
@@ -171,19 +140,23 @@ Platform
 
 Required tools
   [ ok ] git: /usr/bin/git
-  ...
+  [ ok ] tmux: /opt/homebrew/bin/tmux
+  [ ok ] curl: /usr/bin/curl
+  [ ok ] jq: /usr/bin/jq
+  [ ok ] gh: gh version 2.97.0 (2026-07-31)
   [ ok ] gh auth: authenticated
 
 Pinned dependencies
-  [ ok ] PATH includes <your-home>/.local/bin
+  [ ok ] PATH includes /Users/austin/.local/bin
   [ ok ] bd: 1.1.0 (pinned)
   [ ok ] dolt: 2.2.2
   [ ok ] gc: 1.4.0 (at or above the pinned 1.4.0)
 
 Dolt identity
-  [ ok ] dolt identity: Your Name <you@example.com>
+  [ ok ] dolt identity: Austin Born <austin@shinzolabs.com>
 
 Local path
+  [ ok ] workspace: /Users/austin/software-factory-intensive
   [ ok ] home directory is writable
 
 PREFLIGHT: PASS
@@ -191,9 +164,7 @@ PREFLIGHT: PASS
 
 ### 4. Sign in to GitHub
 
-This step signs in *the machine you type on*. A hosted box keeps its own separate GitHub credential and offers the same choice by a different command, covered in [Signing the box in with a token](#signing-the-box-in-with-a-token).
-
-The `gh auth` check is the one line in preflight that needs your GitHub account. `gh auth login`, picking HTTPS, is the shortest route. It opens a browser and authorizes the GitHub CLI against your whole account.
+If you are not currently logged into GitHub, you will need to grant your software factory access to configure repos and push code.`gh auth login`, picking HTTPS, is the shortest route to login if necessary. It opens a browser and authorizes the GitHub CLI against your whole account.
 
 If you would rather not grant that, paste a personal access token instead. Both kinds of token work, but they go in by different commands and the two are not interchangeable.
 
