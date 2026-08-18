@@ -40,21 +40,18 @@ Getting onto the box is its own page. [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.
 **Copy and paste**
 
 ```bash
-cd bootstrap
-./preflight.sh --cloud
+sfbox preflight
 ```
-
-`--cloud` runs every local check first and then adds a "Cloud path" section.
 
 **Expected output**
 
 ```text
-Cloud path
-  [ ok ] sfbox: /path/to/sf-tutorial/participant-box-cli/sfbox
-  [ ok ] box credential: <boxId>
-  [ ok ] box reachable: ssh, gc and the Gas City service all answered
-
-PREFLIGHT: PASS
+==> Checking 'factory-cloud-aborn-2' (ubuntu@34.200.237.69) ...
+==>   ssh            reachable
+==>   gc             installed
+==>   gas-city.service  inactive — no city on this box yet
+==>   Nothing is broken. This box supplies the environment and you build the
+==>   city yourself, so the service stays down until there is one to run.
 ```
 
 ## Running on your own machine (alternative)
