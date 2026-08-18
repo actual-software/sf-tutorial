@@ -57,7 +57,7 @@ Register the rig as a **sibling** of the city, the same shape [W3](./W3-run-your
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
 git clone <your-repo-url> ../<your-rig-name>
 gc rig add ../<your-rig-name> <your-rig-name>
 export MY_RIG_PATH="$(cd ../<your-rig-name> && pwd)"
@@ -71,14 +71,12 @@ gc rig list
 your rig listed alongside ascii-art, with a path and a prefix
 ```
 
-Add `MY_RIG_PATH` to your shell rc the same way W3 did for the other four. You will want it on Day 2.
-
 Then install the base factory into it, so your own rig has the same machinery `ascii-art` does:
 
 **Copy and paste**
 
 ```bash
-gc import add --rig <your-rig-name> "$ARTIFACTS_PATH/packs/base-factory"
+gc import add --rig <your-rig-name> "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/base-factory"
 gc import list --rig <your-rig-name>
 ```
 
@@ -90,7 +88,7 @@ A **project overview** is a loosely structured document answering a few question
 
 ```bash
 mkdir -p "$MY_RIG_PATH/docs/current"
-cp "$ARTIFACTS_PATH/docs/PROJECT_OVERVIEW.template.md" "$MY_RIG_PATH/docs/PROJECT_OVERVIEW.md"
+cp "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/docs/PROJECT_OVERVIEW.template.md" "$MY_RIG_PATH/docs/PROJECT_OVERVIEW.md"
 nano "$MY_RIG_PATH/docs/PROJECT_OVERVIEW.md"
 ```
 
@@ -142,7 +140,7 @@ bd create --title "<something you would struggle to explain to a new hire>" --ty
 The third one is deliberate. Sling it and watch what your factory does with an under-specified ask:
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
 gc sling --rig <your-rig-name> polecat <the-third-bead-id>
 ```
 
