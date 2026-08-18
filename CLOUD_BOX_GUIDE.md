@@ -49,22 +49,12 @@ chmod 600 "$SFI_KEY"
 
 `sfbox` is one bash script, and it ships in this repo under `participant-box-cli/`. There's nothing to build, and nothing to install past what you've already got: bash, ssh, and curl.
 
-Clone the repo if you haven't already.
-
-```bash
-```bash
-cd $HOME && mkdir software-factory-intensive
-cd software-factory-intensive
-export SOFTWARE_FACTORY_INTENSIVE_PATH="$(pwd)"
-git clone https://github.com/actual-software/sf-tutorial.git
-```
-
-Now put `sfbox` on your `PATH`, from the directory holding your clone.
+Put `sfbox` on your `PATH`, from the directory holding your clone.
 
 **Copy and paste**
 
 ```bash
-export PATH="$PWD/sf-tutorial/participant-box-cli:$PATH"
+export PATH="$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/participant-box-cli:$PATH"
 sfbox --help
 ```
 
@@ -76,7 +66,6 @@ Add both of these environment variables to your shell for future use:
 cat <<EOF >> ~/.zshrc
 export SFI_KEY=$HOME/Downloads/key.pem
 export PATH="$PWD/sf-tutorial/participant-box-cli:$PATH"
-export SOFTWARE_FACTORY_INTENSIVE_PATH="$(pwd)"
 EOF
 ```
 
@@ -86,7 +75,6 @@ EOF
 cat <<EOF >> ~/.bashrc
 export SFI_KEY=$HOME/Downloads/key.pem
 export PATH="$PWD/sf-tutorial/participant-box-cli:$PATH"
-export SOFTWARE_FACTORY_INTENSIVE_PATH="$(pwd)"
 EOF
 ```
 
