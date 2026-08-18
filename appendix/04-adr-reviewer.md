@@ -33,9 +33,9 @@ By the end of this exercise you will have an architecture-aware `architect` agen
   `main` is live, the `epic/*` ruleset is active, `.github/CODEOWNERS`
   is on `main` with your handle, and `f.md` merged through the gate.
 - You're inside the rig directory. If you opened a fresh shell,
-  re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and
-  `$ARTIFACTS_PATH` per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then
-  `cd "$ASCII_ART_PATH"`.
+  re-export `$SOFTWARE_FACTORY_INTENSIVE_PATH` per
+  [W2 Cloud Box and Preflight](../progression/W2-cloud-box-and-preflight.md), then
+  `cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art"`.
 - `gh` is authenticated and can create PRs against the rig's GitHub
   repo. Verify with `gh auth status` and `gh repo view`.
 - `jq` is installed (the new formulas use it).
@@ -210,12 +210,12 @@ Inspect the pack before installing:
 **Copy and paste**
 
 ```bash
-ls "$ARTIFACTS_PATH/packs/architect-rig/"
-cat "$ARTIFACTS_PATH/packs/architect-rig/pack.toml"
-cat "$ARTIFACTS_PATH/packs/architect-rig/agents/architect/agent.toml"
-cat "$ARTIFACTS_PATH/packs/architect-rig/agents/architect/prompt.template.md"
-cat "$ARTIFACTS_PATH/packs/architect-rig/formulas/mol-architect-review.formula.toml"
-cat "$ARTIFACTS_PATH/packs/architect-rig/formulas/mol-refinery-architect-patrol.formula.toml"
+ls "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/pack.toml"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/agents/architect/agent.toml"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/agents/architect/prompt.template.md"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/formulas/mol-architect-review.formula.toml"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig/formulas/mol-refinery-architect-patrol.formula.toml"
 ```
 
 You should see `pack.toml`, an `agents/architect/` directory with
@@ -244,13 +244,13 @@ Copy the pack into the city's `packs/` directory:
 **Copy and paste**
 
 ```bash
-mkdir -p "$FACTORY_PATH/packs"
+mkdir -p "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs"
 
 # Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
-rm -rf "$FACTORY_PATH/packs/architect-rig"
+rm -rf "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/architect-rig"
 
-cp -r "$ARTIFACTS_PATH/packs/architect-rig" \
-      "$FACTORY_PATH/packs/architect-rig"
+cp -r "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/architect-rig" \
+      "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/architect-rig"
 ```
 
 Confirm the pack landed flat, with a single `pack.toml` at its top level:
@@ -258,13 +258,13 @@ Confirm the pack landed flat, with a single `pack.toml` at its top level:
 **Copy and paste**
 
 ```bash
-find "$FACTORY_PATH/packs/architect-rig" -name pack.toml
+find "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/architect-rig" -name pack.toml
 ```
 
 **Expected output**
 
 ```text
-$FACTORY_PATH/packs/architect-rig/pack.toml
+$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/architect-rig/pack.toml
 ```
 
 Now register the new import at rig scope and remove the now-superseded
@@ -273,7 +273,7 @@ Now register the new import at rig scope and remove the now-superseded
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
 
 # Add the new pack at rig scope.
 gc import add --rig ascii-art packs/architect-rig
@@ -352,7 +352,7 @@ Letters a–f have merged through pages 01–03. List the remaining open
 **Copy and paste**
 
 ```bash
-cd "$ASCII_ART_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art"
 bd list --type=task --status=open --limit 0 | grep "Implement [g-i]\.md"
 ```
 
@@ -378,7 +378,7 @@ reassignment from the refinery, not by a new dispatch verb:
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
 gc sling ascii-art/architect-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -541,7 +541,7 @@ merge:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view "$PR" --web
 ```
@@ -579,9 +579,9 @@ Commit and push to `main`. Then sling `h.md`:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement h\.md$" | awk '{print $2}')
-cd $FACTORY_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
 gc sling ascii-art/architect-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -674,7 +674,7 @@ Confirm the new letter on `origin/main`:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 git fetch origin && git pull
 git log --oneline origin/main -1
 ls ascii/g.md

@@ -30,11 +30,11 @@ By the end of this exercise you will have three letters from the `letters-a-m` e
 - Pages [W3 Run Your Factory](../progression/W3-run-your-factory.md), [W3 Run Your Factory](../progression/W3-run-your-factory.md),
   and [W3 Run Your Factory](../progression/W3-run-your-factory.md) complete: city stood up with setup
   pack imported, rig registered with locked docs in place, 138 beads seeded,
-  `main` pushed to GitHub, and `$ASCII_ART_PATH`/`$ARTIFACTS_PATH` exported in your
+  `main` pushed to GitHub, and `$SOFTWARE_FACTORY_INTENSIVE_PATH` exported in your
   shell.
 - You're inside the rig directory. If you opened a fresh shell, re-export
-  `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and `$ARTIFACTS_PATH`
-  per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then `cd "$ASCII_ART_PATH"`.
+  `$SOFTWARE_FACTORY_INTENSIVE_PATH` per
+  [W2 Cloud Box and Preflight](../progression/W2-cloud-box-and-preflight.md), then `cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art"`.
 - `gh` is authenticated and can create PRs against the rig's GitHub repo.
   Verify with `gh auth status` and `gh repo view`.
 - `jq` is installed (the new formulas use it).
@@ -140,10 +140,10 @@ Inspect the packs before installing:
 **Copy and paste**
 
 ```bash
-ls "$ARTIFACTS_PATH/packs/pr-gate-city/"
-ls "$ARTIFACTS_PATH/packs/pr-gate-rig/"
-cat "$ARTIFACTS_PATH/packs/pr-gate-rig/formulas/mol-polecat-pr.formula.toml"
-cat "$ARTIFACTS_PATH/packs/pr-gate-rig/formulas/mol-refinery-pr-patrol.formula.toml"
+ls "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-city/"
+ls "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-rig/"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-rig/formulas/mol-polecat-pr.formula.toml"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-rig/formulas/mol-refinery-pr-patrol.formula.toml"
 ```
 
 `pr-gate-city/` contains `pack.toml` and an `agents/mayor/` directory
@@ -156,16 +156,16 @@ Copy both packs into the city's `packs/` directory:
 **Copy and paste**
 
 ```bash
-mkdir -p "$FACTORY_PATH/packs"
+mkdir -p "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs"
 
 # Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
-rm -rf "$FACTORY_PATH/packs/pr-gate-city" "$FACTORY_PATH/packs/pr-gate-rig"
+rm -rf "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/pr-gate-city" "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/pr-gate-rig"
 
-cp -r "$ARTIFACTS_PATH/packs/pr-gate-city" \
-      "$FACTORY_PATH/packs/pr-gate-city"
+cp -r "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-city" \
+      "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/pr-gate-city"
 
-cp -r "$ARTIFACTS_PATH/packs/pr-gate-rig" \
-      "$FACTORY_PATH/packs/pr-gate-rig"
+cp -r "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-rig" \
+      "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/pr-gate-rig"
 ```
 
 Confirm both packs landed flat, with a single `pack.toml` at the top level of each:
@@ -173,14 +173,14 @@ Confirm both packs landed flat, with a single `pack.toml` at the top level of ea
 **Copy and paste**
 
 ```bash
-find "$FACTORY_PATH/packs/pr-gate-city" "$FACTORY_PATH/packs/pr-gate-rig" -name pack.toml
+find "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/pr-gate-city" "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/pr-gate-rig" -name pack.toml
 ```
 
 **Expected output**
 
 ```text
-$FACTORY_PATH/packs/pr-gate-city/pack.toml
-$FACTORY_PATH/packs/pr-gate-rig/pack.toml
+$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/pr-gate-city/pack.toml
+$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/pr-gate-rig/pack.toml
 ```
 
 Now register both packs as imports. `gc import add` is the supported
@@ -191,7 +191,7 @@ city directory:
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
 
 # City scope — pr-gate-city supplies the city-scoped mayor agent.
 gc import add packs/pr-gate-city
@@ -225,7 +225,7 @@ Now hand the mayor's role to the pack. Remove the city's own `mayor` agent, then
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
 rm -rf agents/mayor
 
 sed '/^\[\[named_session\]\]/,/^[[:space:]]*mode = /d' pack.toml > pack.toml.tmp
@@ -274,7 +274,7 @@ List the open `Implement <letter>.md` tasks and grab the first three:
 **Copy and paste**
 
 ```bash
-cd "$ASCII_ART_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art"
 bd list --type=task --status=open --limit 0 | grep "Implement [a-c]\.md"
 ```
 
@@ -303,7 +303,7 @@ pr-gate formula:
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
 gc sling ascii-art/pr-gate-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -384,7 +384,7 @@ METADATA
   gc.routed_to: ascii-art/pr-gate-rig.polecat
   molecule_id: aa-vlh
   target_file: ascii/a.md
-  work_dir: $FACTORY_PATH/.gc/worktrees/ascii-art/polecats/pr-gate-rig.furiosa/worktrees/aa-985.2
+  work_dir: $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/.gc/worktrees/ascii-art/polecats/pr-gate-rig.furiosa/worktrees/aa-985.2
 
 PARENT
   ↑ ○ aa-52p: sling-aa-985.2 ● P2
@@ -466,7 +466,7 @@ Open the PR and look at the diff:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view $PR
 gh pr view $PR --web   # open in browser
@@ -482,16 +482,16 @@ gate clear, manually merge the PR:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement b\.md$" | awk '{print $2}')
 
-cd $FACTORY_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
 gc sling ascii-art/pr-gate-rig.polecat $BEAD_ID --on mol-polecat-pr
 
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement c\.md$" | awk '{print $2}')
 
-cd $FACTORY_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
 gc sling ascii-art/pr-gate-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -538,7 +538,7 @@ Three new commits on `origin/main` from the polecat/refinery → PR cycle:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 git fetch origin && git pull
 git log --oneline origin/main -3
 ```
@@ -555,7 +555,7 @@ Three pull requests exist on the rig's GitHub repo:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 gh pr list --state=merged --limit 5
 ```
 

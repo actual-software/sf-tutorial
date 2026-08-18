@@ -33,9 +33,9 @@ By the end of this exercise you will have installed the `review-loop-rig` pack a
   `pr-gate-rig` are imported, `a.md`/`b.md`/`c.md` are merged via PR,
   the refinery is running on `mol-refinery-pr-patrol`.
 - You're inside the rig directory. If you opened a fresh shell,
-  re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and
-  `$ARTIFACTS_PATH` per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then
-  `cd "$ASCII_ART_PATH"`.
+  re-export `$SOFTWARE_FACTORY_INTENSIVE_PATH` per
+  [W2 Cloud Box and Preflight](../progression/W2-cloud-box-and-preflight.md), then
+  `cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art"`.
 - `gh` is authenticated and can create PRs against the rig's GitHub
   repo. Verify with `gh auth status` and `gh repo view`.
 - `jq` is installed (the new formula uses it).
@@ -129,9 +129,9 @@ Inspect the pack before installing:
 **Copy and paste**
 
 ```bash
-ls "$ARTIFACTS_PATH/packs/review-loop-rig/"
-cat "$ARTIFACTS_PATH/packs/review-loop-rig/pack.toml"
-cat "$ARTIFACTS_PATH/packs/review-loop-rig/formulas/mol-refinery-review-loop-patrol.formula.toml"
+ls "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/review-loop-rig/"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/review-loop-rig/pack.toml"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/review-loop-rig/formulas/mol-refinery-review-loop-patrol.formula.toml"
 ```
 
 You should see `pack.toml`, a `formulas/` directory with one
@@ -142,13 +142,13 @@ Copy the pack into the city's `packs/` directory:
 **Copy and paste**
 
 ```bash
-mkdir -p "$FACTORY_PATH/packs"
+mkdir -p "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs"
 
 # Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
-rm -rf "$FACTORY_PATH/packs/review-loop-rig"
+rm -rf "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/review-loop-rig"
 
-cp -r "$ARTIFACTS_PATH/packs/review-loop-rig" \
-      "$FACTORY_PATH/packs/review-loop-rig"
+cp -r "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/review-loop-rig" \
+      "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/review-loop-rig"
 ```
 
 Confirm the pack landed flat, with a single `pack.toml` at its top level:
@@ -156,13 +156,13 @@ Confirm the pack landed flat, with a single `pack.toml` at its top level:
 **Copy and paste**
 
 ```bash
-find "$FACTORY_PATH/packs/review-loop-rig" -name pack.toml
+find "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/review-loop-rig" -name pack.toml
 ```
 
 **Expected output**
 
 ```text
-$FACTORY_PATH/packs/review-loop-rig/pack.toml
+$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1/packs/review-loop-rig/pack.toml
 ```
 
 Now register the new import at rig scope and remove the now-redundant
@@ -171,7 +171,7 @@ direct `pr-gate-rig` import. Run from the city directory:
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
 
 # Add the new pack at rig scope.
 gc import add --rig ascii-art packs/review-loop-rig
@@ -241,7 +241,7 @@ Three letters merged on the basic flow. List the remaining open `Implement
 **Copy and paste**
 
 ```bash
-cd "$ASCII_ART_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art"
 bd list --type=task --status=open --limit 0 | grep "Implement [d-f]\.md"
 ```
 
@@ -265,7 +265,7 @@ side, so the polecat dispatch is unchanged:
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
 gc sling ascii-art/review-loop-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -433,7 +433,7 @@ and is done; an approval block on the second patrol is a separate concern.
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view $PR
 gh pr view $PR --web   # open in browser
@@ -450,10 +450,10 @@ patrol, manually merge:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement e\.md$" | awk '{print $2}')
 
-cd $FACTORY_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
 gc sling ascii-art/review-loop-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -491,7 +491,7 @@ What's still missing:
 
 ```bash
 # 1. Two new commits on origin/main from the polecat → loop → polecat → refinery → PR cycle.
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 git fetch origin && git pull
 git log --oneline origin/main
 ```
@@ -519,7 +519,7 @@ at least 5 merged PRs total (a, b, c from the basic flow plus d, e from this pag
 **Copy and paste**
 
 ```bash
-# 3. Worktrees cleaned up — only the main worktree remains in $ASCII_ART_PATH
+# 3. Worktrees cleaned up — only the main worktree remains in $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 git worktree list
 ```
 

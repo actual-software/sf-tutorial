@@ -607,14 +607,14 @@ Check the scope you asked about: `base-factory` is a rig import (`gc import list
 
 ### `bd list` returns "No issues found" right after `seed-epics.sh`
 
-You ran the script outside the rig, so the beads went into a different database. Run `pwd`; if you are not at `$ASCII_ART_PATH`, `cd` there and re-run it.
+You ran the script outside the rig, so the beads went into a different database. Run `pwd`; if you are not at `$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art`, `cd` there and re-run it.
 
-### A fresh shell prints `FACTORY_PATH=` with nothing after it
+### A fresh shell prints `SOFTWARE_FACTORY_INTENSIVE_PATH=` with nothing after it
 
-Step 10's append ran from a shell where the four vars were empty, so it wrote four empty exports. Re-running it appends four more rather than fixing anything. Find the bad lines, delete them by hand, re-export, then re-run step 10:
+The rc append in [W2](./W2-cloud-box-and-preflight.md) ran from a shell where the variable was still empty, so it wrote an empty export. Re-running it appends a second empty one rather than fixing the first. Find the bad line, delete it by hand, re-export, then re-run the append:
 
 ```bash
-grep -n 'export \(FACTORY\|ASCII_ART\|TUTORIAL\|ARTIFACTS\)_PATH=""' ~/.bashrc ~/.zshrc
+grep -n 'export SOFTWARE_FACTORY_INTENSIVE_PATH=""' ~/.bashrc ~/.zshrc
 ```
 
 ### Recurring breakage after reinstalling `gc` or `bd`

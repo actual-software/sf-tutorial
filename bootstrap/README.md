@@ -43,7 +43,7 @@ Runs the work for 00.1 *and* 00.2, then stops. Your factory now looks like it wo
 
 **Mental model:** `./bootstrap.sh <step>` answers "make my factory look like I just finished `<step>`," not "make my factory ready for me to start `<step>`."
 
-**Then paste the export block the run prints.** The script sets `FACTORY_PATH`, `ASCII_ART_PATH`, `TUTORIAL_PATH` and `ARTIFACTS_PATH` in its own child process, so they do not reach the shell you launched it from. Every run ends by printing them in paste-ready form; do that before you continue, and before you append them to a shell rc on [W3 Run Your Factory](../progression/W3-run-your-factory.md).
+**Then paste the export line the run prints.** The script reads `SOFTWARE_FACTORY_INTENSIVE_PATH` from `.env` into its own child process, so it does not reach the shell you launched it from. Every run ends by printing it in paste-ready form; do that before you continue, and before you append it to a shell rc on [W2 Cloud Box and Preflight](../progression/W2-cloud-box-and-preflight.md).
 
 ## About the Bootstrap Script
 
