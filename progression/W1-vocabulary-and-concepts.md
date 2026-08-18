@@ -7,7 +7,7 @@
 - [Objective](#objective)
 - [Prereqs](#prereqs)
 - [What a software factory is](#what-a-software-factory-is)
-- [Machine, city, rig](#machine-city-rig)
+- [Machine to City to Rig](#machine-to-city-to-rig)
 - [The vocabulary](#the-vocabulary)
   - [Where work lives](#where-work-lives)
   - [Who does the work](#who-does-the-work)
@@ -31,15 +31,13 @@ None. If you have run the [Actual Factory Demo](https://github.com/actual-softwa
 
 ## What a software factory is
 
-A coding agent is one worker. You give it a task, it works, you read the result. Scaling that up means running more of them, and the moment you do, the interesting problems stop being about the agent and start being about everything around it. Who decides what gets worked on. What happens when two agents want the same file. How a review happens when the reviewer is also an agent. What wakes something up when there is nothing to react to.
+A coding agent is one worker. You give it a task, it works, you read the result. Scaling that up means running more of them, in parallel, with the ability to coordinate work between each other. The moment you do this, the interesting problems stop being about the agent and start being about everything around it. Who decides what gets worked on? What happens when two agents want the same file? How does a review happen when the reviewer is also an agent? What wakes an agent up when there is something to react to?
 
 A software factory is the layer that answers those. It is the infrastructure above individual coding agents: the queue, the roles, the review gates, the schedules, and the record of what happened. Gas City is one implementation of that layer, and its bet is that these concerns are general. Once the primitives exist, a code-review pipeline, a research pipeline and an ops-automation pipeline are the same machinery with different agents plugged in.
 
-The practical consequence for the next two days: you are not going to write agents. You are going to configure a factory, and the agents come from packs.
+The practical consequence for the next two days: you are not going to write agents. You are going to configure a factory, and the agents are simply one element of that configuration.
 
-## Machine, city, rig
-
-Three levels, and mixing them up is the most common early confusion. They nest.
+## Machine to City to Rig
 
 ```mermaid
 graph TB
@@ -139,8 +137,6 @@ They sit at different points in a three-way trade-off.
 
 **Addressing.** Is it aimed at a pool, at one named agent, or visible to everyone? Tasks broadcast to whoever is eligible. An attach reaches exactly one session.
 
-Here is the part worth carrying into the rest of the curriculum. **A mail nobody reads and a status nobody polls look identical from the outside.** Both are silence. What differs is which primitive you chose, and therefore where you look when the factory goes quiet at two in the morning.
-
 One rule of thumb survives contact with real factories: **tasks are the default and everything else is the exception.** When a handoff seems to want mail instead of a bead, ask first whether a bead would carry the same intent more durably. You will use all five by hand in [W4](./W4-tour-the-factory.md) and write down which one carries which handoff in your own factory.
 
 ## What you are about to build
@@ -160,9 +156,32 @@ Day 2 is spent extending that factory with options you choose, and pointing the 
 You are ready to move on if you can answer these without looking back:
 
 1. Your laptop runs two cities. Where does the mayor live, and how many mayors are there?
+  <details>
+    <summary>Answer</summary>
+    
+    The mayor lives at the city level, so there are two mayors running on your laptop.
+  </details>
+
 2. You install a pack at city scope, and the agent it defines never appears in your rig. What is the likely cause?
+  <details>
+    <summary>Answer</summary>
+
+    The agent was never imported at the rig level, so is not visible within the rig scope.
+  </details>
+
 3. A bead is sitting open and nothing has picked it up. Which coordination channel was supposed to move it, and which one would you reach for to recover?
+<details>
+  <summary>Answer</summary>
+  
+  The `task` coordination channel is responsible for routing beads. You may wish to send `mail` to the mayor to explain that the task was not picked up as expected.
+</details>
+
 4. What is the difference between an agent and a session?
+<details>
+  <summary>Answer</summary>
+  
+  An agent is the definition of the provider, prompts and skills related to an agent profile, and a session is a running instance of an agent.
+</details>
 
 ## What's next
 
