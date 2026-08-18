@@ -29,22 +29,33 @@
 #   7. A `[[patches.agent]]` that overrides the refinery prompt to
 #      point at `mol-refinery-domain-patrol`.
 #
-# Install (replaces architect-rig's single-architect flow with the
+# Install (replaces the base factory's single-architect flow with the
 # four-lane flow):
-#   gc import add --rig <rig-name> packs/domain-reviewers-rig
-#   gc import remove --rig <rig-name> bead-builders-rig
+#   gc import add --rig <rig-name> artifacts/packs/domain-reviewers-rig
 #
-# domain-reviewers-rig imports bead-builders-rig directly (which
-# transitively imports bead-gate-rig → architect-rig → pr-gate-rig
-# → setup), so the project-manager, the three Leads, and the
-# polecat / refinery flow remain resolvable.
+# domain-reviewers-rig imports architect-rig, the base factory's top
+# node, so the polecat / refinery flow and the patrol formula this
+# pack's own patrol extends remain resolvable. It does not import any
+# other option, and no other option has to be installed first: the
+# four reviewer agents and the patrol that fans out to them all ship
+# here.
+#
+# WHAT THREE OF THE FOUR LANES DO ON THE BARE BASE FACTORY: they
+# defer. The design, testing and docs reviewers each read a spec the
+# bead-builders Leads write (`metadata.design_doc`, `test_plan`,
+# `docs_outline`), and each is written to stamp its lane approved with
+# a deferral note when that field is unset rather than block on it. So
+# on the base factory alone this option is a real ADR review plus three
+# lanes that pass through, and installing the bead builders option as
+# well is what turns the other three on. That is by design: the Leads
+# are the spec authors and these reviewers are not.
 
 [pack]
 name = "domain-reviewers-rig"
 schema = 1
 
-[imports.bead-builders-rig]
-source = "../bead-builders-rig"
+[imports.architect-rig]
+source = "../architect-rig"
 
 [[patches.agent]]
 name = "refinery"

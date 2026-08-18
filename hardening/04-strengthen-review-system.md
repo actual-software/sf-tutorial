@@ -10,7 +10,7 @@
   - [2. Sling a clean bead through the standard pipeline up to the polecat](#2-sling-a-clean-bead-through-the-standard-pipeline-up-to-the-polecat)
   - [3. Sling the three vendor reviewers in parallel](#3-sling-the-three-vendor-reviewers-in-parallel)
   - [4. Sling the synthesizer](#4-sling-the-synthesizer)
-  - [5. Sling the other three lanes and watch the refinery aggregate](#5-sling-the-other-three-lanes-and-watch-the-refinery-aggregate)
+  - [5. Watch the refinery pick the verdict up](#5-watch-the-refinery-pick-the-verdict-up)
   - [6. Demonstrate vendor disagreement on a deliberately weak bead](#6-demonstrate-vendor-disagreement-on-a-deliberately-weak-bead)
   - [7. Reflect — Tutorial complete](#7-reflect--tutorial-complete)
 - [Verification](#verification)
@@ -21,14 +21,14 @@
 
 By the end of this exercise you will have:
 
-- The `multi-vendor-rig` pack installed into the `ascii-art` rig, with `principles-loop-rig` removed from the rig's direct imports (it loads transitively).
+- The `multi-vendor-rig` pack installed into the `ascii-art` rig, sitting directly on the base factory.
 - Three CLI providers (`codex`, `claude`, `gemini`) verified as installed and authenticated on the host.
-- A clean bead carried through the standard pipeline (Leads → `project-manager` → `polecat`), then reviewed by three vendor-pinned reviewers in parallel and fused by a `synthesizer`.
+- A clean bead carried through the base factory's pipeline to the polecat, then reviewed by three vendor-pinned reviewers in parallel and fused by a `synthesizer`.
 - A deliberately weak bead that exercises vendor disagreement, the synthesizer's majority rule, and the refinery's bounce path.
 
 ## Prereqs
 
-- Hardening 3 complete: `principles-loop-rig` is installed, the per-principle audit trail is wired, and at least one bead has been through the principles loop end-to-end.
+- [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on a rig, with the polecat, refinery and architect running.
 - **Three CLI providers** installed and authenticated on the host running the pool: `codex`, `claude`, `gemini`. Each provider is installed separately; check the Gas City installation docs (or each provider's own docs) for current install instructions. Verify each:
 
   **Copy and paste**
@@ -39,8 +39,10 @@ By the end of this exercise you will have:
   gemini --version
   ```
 
-  If any provider is missing, you can either skip H4 and stay on the single-vendor flow, or run with two providers (majority rule still works at 2/2; at 1/1 the synthesizer always says `false` — see Troubleshooting).
-- You're inside the rig directory. If a fresh shell, re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and `$ARTIFACTS_PATH` per [00.3](../progression/00.3-setup-foundation.md), then:
+  If any provider is missing, you can either pick a different option and stay on the single-vendor flow, or run with two providers (majority rule still works at 2/2; at 1/1 the synthesizer always says `false` — see Troubleshooting).
+
+**This option needs no other option.** It installs on the base factory and replaces the single architecture reviewer with three. The synthesizer stamps `architect_approved`, which is the field the base factory's refinery patrol already gates on, so the fan-out is invisible from the refinery's side: it sees one architecture verdict, the same as before.
+- You're inside the rig directory. If a fresh shell, re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and `$ARTIFACTS_PATH` per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then:
 
   **Copy and paste**
 
@@ -52,11 +54,11 @@ By the end of this exercise you will have:
 
 ## Context
 
-Branching/merging strategy is unchanged from page 04. What changes here is the *vendor diversity* of the ADR-lane review. The single `adr-reviewer` (H2) — and its principles-loop variant (H3) — runs against whichever model your harness pins. A single LLM is a single point of view; the cheapest way to harden a code review is to ask two more reviewers who were trained differently and synthesize their answers. This page does exactly that: three vendor-pinned reviewer agents (`reviewer-codex`, `reviewer-claude`, `reviewer-gemini`) run in parallel against the same diff and the same ADR corpus; a `synthesizer` agent reads all three verdicts and applies majority rule.
+Branching/merging strategy is unchanged from the base factory's architect. What changes here is the *vendor diversity* of the architecture review. The base factory's single architect runs against whichever model your harness pins. A single LLM is a single point of view; the cheapest way to harden a code review is to ask two more reviewers who were trained differently and synthesize their answers. This page does exactly that: three vendor-pinned reviewer agents (`reviewer-codex`, `reviewer-claude`, `reviewer-gemini`) run in parallel against the same diff and the same ADR corpus; a `synthesizer` agent reads all three verdicts and applies majority rule.
 
 Agent workflow with the multi-vendor fan-out in place:
 
-1. The **operator** runs the H1 Leads, `project-manager`, and `polecat` as in earlier hardening pages. (Unchanged.)
+1. The **operator** slings the `polecat` as on the base factory. (Unchanged.)
 1. The **polecat** publishes a feature branch and reassigns to the refinery. (Unchanged.)
 1. The **operator** slings the three vendor reviewers at the bead in parallel:
 
@@ -77,17 +79,17 @@ Agent workflow with the multi-vendor fan-out in place:
    gc sling <rig>/synthesizer <bead> --on mol-synthesize-reviews
    ```
 
-   The synthesizer reads the three verdicts, applies majority rule (≥ 2 of 3 approve → `adr_approved=true`; otherwise `false`), and writes a one-paragraph `synthesizer_summary` distilling points of agreement and disagreement.
-1. The **refinery** (H2's `verify-reviewers` step) reads the `adr_approved` value the synthesizer wrote, alongside `design_approved`, `testing_approved`, `docs_approved` from the other three lanes — and aggregates as before. From the refinery's point of view, the ADR lane looks the same as it did in H2; the fan-out is invisible to it.
-1. The **merger** (human, plus branch protection from page 03) reads the four-lane verdict trail (with `synthesizer_summary` as the most useful single artifact for the ADR lane) and clicks **Merge**.
+   The synthesizer reads the three verdicts, applies majority rule (≥ 2 of 3 approve → `architect_approved=true`; otherwise `false`), and writes a one-paragraph `synthesizer_summary` distilling points of agreement and disagreement.
+1. The **refinery** reads the `architect_approved` value the synthesizer wrote and proceeds as it always does. From the refinery's point of view this looks exactly like the single architect it already had; the fan-out is invisible to it.
+1. The **merger** (human, plus branch protection from branch protection) reads the four-lane verdict trail (with `synthesizer_summary` as the most useful single artifact for the ADR lane) and clicks **Merge**.
 
-The vendor reviewers do **not** push code, share state with each other, or write to the cross-vendor `adr_approved` field. The synthesizer does **not** read the diff; it only fuses what the three vendors wrote.
+The vendor reviewers do **not** push code, share state with each other, or write to the `architect_approved` field themselves. The synthesizer does **not** read the diff; it only fuses what the three vendors wrote.
 
 ## Walkthrough
 
 ### 1. Install the multi-vendor-rig pack into factory1
 
-H3 added depth along the ADR lane (per-principle scoring) but the scoring still came from a single vendor. A second-opinion review from an independent model would catch principle-scoring blind spots and surface honest disagreements about what "compliant" means.
+The base factory's architecture review comes from a single vendor, so its blind spots are systematic rather than random. A second opinion from an independently trained model catches what one model consistently misses, and surfaces honest disagreement about what "compliant" means.
 
 This ships as a single rig-scoped pack, **`multi-vendor-rig`**, that fans out the ADR lane:
 
@@ -95,9 +97,9 @@ This ships as a single rig-scoped pack, **`multi-vendor-rig`**, that fans out th
 - A new `synthesizer` agent that reads the three vendor verdicts and applies majority rule.
 - Four new formulas: three vendor reviewer formulas (`mol-vendor-codex-review`, `mol-vendor-claude-review`, `mol-vendor-gemini-review`) and one synthesis formula (`mol-synthesize-reviews`).
 
-The H2 refinery's `verify-reviewers` step is **unchanged**. The synthesizer writes `adr_approved` (true or false) — the same field the H2 `adr-reviewer` wrote — so from the refinery's point of view the ADR lane looks identical to H2. Manual sling is the entry point in this lesson; auto-dispatch from the refinery (so the operator doesn't have to remember to sling four reviewers per bead) is left as a final exercise.
+The refinery's patrol is **unchanged**. The synthesizer writes `architect_approved` (true or false), the same field the base factory's architect writes, so the refinery cannot tell the difference. Manual sling is the entry point in this lesson; auto-dispatch from the refinery, so the operator doesn't have to remember to sling four reviewers per bead, is left as a final exercise.
 
-The other three domain lanes (design, testing, docs) continue to use their H2 single-vendor reviewers. Multi-vendor fan-out for those lanes follows the same pattern as the ADR lane and is left as an exercise.
+If you also installed the [domain reviewers](./02-specialize-reviewers-per-domain.md) option, its design, testing and docs lanes stay single-vendor. Fanning those out across vendors follows the same pattern shown here and is left as an exercise.
 
 Inspect the pack:
 
@@ -116,7 +118,7 @@ What to notice:
 
 - **Three identical rubrics.** The shared `vendor-reviewer.template.md` is loaded by all three vendor agents. They differ only in `provider`. Identical rubric is deliberate: only the model varies, not the read.
 - **Synthesizer is not a fourth reviewer.** Its prompt explicitly says "do NOT read the diff yourself." It reads only what the three vendors stamped.
-- **Majority rule, no synthesis-by-LLM tricks.** The synthesizer counts `true` verdicts; ≥ 2 of 3 stamps `adr_approved=true`. The one-paragraph `synthesizer_summary` is for the operator's benefit; the gate is the count.
+- **Majority rule, no synthesis-by-LLM tricks.** The synthesizer counts `true` verdicts; ≥ 2 of 3 stamps `architect_approved=true`. The one-paragraph `synthesizer_summary` is for the operator's benefit; the gate is the count.
 
 Copy the pack into the city's `packs/` directory:
 
@@ -153,8 +155,11 @@ Register the new import at rig scope:
 ```bash
 cd "$FACTORY_PATH"
 
-gc import add --rig ascii-art packs/multi-vendor-rig
-gc import remove --rig ascii-art principles-loop-rig
+gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/multi-vendor-rig"
+
+# Nothing is removed. This option sits alongside the base factory,
+# which keeps its orders and resolves the shared packs once.
+
 ```
 
 The rig should now import `multi-vendor-rig` and no longer import `principles-loop-rig`.
@@ -199,19 +204,12 @@ cd "$ASCII_ART_PATH"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement n\.md$" | awk '{print $2}')
 
 cd $FACTORY_PATH
-gc sling ascii-art/multi-vendor-rig.design-lead $BEAD_ID --on mol-design-spec
-gc sling ascii-art/multi-vendor-rig.test-lead   $BEAD_ID --on mol-test-spec
-gc sling ascii-art/multi-vendor-rig.doc-lead    $BEAD_ID --on mol-doc-spec
-cd $ASCII_ART_PATH
-git add docs/design docs/testing docs/outlines && git commit -m "docs(specs): pre-PM specs for $BEAD_ID" && git push origin main
-
-cd $FACTORY_PATH
-gc sling ascii-art/multi-vendor-rig.project-manager $BEAD_ID --on mol-bead-review
-# Wait for PASS; polecat picks up; refinery picks up.
+gc sling ascii-art/multi-vendor-rig.polecat $BEAD_ID --on mol-polecat-pr
+# Wait for the polecat to publish a branch and hand back to the refinery.
 watch -n 5 'gc bd show $BEAD_ID | grep -E "branch|pr_url|_approved"'
 ```
 
-When the polecat has pushed a branch and the bead is back at the refinery (with `adr_approved` and the other three lane fields all unset), proceed to step 3.
+When the polecat has pushed a branch and the bead is back at the refinery with `architect_approved` unset, proceed to step 3.
 
 ### 3. Sling the three vendor reviewers in parallel
 
@@ -291,12 +289,12 @@ gc session list
 gc session attach <synthesizer-session>
 ```
 
-The synthesizer reads the three verdicts, computes the count, and stamps `adr_approved` plus `synthesizer_summary`:
+The synthesizer reads the three verdicts, computes the count, and stamps `architect_approved` plus `synthesizer_summary`:
 
 **Copy and paste**
 
 ```bash
-gc bd show $BEAD_ID | grep -E "adr_approved|synthesizer_summary"
+gc bd show $BEAD_ID | grep -E "architect_approved|synthesizer_summary"
 ```
 
 Expected on a 2-of-3 approve case:
@@ -304,7 +302,7 @@ Expected on a 2-of-3 approve case:
 **Expected output**
 
 ```text
-adr_approved:           true
+architect_approved:           true
 synthesizer_summary:    Codex and Claude approve. Gemini rejected
                         citing ADR-0001 rule 3 (line width). Codex
                         and Claude explicitly read line width as
@@ -313,20 +311,27 @@ synthesizer_summary:    Codex and Claude approve. Gemini rejected
                         Forwarding as approved per majority.
 ```
 
-### 5. Sling the other three lanes and watch the refinery aggregate
+### 5. Watch the refinery pick the verdict up
 
-Run the three single-vendor lane reviewers from H2 (manually, or let the refinery's `verify-reviewers` auto-dispatch them).
+The synthesizer has stamped `architect_approved`, which is the one
+architecture verdict the base factory's refinery waits on. Its next
+patrol proceeds to `approval-review` and `merge-push` with nothing
+further to run.
+
+If you also installed the [domain reviewers](./02-specialize-reviewers-per-domain.md)
+option, that patrol waits on three more lanes. Run them, or let it
+dispatch them itself:
 
 **Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
-gc sling ascii-art/multi-vendor-rig.design-reviewer  $BEAD_ID --on mol-design-review
-gc sling ascii-art/multi-vendor-rig.testing-reviewer $BEAD_ID --on mol-testing-review
-gc sling ascii-art/multi-vendor-rig.docs-reviewer    $BEAD_ID --on mol-docs-review
+gc sling ascii-art/domain-reviewers-rig.design-reviewer  $BEAD_ID --on mol-design-review
+gc sling ascii-art/domain-reviewers-rig.testing-reviewer $BEAD_ID --on mol-testing-review
+gc sling ascii-art/domain-reviewers-rig.docs-reviewer    $BEAD_ID --on mol-docs-review
 ```
 
-The refinery's next patrol sees all four `*_approved` fields set and proceeds to `approval-review` and `merge-push`. Wait for the PR:
+Wait for the PR:
 
 **Copy and paste**
 
@@ -367,15 +372,8 @@ Run the standard pipeline:
 
 ```bash
 cd $FACTORY_PATH
-gc sling ascii-art/multi-vendor-rig.design-lead $WEAK_BEAD --on mol-design-spec
-gc sling ascii-art/multi-vendor-rig.test-lead   $WEAK_BEAD --on mol-test-spec
-gc sling ascii-art/multi-vendor-rig.doc-lead    $WEAK_BEAD --on mol-doc-spec
-cd $ASCII_ART_PATH
-git add docs/design docs/testing docs/outlines && git commit -m "docs(specs): pre-PM specs for $WEAK_BEAD" && git push origin main
-
-cd $FACTORY_PATH
-gc sling ascii-art/multi-vendor-rig.project-manager $WEAK_BEAD --on mol-bead-review
-# Wait for PASS, polecat to publish branch.
+gc sling ascii-art/multi-vendor-rig.polecat $WEAK_BEAD --on mol-polecat-pr
+# Wait for the polecat to publish the (weak) branch.
 watch -n 5 'gc bd show $WEAK_BEAD | grep -E "branch"'
 
 # Sling all three vendor reviewers.
@@ -395,9 +393,9 @@ What you should see:
   gc sling ascii-art/multi-vendor-rig.synthesizer $WEAK_BEAD --on mol-synthesize-reviews
   ```
 
-  Expected: `adr_approved=false`, `synthesizer_summary` names which vendors rejected and why.
-- The refinery's `verify-reviewers` reads `adr_approved=false`, increments `review_loops`, and bounces the bead to the polecat pool with the synthesizer's summary as the rejection reason.
-- The polecat picks up the bead, reads `review_feedback`, and re-implements. The cycle continues up to 2 rejection rounds before the refinery's H2 cap fires.
+  Expected: `architect_approved=false`, `synthesizer_summary` names which vendors rejected and why.
+- The refinery's `verify-reviewers` reads `architect_approved=false`, increments `review_loops`, and bounces the bead to the polecat pool with the synthesizer's summary as the rejection reason.
+- The polecat picks up the bead, reads `review_feedback`, and re-implements. The cycle continues up to 2 rejection rounds before the refinery's cap fires.
 
 Inspect the bead's notes after the loop runs:
 
@@ -417,7 +415,7 @@ gc bd show $WEAK_BEAD
 
 - **Scale up.** Raise pool concurrency, add rigs, run multiple repos under one city.
 - **Replace the deliverable.** ASCII letter files are an exercise. Swap them for the real work your team does — services, libraries, ML pipelines, infrastructure modules. The agent shape is stable; the rig content is yours.
-- **Auto-dispatch the multi-vendor fan-out.** Manual slinging of three vendor reviewers per bead is not how a hardened factory runs in production. Patch the H2 refinery's `verify-reviewers` step to auto-dispatch the three vendor formulas (and the synthesizer once they're done) the same way it dispatches the other three lanes. The pattern is in `mol-refinery-domain-patrol` — extend it.
+- **Auto-dispatch the multi-vendor fan-out.** Manual slinging of three vendor reviewers per bead is not how a hardened factory runs in production. Patch the refinery patrol to dispatch the three vendor formulas, and the synthesizer once they're done, the way it already dispatches the architect.
 - **Fan out the other three lanes.** What works for ADR works for design, testing, and docs. Three vendors per lane plus a synthesizer per lane gives you 12 reviewer wisps and 4 synthesizers per bead — costly, but the strongest review infrastructure short of a human review.
 - **Contribute back.** The packs in this tutorial are deliberately small. If your variant is useful, contribute it back to the Gas City community packs.
 
@@ -441,19 +439,19 @@ gc formula list \
 # mol-vendor-gemini-review, mol-synthesize-reviews.
 ```
 
-After running the three vendors and the synthesizer on `$BEAD_ID`, confirm the bead carries three vendor verdicts plus a synthesizer summary plus `adr_approved`:
+After running the three vendors and the synthesizer on `$BEAD_ID`, confirm the bead carries three vendor verdicts plus a synthesizer summary plus `architect_approved`:
 
 **Copy and paste**
 
 ```bash
-gc bd show $BEAD_ID | grep -E "vendor_|synthesizer_summary|adr_approved"
+gc bd show $BEAD_ID | grep -E "vendor_|synthesizer_summary|architect_approved"
 ```
 
 **Expected output**
 
 ```text
 # Three vendor_*_approved rows, optionally vendor_*_feedback,
-# synthesizer_summary, adr_approved.
+# synthesizer_summary, architect_approved.
 ```
 
 Confirm the letter landed on `origin/main`:
@@ -467,16 +465,18 @@ ls ascii/n.md
 
 ## Troubleshooting
 
-- **Provider X not installed.** The matching vendor reviewer cannot spawn. Either install the provider, or run the H4 flow with the remaining vendors. With two vendors, both must approve for the synthesizer to stamp `adr_approved=true`. With one, the synthesizer always says `false` (1 vote is not majority by design — adjust the synthesizer prompt if you want a different policy for solo-vendor mode).
-- **Synthesizer escalates with `<2 votes`.** The vendors posted `--comment` instead of approve / request-changes. (This is the GitHub self-author footgun from page 03 in disguise — the vendors are reviewing a feature branch, not a PR, so it shouldn't fire here. If it does, your vendor reviewer prompt is leaking PR-review semantics into a branch-review flow.)
+- **Provider X not installed.** The matching vendor reviewer cannot spawn. Either install the provider, or run this flow with the remaining vendors. With two vendors, both must approve for the synthesizer to stamp `architect_approved=true`. With one, the synthesizer always says `false` (1 vote is not majority by design — adjust the synthesizer prompt if you want a different policy for solo-vendor mode).
+- **Synthesizer escalates with `<2 votes`.** The vendors posted `--comment` instead of approve / request-changes. (This is the GitHub self-author footgun from branch protection in disguise — the vendors are reviewing a feature branch, not a PR, so it shouldn't fire here. If it does, your vendor reviewer prompt is leaking PR-review semantics into a branch-review flow.)
 - **Vendor stamps a value that isn't `true` or `false`.** The shared prompt explicitly says to write `true` or `false`. If a vendor wrote `yes` / `no` / `approved` / a free-form sentence, the synthesizer's count goes wrong. Edit the vendor reviewer prompt to be more emphatic about the literal stamp value.
-- **Synthesizer stamps `adr_approved=true` despite obvious violations.** Read `synthesizer_summary` — the synthesizer followed majority rule on what the three vendors wrote. If two vendors approved a bad diff, the synthesizer is doing its job, not yours; the issue is upstream (vendor prompt drift, training-data overlap between two of the three vendors). Lower the approval threshold (require unanimity instead of majority), or add a fourth vendor.
-- **Cost spikes.** Three vendors per bead adds up. Reserve the full trio for risky changes; for routine work, fall back to the H3 single-vendor principles loop or the H2 single-vendor `adr-reviewer`.
-- **Refinery loops three or more times despite the cap.** The H2 cap (`review_loops >= 2`) bounds bounces; check `metadata.review_loops` and confirm the refinery is running `mol-refinery-domain-patrol`.
+- **Synthesizer stamps `architect_approved=true` despite obvious violations.** Read `synthesizer_summary` — the synthesizer followed majority rule on what the three vendors wrote. If two vendors approved a bad diff, the synthesizer is doing its job, not yours; the issue is upstream (vendor prompt drift, training-data overlap between two of the three vendors). Lower the approval threshold (require unanimity instead of majority), or add a fourth vendor.
+- **Cost spikes.** Three vendors per bead adds up. Reserve the full trio for risky changes; for routine work, fall back to the base factory's single architect, or to the [principles loop](./03-architecture-best-practices-loop.md) if you want depth from one vendor.
+- **Refinery loops three or more times despite the cap.** The cap (`review_loops >= 2`) bounds bounces; check `metadata.review_loops` and confirm which patrol formula the refinery is running.
 - **`<coordinator>` mail bounces.** Substitute your operator handle (e.g., `mayor`).
 
 ## What's next
 
-Return to the [tutorial index](../README.md). The Hardening track is complete. Beyond this, the direction is yours.
+This is one of six options, and they are a menu rather than a sequence. Every one installs on the base factory alone, so take them in whatever order solves a problem you actually have. The full list is in [the feature labs](../progression/L3-L5-feature-labs.md#the-six-options).
 
-« [previous: L-3 Hardening — Track A, scoring](./03-architecture-best-practices-loop.md) | [next: L-4 Self-improvement Loop](./05-self-improvement-loop.md) »
+Pairs naturally with the [architecture best-practices loop](./03-architecture-best-practices-loop.md), which deepens the same lane along a different axis: this option asks more reviewers, that one asks more questions.
+
+« [back to the feature labs](../progression/L3-L5-feature-labs.md) »

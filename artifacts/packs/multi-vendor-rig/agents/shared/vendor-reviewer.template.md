@@ -74,7 +74,7 @@ gc bd update $WORK \
 gc bd note $WORK "reviewer-${VENDOR}: REJECTED. $FEEDBACK"
 ```
 
-Do NOT touch `adr_approved`, `review_loops`, or any sibling
+Do NOT touch `architect_approved`, `review_loops`, or any sibling
 vendor's metadata. The synthesizer owns aggregation.
 
 After the verdict, reassign to the refinery:

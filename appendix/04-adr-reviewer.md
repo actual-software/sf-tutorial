@@ -29,12 +29,12 @@ By the end of this exercise you will have an architecture-aware `architect` agen
 
 ## Prereqs
 
-- Page [03](./03-branch-protection.md) complete: branch protection on
+- Page [the branch-protection appendix](./03-branch-protection.md) complete: branch protection on
   `main` is live, the `epic/*` ruleset is active, `.github/CODEOWNERS`
   is on `main` with your handle, and `f.md` merged through the gate.
 - You're inside the rig directory. If you opened a fresh shell,
   re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and
-  `$ARTIFACTS_PATH` per [00.3](./00.3-setup-foundation.md), then
+  `$ARTIFACTS_PATH` per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then
   `cd "$ASCII_ART_PATH"`.
 - `gh` is authenticated and can create PRs against the rig's GitHub
   repo. Verify with `gh auth status` and `gh repo view`.
@@ -48,7 +48,7 @@ By the end of this exercise you will have an architecture-aware `architect` agen
 
 ## Context
 
-Branching/merging strategy is unchanged from page 03. What changes
+Branching/merging strategy is unchanged from branch protection. What changes
 here is that every bead now passes through a dedicated `architect`
 agent — sitting between the polecat and the refinery — that reads
 the rig's locked architecture decisions and current architecture docs
@@ -91,9 +91,9 @@ Agent workflow with the architect in place:
    - **Approved** (`architect_approved=true`, whether the architect's
      own verdict or the cap-forced flip): the step is a no-op and the
      inherited `approval-review` and `merge-push` steps run as in
-     page 02 — refinery does its mechanical sanity checks, publishes
+     the review loop — refinery does its mechanical sanity checks, publishes
      a PR.
-1. The **merger** (human, plus branch protection from page 03) reads
+1. The **merger** (human, plus branch protection from branch protection) reads
    the architect's verdict trail (and `review_cap_reached` /
    `architect_feedback` if the cap fired), the inherited approval,
    and clicks **Merge** as before.
@@ -106,7 +106,7 @@ In this exercise you will install the **architect-rig** pack into the
 imports — the new pack supersedes it; the architect now owns the
 review-loop concept, not the refinery). Restart so the new architect
 agent and the patched refinery patrol take effect. Sling the next
-letter from `letters-a-m` at the polecat exactly the way page 03
+letter from `letters-a-m` at the polecat exactly the way branch protection
 taught you, then watch the refinery hand the bead off to the
 architect, watch the architect post a verdict, and watch the refinery
 proceed (or bounce back to the polecat pool, depending on the
@@ -134,14 +134,14 @@ cd path/to/sf-tutorial/bootstrap
 
 The script reproduces every step up through this lesson — `architect-rig` is added at rig scope, `review-loop-rig` is removed from the rig's direct imports (still resolved transitively via `architect-rig`), and the city is restarted.
 
-After it finishes, re-export the four env vars per [00.3](./00.3-setup-foundation.md), then jump to [Try It](#try-it).
+After it finishes, re-export the four env vars per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then jump to [Try It](#try-it).
 
 ### Build Factory1 by Hand
 
 ### 1. Install the architect-rig pack into factory1
 
-The page 02 setup gave the refinery a single hard-coded round of
-self-generated feedback. The page 03 setup gated PRs on a CODEOWNER
+The review loop setup gave the refinery a single hard-coded round of
+self-generated feedback. The branch protection setup gated PRs on a CODEOWNER
 approval. Neither one knows about the rig's ADRs or current
 architecture docs — feedback was whatever the refinery thought of in
 the moment, and CODEOWNERS only enforces "a human looked", not "a
@@ -197,7 +197,7 @@ dispatch guidance (`gc sling <rig>/polecat <bead> --on
 mol-polecat-pr`) is unchanged — the polecat still hands work to the
 refinery; the refinery now hands it to the architect.
 
-The review-cycle cap is **2 rejections** (up from page 02's hard-coded
+The review-cycle cap is **2 rejections** (up from the review loop's hard-coded
 1 round). After two architect rejections, the next refinery patrol
 sees the third rejection, marks `review_cap_reached=true`, forces
 `architect_approved=true` for flow-control, mails the mayor, and lets
@@ -404,7 +404,7 @@ gc session list
 ```
 
 Watch the polecat write the file and reassign to the refinery — same
-play-by-play as page 02 up to the point where the polecat hands off.
+play-by-play as the review loop up to the point where the polecat hands off.
 
 **Copy and paste**
 
@@ -534,7 +534,7 @@ You should see `refinery_approved: true`, `refinery_approval_at`, and
 
 ### 7. Manually approve and merge the PR
 
-The architect has done its job. Now do what page 03 already taught
+The architect has done its job. Now do what branch protection already taught
 you — approve as the CODEOWNER (or have a teammate approve), then
 merge:
 
@@ -744,11 +744,11 @@ Expect a single line for the rig's main checkout.
 
 ## What's next
 
-Continue to [Bead gate checks](./05.1-bead-gate-checks.md). Page 05.1
+Continue to [Bead gate checks](../hardening/06-bead-gate-checks.md). The bead gate
 closes the upstream hole this page leaves open: the architect runs
 *after* the polecat has done work, so a malformed bead still wastes
-a polecat pass before getting caught. Page 05.1 introduces a pre-
+a polecat pass before getting caught. The bead gate introduces a pre-
 implementation `bead-reviewer` that checks each bead is well-formed
 before any polecat is allowed to claim it.
 
-« [previous: 03 Branch protection](./03-branch-protection.md) | [next: W-5 Requirement Gates](./05.1-bead-gate-checks.md) »
+« [previous: the branch-protection appendix](./03-branch-protection.md) | [next: the bead gate option](../hardening/06-bead-gate-checks.md) »

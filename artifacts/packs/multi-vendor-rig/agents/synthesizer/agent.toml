@@ -1,7 +1,7 @@
 # Synthesizer — fuses three vendor reviewer verdicts into one ADR-lane
 # decision. Reads `vendor_codex_approved`, `vendor_claude_approved`,
 # `vendor_gemini_approved` (plus the matching feedback fields), applies
-# majority rule, stamps `adr_approved=true|false` on the bead, and
+# majority rule, stamps `architect_approved=true|false` on the bead, and
 # writes a short `synthesizer_summary` distilling the three reads.
 
 scope = "rig"

@@ -2,6 +2,12 @@
 
 This folder contains the bootstrap scripts for the Software Factory Intensive tutorial.
 
+
+> **The step names below are the old page filenames**, and they still work. The taught path now installs the
+> `base-factory` pack in one command (see [W3](../progression/W3-run-your-factory.md)), while this script
+> assembles the same factory the long way, matching the [appendix pages](../appendix/README.md). Teaching the
+> script to install the base pack directly is tracked as follow-up work.
+
 ## Instructions
 
 1. Set up your environment variables
@@ -37,7 +43,7 @@ Runs the work for 00.1 *and* 00.2, then stops. Your factory now looks like it wo
 
 **Mental model:** `./bootstrap.sh <step>` answers "make my factory look like I just finished `<step>`," not "make my factory ready for me to start `<step>`."
 
-**Then paste the export block the run prints.** The script sets `FACTORY_PATH`, `ASCII_ART_PATH`, `TUTORIAL_PATH` and `ARTIFACTS_PATH` in its own child process, so they do not reach the shell you launched it from. Every run ends by printing them in paste-ready form; do that before you continue, and before you append them to a shell rc on [page 00.3](../progression/00.3-setup-foundation.md).
+**Then paste the export block the run prints.** The script sets `FACTORY_PATH`, `ASCII_ART_PATH`, `TUTORIAL_PATH` and `ARTIFACTS_PATH` in its own child process, so they do not reach the shell you launched it from. Every run ends by printing them in paste-ready form; do that before you continue, and before you append them to a shell rc on [W3 Run Your Factory](../progression/W3-run-your-factory.md).
 
 ## About the Bootstrap Script
 

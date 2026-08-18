@@ -2,7 +2,7 @@ description = """
 Fuse the three vendor reviewer verdicts into one ADR-lane
 decision. Reads `vendor_codex_approved`, `vendor_claude_approved`,
 `vendor_gemini_approved`, applies majority rule, and stamps
-`adr_approved=true|false` plus a one-paragraph
+`architect_approved=true|false` plus a one-paragraph
 `synthesizer_summary`. Reassigns the bead to the refinery.
 
 Read-only with respect to source code and the diff. Reads only the
@@ -45,7 +45,7 @@ gc bd update {{issue}} --status=in_progress
 
 [[steps]]
 id = "synthesize"
-title = "Apply majority rule, write summary, stamp adr_approved, reassign"
+title = "Apply majority rule, write summary, stamp architect_approved, reassign"
 needs = ["load-context"]
 description = """
 ```bash
@@ -61,12 +61,12 @@ GEMINI_FB=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.vendor_gemini_fee
 SUMMARY=\"<your one-paragraph synthesis citing each vendor's verdict and any disagreements>\"
 
 if [ \"$APPROVES\" -ge 2 ]; then
-  gc bd update {{issue}} --set-metadata adr_approved=true \\
+  gc bd update {{issue}} --set-metadata architect_approved=true \\
     --set-metadata synthesizer_summary=\"$SUMMARY\"
   gc bd note {{issue}} \"synthesizer: ADR APPROVED ($APPROVES of 3 vendors). $SUMMARY\"
 else
-  gc bd update {{issue}} --set-metadata adr_approved=false \\
-    --set-metadata adr_feedback=\"$SUMMARY\" \\
+  gc bd update {{issue}} --set-metadata architect_approved=false \\
+    --set-metadata architect_feedback=\"$SUMMARY\" \\
     --set-metadata synthesizer_summary=\"$SUMMARY\"
   gc bd note {{issue}} \"synthesizer: ADR REJECTED ($APPROVES of 3 vendors approved). $SUMMARY\"
 fi
@@ -76,7 +76,7 @@ gc bd update {{issue}} --status=open --assignee=\"$REFINERY_TARGET\" \\
   --set-metadata gc.routed_to=\"$REFINERY_TARGET\"
 ```
 
-**Exit criterion:** adr_approved set; bead routed to refinery."""
+**Exit criterion:** architect_approved set; bead routed to refinery."""
 
 [[steps]]
 id = "drain"

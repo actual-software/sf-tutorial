@@ -18,47 +18,41 @@
 
 ## Objective
 
-By the end of this exercise you will have installed the `principles-loop-rig` pack, run the ADR reviewer's per-principle scoring loop against both a clean bead and a deliberately weak bead, and produced an append-only YAML audit trail that records 23-principle scores per iteration.
+By the end of this exercise you will have installed the `principles-loop-rig` pack, run the architect's per-principle scoring loop against both a clean bead and a deliberately weak bead, and produced an append-only YAML audit trail that records 23-principle scores per iteration.
 
 ## Prereqs
 
-- Hardening 2 complete: `domain-reviewers-rig` is installed, four
-  reviewer agents (`adr-reviewer`, `design-reviewer`,
-  `testing-reviewer`, `docs-reviewer`) are registered, and the
-  refinery is using `mol-refinery-domain-patrol`.
+- [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on a rig, with the polecat, refinery and architect running.
 - `python3` available; `PyYAML` installed
   (`python3 -m pip install pyyaml`).
-- You're inside the rig directory. If a fresh shell, re-export
-  `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and
-  `$ARTIFACTS_PATH` per
-  [00.3](../progression/00.3-setup-foundation.md), then
-  `cd "$ASCII_ART_PATH"`.
+- You are inside the rig directory, with `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH` and `$ARTIFACTS_PATH` exported, then `cd "$ASCII_ART_PATH"`.
 - `gh` is authenticated; `jq` is installed.
-- Letters consumed so far: a–k. The next two open task beads are
-  `Implement l.md` (clean sanity check) and `Implement m.md` (the
-  weak-bead demo).
+- Two open task beads: one you expect to pass cleanly, one you expect to score badly.
+
+**This option needs no other option.** It ships a formula and a check script rather than an agent, so it is poured by an agent you already have: the base factory's **architect**. The refinery patrol already gates on `architect_approved`, which is what this formula stamps, so the loop closes with nothing else installed.
+
+Install the [domain reviewers](./02-specialize-reviewers-per-domain.md) as well and the same loop deepens whichever architecture lane that option leaves in place.
 
 ## Context
 
-Branching/Merging strategy is unchanged from page 04. What changes
-here is the *depth* of the ADR-lane review introduced in Hardening
-2. The single binary "ADR approved / rejected" verdict is replaced
-with a per-principle scoring pass against **23 canonical
-architecture principles**, each scored 0-5, with an **append-only
-YAML audit trail** per bead. The loop self-pours up to 3 iterations
-until the aggregate score clears the target threshold.
+Branching/Merging strategy is unchanged from the base factory's architect. What changes
+here is the *depth* of that architect's review. The single binary
+"approved / rejected" verdict is replaced with a per-principle
+scoring pass against **23 canonical architecture principles**, each
+scored 0-5, with an **append-only YAML audit trail** per bead. The
+loop self-pours up to 3 iterations until the aggregate score clears
+the target threshold.
 
 Agent workflow with the principles loop in place:
 
-1. The **operator** runs the H1 Leads, project-manager, and polecat
-   as before. The polecat publishes a branch and the bead carries
-   the four-lane verdict fields (unset on a fresh bead).
-1. The **refinery's** `verify-reviewers` step (H2) sees
-   `adr_approved` is unset and slings the adr-reviewer with the new
-   formula `mol-principles-review` (instead of the H2
-   `mol-adr-review`). The other three lanes — design, testing,
-   docs — continue to use their H2 formulas unchanged.
-1. The **adr-reviewer** runs `mol-principles-review`:
+1. The **operator** slings the polecat as on the base factory. The
+   polecat publishes a branch and hands the bead to the refinery
+   with `architect_approved` unset.
+1. The **refinery's** patrol sees `architect_approved` is unset and
+   dispatches the architect. Pour `mol-principles-review` instead of
+   the base factory's `mol-architect-review` and the same agent does
+   a much deeper job.
+1. The **architect** runs `mol-principles-review`:
    - Reads the diff and the ADR corpus.
    - Scores the diff against each of the 23 canonical principles
      (DRY, SoC, SRP, KISS, YAGNI, ...). One row per principle is
@@ -68,59 +62,58 @@ Agent workflow with the principles loop in place:
    - Runs the aggregator (`checks/aggregate-score.sh`) on the YAML.
    - Branches on the aggregator's exit code:
      - **PASS (rc=0)**: aggregate ≥ target and every principle's
-       latest score ≥ floor. Stamps `adr_approved=true` and
+       latest score ≥ floor. Stamps `architect_approved=true` and
        `principles_review_passed=true`. Reassigns to refinery.
      - **CONTINUE (rc=1)**: aggregate below target or some floor
        below min. Self-pours the formula with `iteration += 1`. Cap
        at 3 iterations; the 3rd CONTINUE escalates.
      - **ESCALATE (rc=2)**: malformed YAML, duplicate timestamps,
        or a principle name not in the canonical 23. Mails operator,
-       stamps `adr_approved=false`. Reassigns to refinery.
-1. The **refinery** sees `adr_approved` set (along with the other
-   three lanes) and aggregates as in H2. The principles loop's
-   verdict surfaces through the same lane the H2 ADR reviewer used,
-   so no refinery prompt change is required.
-1. The **merger** (human, plus branch protection from page 03)
-   reads the YAML audit trail (now part of the bead's durable
-   record) plus the four-lane verdicts and clicks **Merge**.
+       stamps `architect_approved=false`. Reassigns to refinery.
+1. The **refinery** sees `architect_approved` set and proceeds
+   exactly as it does on the base factory. The principles loop's
+   verdict arrives through the field the refinery already reads, so
+   no refinery prompt change is required.
+1. The **merger** (human, plus branch protection) reads the YAML
+   audit trail, now part of the bead's durable record, alongside
+   whatever verdicts the bead carries, and clicks **Merge**.
 
 The reviewers do **not** push code, count cycles for *all* lanes,
 or close the bead. The principles loop owns its own iteration
-counter (`iteration` formula var) — separate from the refinery's
-cross-lane `review_loops` counter from H2.
+counter (the `iteration` formula var), separate from the refinery's
+`review_loops` counter.
 
-In this exercise you install the **principles-loop-rig** pack into the `ascii-art` rig
-(removing `domain-reviewers-rig` from the rig's direct imports — the
-new pack imports it transitively). Drop the principles schema doc
-into the rig. Sling the next letter through the standard pipeline
-(Leads → project-manager → polecat → refinery), then watch the
-adr-reviewer fan out 23 scoring writes into the YAML audit trail.
+In this exercise you install the **principles-loop-rig** pack into the `ascii-art` rig.
+It imports the base factory directly, so the polecat, refinery and
+architect you already have keep working. Drop the principles schema
+doc into the rig. Sling the next letter at the polecat, then watch
+the architect fan out 23 scoring writes into the YAML audit trail.
 The aggregator decides PASS or CONTINUE; on CONTINUE the formula
 self-pours with the next iteration. Then deliberately weaken a
 later bead and watch the loop iterate 2-3 times until aggregate
 converges (or the cap trips and operator gets mailed).
 
-The next page (Hardening 4) adds review **breadth** instead of
-depth: vendor-diverse reviewers (Codex / Claude / Gemini) plus a
-synthesizer that fuses three independent verdicts into one.
+The [multi-vendor review](./04-strengthen-review-system.md) option
+adds review **breadth** where this one adds depth: vendor-diverse
+reviewers (Codex / Claude / Gemini) plus a synthesizer that fuses
+three independent verdicts into one. Neither needs the other.
 
 ## Walkthrough
 
 ### 1. Install the principles-loop-rig pack into factory1
 
-The page H2 setup gave the rig a four-lane review breadth — but
-the ADR lane was still binary. Real architectural review is multi-
-dimensional: a diff might be DRY-perfect but coupling-heavy, or
-test-coverage-strong but observability-weak. The 23 canonical Gas
-City principles capture those dimensions; per-principle scoring
-makes "ADR review" a continuous quality measure rather than a
-yes/no gate.
+The base factory's architect review is binary: approve or reject.
+Real architectural review is multi-dimensional — a diff might be
+DRY-perfect but coupling-heavy, or test-coverage-strong but
+observability-weak. The 23 canonical Gas City principles capture
+those dimensions, and per-principle scoring turns architecture
+review into a continuous quality measure rather than a yes/no gate.
 
 This ships as a single rig-scoped pack, **`principles-loop-rig`**,
-that adds depth along the ADR lane:
+that adds depth to the architect's review:
 
-- A new formula `mol-principles-review` that the adr-reviewer
-  pours instead of `mol-adr-review`. Scores the diff against 23
+- A new formula `mol-principles-review` that the architect
+  pours instead of `mol-architect-review`. Scores the diff against 23
   principles, appends to a per-bead YAML, runs the aggregator,
   branches on PASS / CONTINUE / ESCALATE.
 - A check script `checks/aggregate-score.sh` — the source of truth
@@ -129,18 +122,16 @@ that adds depth along the ADR lane:
 - A schema doc `docs/reviews/principles-schema.md` (lives in the
   rig, not the pack — it documents the audit-trail format).
 
-The H2 refinery's `verify-reviewers` step is **unchanged**. It
-slings the adr-reviewer with `--on mol-adr-review` by default; this
-hardening replaces `mol-adr-review` with `mol-principles-review` at
-the dispatch layer (either by user-facing convention as taught in
-this lesson, or by patching the refinery prompt — H4 does this).
-For now, when the operator slings the adr-reviewer manually, they
-sling with `--on mol-principles-review`. Auto-dispatch from the
-refinery still uses `mol-adr-review` (the binary check); this
-lesson focuses on the manual deeper review that runs in addition.
+The refinery's patrol is **unchanged**. Left to itself it dispatches
+the architect on `mol-architect-review`, the binary check. This
+option supplies a deeper formula and teaches you to pour it by hand,
+so the operator slings the architect with `--on mol-principles-review`
+and the scored review runs in addition to the default one. Wiring the
+deeper formula into auto-dispatch means patching the refinery prompt,
+which is a customization this page leaves to you.
 
-The loop cap is **3 iterations** (separate from H2's 2-rejection
-cross-lane cap).
+The loop cap is **3 iterations**, separate from the refinery's own
+`review_loops` rejection cap.
 
 Inspect the pack:
 
@@ -204,8 +195,11 @@ Register the new import at rig scope:
 ```bash
 cd "$FACTORY_PATH"
 
-gc import add --rig ascii-art packs/principles-loop-rig
-gc import remove --rig ascii-art domain-reviewers-rig
+gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/principles-loop-rig"
+
+# Nothing is removed. This option sits alongside the base factory,
+# which keeps its orders and resolves the shared packs once.
+
 ```
 
 The rig should now import `principles-loop-rig` and no longer import `domain-reviewers-rig`.
@@ -308,7 +302,7 @@ git push origin main
 
 ### 3. Sling a clean bead through the standard pipeline
 
-Same recipe as Hardening 1 and 2, up to and including the polecat
+Same recipe as the base factory, up to and including the polecat
 publishing a branch:
 
 **Copy and paste**
@@ -318,33 +312,31 @@ cd "$ASCII_ART_PATH"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement l\.md$" | awk '{print $2}')
 
 cd $FACTORY_PATH
-gc sling ascii-art/principles-loop-rig.design-lead $BEAD_ID --on mol-design-spec
-gc sling ascii-art/principles-loop-rig.test-lead   $BEAD_ID --on mol-test-spec
-gc sling ascii-art/principles-loop-rig.doc-lead    $BEAD_ID --on mol-doc-spec
-cd $ASCII_ART_PATH
-git add docs/design docs/testing docs/outlines && git commit -m "docs(specs): pre-PM specs for $BEAD_ID" && git push origin main
-
-cd $FACTORY_PATH
-gc sling ascii-art/principles-loop-rig.project-manager $BEAD_ID --on mol-bead-review
-# Wait for PASS, polecat picks up, refinery picks up.
+gc sling ascii-art/principles-loop-rig.polecat $BEAD_ID --on mol-polecat-pr
+# Wait for the polecat to publish a branch and hand back to the refinery.
 watch -n 5 'gc bd show $BEAD_ID | grep -E "_approved|branch|review"'
 ```
 
-When the bead is back at the refinery and `adr_approved` is unset,
-manually sling the adr-reviewer with the principles formula
-**instead of** waiting for the refinery's auto-dispatch (which would
-sling `mol-adr-review`):
+When the bead is back at the refinery and `architect_approved` is
+unset, sling the architect with the principles formula **instead of**
+waiting for the refinery's auto-dispatch (which would sling
+`mol-architect-review`):
 
 **Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
-gc sling ascii-art/principles-loop-rig.adr-reviewer $BEAD_ID --on mol-principles-review
+gc sling ascii-art/principles-loop-rig.architect $BEAD_ID --on mol-principles-review
 ```
+
+The principles formula replaces `mol-architect-review` as the formula
+the architect pours, so the agent is the base factory's architect and
+only the formula changes. That is what lets this option install on
+its own.
 
 ### 4. Watch the principles loop run (clean bead → PASS in iteration 1)
 
-The adr-reviewer scores 23 principles, appends to the YAML, runs
+The architect scores 23 principles, appends to the YAML, runs
 the aggregator. On a clean diff, aggregate clears 0.9 in iteration
 1.
 
@@ -352,7 +344,7 @@ the aggregator. On a clean diff, aggregate clears 0.9 in iteration
 
 ```bash
 gc session list
-gc session attach <adr-reviewer-session>
+gc session attach <architect-session>
 ```
 
 When the session ends, inspect the YAML and the per-principle
@@ -384,25 +376,29 @@ echo "rc=$?"
 TBD: capture actual terminal output during smoke test
 ```
 
-Confirm `adr_approved=true` and `principles_review_passed=true` are
-stamped on the bead:
+Confirm `architect_approved=true` and `principles_review_passed=true`
+are stamped on the bead:
 
 **Copy and paste**
 
 ```bash
-gc bd show $BEAD_ID | grep -E "adr_approved|principles_review_passed"
+gc bd show $BEAD_ID | grep -E "architect_approved|principles_review_passed"
 ```
 
-Run the other three lane reviewers (manually, or wait for the
-refinery's auto-dispatch — both work):
+That is the only verdict field the base factory's refinery waits on,
+so the bead is now free to proceed.
+
+If you also installed the [domain reviewers](./02-specialize-reviewers-per-domain.md)
+option, its refinery patrol waits on three more lanes. Run them, or
+let the patrol dispatch them itself:
 
 **Copy and paste**
 
 ```bash
 cd $FACTORY_PATH
-gc sling ascii-art/principles-loop-rig.design-reviewer  $BEAD_ID --on mol-design-review
-gc sling ascii-art/principles-loop-rig.testing-reviewer $BEAD_ID --on mol-testing-review
-gc sling ascii-art/principles-loop-rig.docs-reviewer    $BEAD_ID --on mol-docs-review
+gc sling ascii-art/domain-reviewers-rig.design-reviewer  $BEAD_ID --on mol-design-review
+gc sling ascii-art/domain-reviewers-rig.testing-reviewer $BEAD_ID --on mol-testing-review
+gc sling ascii-art/domain-reviewers-rig.docs-reviewer    $BEAD_ID --on mol-docs-review
 ```
 
 Wait for the refinery to aggregate and publish the PR:
@@ -449,20 +445,13 @@ bad code:
 
 ```bash
 cd $FACTORY_PATH
-gc sling ascii-art/principles-loop-rig.design-lead $WEAK_BEAD --on mol-design-spec
-gc sling ascii-art/principles-loop-rig.test-lead   $WEAK_BEAD --on mol-test-spec
-gc sling ascii-art/principles-loop-rig.doc-lead    $WEAK_BEAD --on mol-doc-spec
-cd $ASCII_ART_PATH
-git add docs/design docs/testing docs/outlines && git commit -m "docs(specs): pre-PM specs for $WEAK_BEAD" && git push origin main
-
-cd $FACTORY_PATH
-gc sling ascii-art/principles-loop-rig.project-manager $WEAK_BEAD --on mol-bead-review
+gc sling ascii-art/principles-loop-rig.polecat $WEAK_BEAD --on mol-polecat-pr
 
 # Wait for the polecat to publish the (weak) branch...
 watch -n 5 'gc bd show $WEAK_BEAD | grep -E "branch|pr_url"'
 
 # ... then sling the principles loop.
-gc sling ascii-art/principles-loop-rig.adr-reviewer $WEAK_BEAD --on mol-principles-review
+gc sling ascii-art/principles-loop-rig.architect $WEAK_BEAD --on mol-principles-review
 ```
 
 What you should see across iterations:
@@ -565,7 +554,7 @@ After slinging on the weak bead, at least 2 iterations of rows; final outcome PA
 
 ```bash
 wc -l docs/reviews/principles.$WEAK_BEAD.yaml
-gc bd show $WEAK_BEAD | grep -E "principles_review_passed|adr_approved"
+gc bd show $WEAK_BEAD | grep -E "principles_review_passed|architect_approved"
 ```
 
 Per-principle findings exist.
@@ -597,21 +586,18 @@ ls docs/reviews/principles/$BEAD_ID.*.md | head -5
   Inspect the lowest-scoring principle in the JSON output. The
   implementation may genuinely violate it; either fix by hand or
   accept the escalation.
-- **The principles loop's verdict didn't reach the refinery's
-  cross-lane aggregator.** The refinery's `verify-reviewers` reads
-  `adr_approved`, which the principles loop sets on PASS. Confirm
-  `metadata.adr_approved` is set after the loop finishes, and that
-  no other process unset it before the refinery's next patrol.
+- **The principles loop's verdict didn't reach the refinery.** The
+  refinery's patrol reads `architect_approved`, which the principles
+  loop sets on PASS. Confirm `metadata.architect_approved` is set
+  after the loop finishes, and that no other process unset it before
+  the refinery's next patrol.
 - **`<coordinator>` mail bounces.** Substitute your operator
   handle (e.g., `mayor`).
 
 ## What's next
 
-Continue to [Strengthen the review system](./04-strengthen-review-system.md).
-H4 adds review breadth on a different axis — vendor diversity. The
-adr-reviewer (or any of the four domain reviewers) is replaced
-with three vendor-pinned reviewers running in parallel, plus a
-synthesizer agent that fuses three independent verdicts into one
-recommendation.
+This is one of six options, and they are a menu rather than a sequence. Every one installs on the base factory alone, so take them in whatever order solves a problem you actually have. The full list is in [the feature labs](../progression/L3-L5-feature-labs.md#the-six-options).
 
-« [previous: L-2 Retargeting the Rig](./02-specialize-reviewers-per-domain.md) | [next: L-3 Hardening — Track B, multi-vendor](./04-strengthen-review-system.md) »
+Pairs naturally with the [domain reviewers](./02-specialize-reviewers-per-domain.md), which add review breadth where this option adds depth, and with [multi-vendor review](./04-strengthen-review-system.md), which widens the same lane across models rather than across principles.
+
+« [back to the feature labs](../progression/L3-L5-feature-labs.md) »

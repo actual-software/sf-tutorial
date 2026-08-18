@@ -1,7 +1,6 @@
-# multi-vendor-rig — rig-scoped pack that fans out the ADR lane to
-# three vendor-pinned reviewer agents (Codex, Claude, Gemini) plus
-# a synthesizer that fuses the three verdicts into one. Installed
-# in Hardening 4.
+# multi-vendor-rig — rig-scoped pack that fans the architecture review
+# lane out to three vendor-pinned reviewer agents (Codex, Claude,
+# Gemini) plus a synthesizer that fuses the three verdicts into one.
 #
 # What this pack contributes:
 #   1. `reviewer-codex`, `reviewer-claude`, `reviewer-gemini` —
@@ -10,7 +9,7 @@
 #      and the same ADR corpus; each stamps its own
 #      `vendor_<name>_approved` and `vendor_<name>_feedback`.
 #   2. `synthesizer` — reads the three vendor verdicts, applies
-#      majority rule, stamps `adr_approved=true|false` plus
+#      majority rule, stamps `architect_approved=true|false` plus
 #      `synthesizer_summary` that distills the three verdicts into
 #      one short paragraph.
 #   3. Four formulas:
@@ -19,19 +18,25 @@
 #       - `mol-vendor-gemini-review`
 #       - `mol-synthesize-reviews`
 #
-# This pack supersedes principles-loop-rig's single-vendor
-# adr-reviewer flow with a vendor-diverse fan-out. The other three
-# domain lanes (design, testing, docs) continue to use the H2
-# single-vendor reviewers.
+# This pack replaces one architecture reviewer with three that were
+# trained differently. The base factory ships a single architect, and a
+# single model is a single point of view; the cheapest way to harden a
+# review is to ask two more and synthesize the answers.
 #
-# Install:
-#   gc import add --rig <rig-name> packs/multi-vendor-rig
-#   gc import remove --rig <rig-name> principles-loop-rig
+# Install (sits directly on the base factory):
+#   gc import add --rig <rig-name> artifacts/packs/multi-vendor-rig
 #
-# multi-vendor-rig imports principles-loop-rig directly so the H1
-# Leads, H2 design/testing/docs reviewers, H3 principles formula,
-# and the standard polecat / refinery / project-manager flow remain
-# resolvable transitively.
+# multi-vendor-rig imports architect-rig, the base factory's top node,
+# so the polecat / refinery flow remains resolvable. It does not import
+# any other option, and no other option has to be installed first.
+#
+# HOW THE VERDICT REACHES THE REFINERY. The synthesizer stamps
+# `architect_approved`, which is the field the base factory's refinery
+# patrol already gates on, so the fan-out is invisible from the
+# refinery's side: it sees one architecture verdict, the same as
+# before. The three vendor reviewers and the synthesizer are slung by
+# hand in this lesson; wiring them into the patrol so the operator does
+# not have to remember is the closing exercise.
 #
 # REQUIRES: each of the three CLI providers (`codex`, `claude`,
 # `gemini`) installed and authenticated on the host running the
@@ -43,5 +48,5 @@
 name = "multi-vendor-rig"
 schema = 1
 
-[imports.principles-loop-rig]
-source = "../principles-loop-rig"
+[imports.architect-rig]
+source = "../architect-rig"
