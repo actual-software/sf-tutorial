@@ -187,14 +187,14 @@ fi
 # --------------------------------------------------------------------------
 head2 "Local path"
 
-if [ -n "${SOFTWARE_FACTORY_INTENSIVE_PATH:-}" ]; then
-  if [ -d "$SOFTWARE_FACTORY_INTENSIVE_PATH" ]; then
-    ok "workspace: $SOFTWARE_FACTORY_INTENSIVE_PATH"
+if [ -n "${SFI_PATH:-}" ]; then
+  if [ -d "$SFI_PATH" ]; then
+    ok "workspace: $SFI_PATH"
   else
-    fail "workspace: \$SOFTWARE_FACTORY_INTENSIVE_PATH is set but does not exist"
+    fail "workspace: \$SFI_PATH is set but does not exist"
   fi
 else
-  warn "workspace: \$SOFTWARE_FACTORY_INTENSIVE_PATH is unset — bootstrap.sh needs it, the progression pages do not"
+  warn "workspace: \$SFI_PATH is unset — bootstrap.sh needs it, the progression pages do not"
 fi
 
 if [ -w "$HOME" ]; then ok "home directory is writable"; else fail "home directory is not writable"; fi

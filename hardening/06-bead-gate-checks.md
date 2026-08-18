@@ -131,7 +131,7 @@ overridden, and the polecat formulas do not need to gate on
 `bead_review_passed=true` because beads simply do not reach the
 polecat pool unless the project-manager routes them there.
 
-`pr-gate-city` (the mayor patch) stays in place at city scope. The
+`pr-gate-city` (the pack that supplies the mayor) stays in place at city scope. The
 mayor's pr-gate guidance is still useful for the post-PM polecat
 dispatch; the new entry point — `gc sling <rig>/project-manager <bead> --on mol-bead-review` — is taught in this lesson rather than
 patched into the mayor's prompt.

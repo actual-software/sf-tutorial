@@ -34,7 +34,7 @@ if [ -z "$BD_PINNED" ] || [ -z "$DOLT_PINNED" ] || [ -z "$GC_PINNED" ]; then
   exit 1
 fi
 
-read -p "Are you comfortable with resetting all of \$SOFTWARE_FACTORY_INTENSIVE_PATH? (Y/n) " confirm
+read -p "Are you comfortable with resetting all of \$SFI_PATH? (Y/n) " confirm
 if [ "$confirm" != "Y" ]; then
   echo "==> Exiting script."
   exit 1
@@ -138,29 +138,29 @@ if ! [[ "$TUTORIAL_STEP" =~ ^(00\.1-setup-foundation|00\.2-setup-foundation|00\.
   exit 1
 fi
 
-if [ -z "$SOFTWARE_FACTORY_INTENSIVE_PATH" ]; then
-  echo "==> SOFTWARE_FACTORY_INTENSIVE_PATH environment variable not found"
-  echo "==> Please set the SOFTWARE_FACTORY_INTENSIVE_PATH environment variable in the .env file."
+if [ -z "$SFI_PATH" ]; then
+  echo "==> SFI_PATH environment variable not found"
+  echo "==> Please set the SFI_PATH environment variable in the .env file."
   exit 1
 fi
 
-# Sanity check: warn if .env's SOFTWARE_FACTORY_INTENSIVE_PATH doesn't match
+# Sanity check: warn if .env's SFI_PATH doesn't match
 # the parent directory of sf-tutorial. A mismatch typically means the user
 # has sf-tutorial cloned somewhere other than what .env says, which would
 # create two parallel software-factory-intensive trees (one with sf-tutorial,
 # another with factory1/ascii-art). Most of the time this is misconfiguration,
 # not intent — so stop and let the user confirm or abort.
 DERIVED_SFI_PATH="$(cd "$TUTORIAL_PATH/.." && pwd -P)"
-if [ -d "$SOFTWARE_FACTORY_INTENSIVE_PATH" ]; then
-  NORMALIZED_ENV_SFI="$(cd "$SOFTWARE_FACTORY_INTENSIVE_PATH" && pwd -P)"
+if [ -d "$SFI_PATH" ]; then
+  NORMALIZED_ENV_SFI="$(cd "$SFI_PATH" && pwd -P)"
 else
-  NORMALIZED_ENV_SFI="${SOFTWARE_FACTORY_INTENSIVE_PATH%/}"
+  NORMALIZED_ENV_SFI="${SFI_PATH%/}"
 fi
 if [ "$NORMALIZED_ENV_SFI" != "$DERIVED_SFI_PATH" ]; then
   echo ""
-  echo "==> WARNING: SOFTWARE_FACTORY_INTENSIVE_PATH does not match the parent of sf-tutorial."
+  echo "==> WARNING: SFI_PATH does not match the parent of sf-tutorial."
   echo ""
-  echo "    .env SOFTWARE_FACTORY_INTENSIVE_PATH : $SOFTWARE_FACTORY_INTENSIVE_PATH"
+  echo "    .env SFI_PATH : $SFI_PATH"
   echo "    sf-tutorial parent directory         : $DERIVED_SFI_PATH"
   echo ""
   echo "    Continuing will run the bootstrap against the .env path, leaving"
@@ -262,15 +262,15 @@ print_beads_dolt_hint() {
 }
 trap print_beads_dolt_hint EXIT
 
-mkdir -p $SOFTWARE_FACTORY_INTENSIVE_PATH
-cd $SOFTWARE_FACTORY_INTENSIVE_PATH
+mkdir -p $SFI_PATH
+cd $SFI_PATH
 
 if gc cities | grep -q "factory"; then
   for city in $(gc cities | grep "factory" | awk '{print $2}'); do
     # Subshell so `cd` doesn't leak. `gc cities` returns absolute paths that may
-    # point outside $SOFTWARE_FACTORY_INTENSIVE_PATH (stale registrations from
+    # point outside $SFI_PATH (stale registrations from
     # prior runs with a different .env). Leaking cwd here caused subsequent
-    # rm -rf calls to nuke directories outside $SOFTWARE_FACTORY_INTENSIVE_PATH.
+    # rm -rf calls to nuke directories outside $SFI_PATH.
     (cd "$city" 2>/dev/null && gc stop) || true
   done
 fi
@@ -512,7 +512,17 @@ gc import add packs/pr-gate-city
 gc import add --rig ascii-art packs/pr-gate-rig
 gc import remove --rig ascii-art setup
 rm -rf "$FACTORY_PATH/agents/mayor"
-sed "${SED_I[@]}" '/\[named_session\]/,/\[named_session\]/d' "$FACTORY_PATH/pack.toml"
+# Point the always-on mayor session at the pack's mayor. Deleting the block
+# outright would leave the city with no mayor at all, because pr-gate-city
+# deliberately declares no named_session of its own.
+sed '/^\[\[named_session\]\]/,/^[[:space:]]*mode = /d' "$FACTORY_PATH/pack.toml" > "$FACTORY_PATH/pack.toml.tmp"
+cat >> "$FACTORY_PATH/pack.toml.tmp" <<'EOF'
+[[named_session]]
+name = "mayor"
+template = "pr-gate-city.mayor"
+mode = "always"
+EOF
+mv "$FACTORY_PATH/pack.toml.tmp" "$FACTORY_PATH/pack.toml"
 
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   git add .
@@ -613,13 +623,13 @@ fi
 
 # Run 05.2-bead-gate-checks
 
-if [ ! -d $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills ]; then
+if [ ! -d $SFI_PATH/mp-skills ]; then
   if [ "$GITHUB_CLONE_METHOD" == "https" ]; then
-    git clone https://github.com/mattpocock/skills.git $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
+    git clone https://github.com/mattpocock/skills.git $SFI_PATH/mp-skills
   elif [ "$GITHUB_CLONE_METHOD" == "ssh" ]; then
-    git clone git@github.com:mattpocock/skills.git $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
+    git clone git@github.com:mattpocock/skills.git $SFI_PATH/mp-skills
   elif [ "$GITHUB_CLONE_METHOD" == "gh" ]; then
-    gh repo clone mattpocock/skills $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills
+    gh repo clone mattpocock/skills $SFI_PATH/mp-skills
   else
     echo "==> GITHUB_CLONE_METHOD environment variable is not valid"
     echo "==> Please set the GITHUB_CLONE_METHOD environment variable to a valid value (https, ssh, gh)."
@@ -629,7 +639,7 @@ fi
 cd "$ASCII_ART_PATH"
 mkdir -p .claude/skills/grill-me
 if [ ! -f .claude/skills/grill-me/SKILL.md ]; then
-  cp $SOFTWARE_FACTORY_INTENSIVE_PATH/mp-skills/skills/productivity/grill-me/SKILL.md \
+  cp $SFI_PATH/mp-skills/skills/productivity/grill-me/SKILL.md \
      .claude/skills/grill-me/SKILL.md
 fi
 

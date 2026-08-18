@@ -70,18 +70,18 @@ This script is destructive and meant to be re-runnable. **If you made any change
 **Confirmation prompt.** On launch, you'll see:
 
 ```
-Are you comfortable with resetting all of $SOFTWARE_FACTORY_INTENSIVE_PATH? (Y/n)
+Are you comfortable with resetting all of $SFI_PATH? (Y/n)
 ```
 
 You must type a **capital `Y`** to continue — `y`, `yes`, or just pressing Enter all abort the script. Nothing has been deleted at the prompt.
 
-**What gets `rm -rf`'d on every run.** Inside `$SOFTWARE_FACTORY_INTENSIVE_PATH` only:
+**What gets `rm -rf`'d on every run.** Inside `$SFI_PATH` only:
 
 - `factory*/` — every directory whose name starts with `factory` (e.g. `factory1`, `factory2`)
 - `ascii-art/`
 - `sf-tutorial/`
 
-Anything outside `$SOFTWARE_FACTORY_INTENSIVE_PATH` is untouched. Anything inside it that doesn't match those names (e.g. `mp-skills/`, pulled by step 05.2) is also untouched.
+Anything outside `$SFI_PATH` is untouched. Anything inside it that doesn't match those names (e.g. `mp-skills/`, pulled by step 05.2) is also untouched.
 
 **Other cleanup the script performs.**
 

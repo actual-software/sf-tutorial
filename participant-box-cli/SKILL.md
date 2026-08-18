@@ -35,43 +35,25 @@ Most participants run two boxes, so they're able to try a change on one and comp
 ```
 sfbox box list          # what is saved, and which one is current
 sfbox box use alice-test
-sfbox deploy-factory <url> --box alice-prod
+sfbox gc --box alice-prod session list
 ```
 
 When someone says "my test box" or "the other one", don't guess which id they meant. Check `sfbox box list`.
 
-## Deploying a factory
+## Running a command on the box
 
 ```
-sfbox deploy-factory https://github.com/<org>/<repo>/tree/<ref>/<subdir>
+sfbox exec <command> [args...]
+sfbox gc <gc-args...>
 ```
 
-The pack becomes the top-level factory, which means the imports already sitting on the box get removed, and that's worth spelling out before the user agrees to it, because a workshop box usually has a factory on it they'd rather not lose by accident. `sfbox` prints the plan and asks before touching anything, so read that plan back to the user if they're unsure. Gas City's own `core` and `bd` imports are never removed, though.
+`exec` runs anything on the box. `gc` runs a `gc` command inside the city, resolving the city path so the user doesn't have to know it. Both take `--box <boxId>`, and `gc` takes `--city-path <path>` for a box carrying more than one city.
 
-The ref gets resolved to a commit for you. Pass `--version sha:<commit>` when the user's after a particular one.
+Arguments reach the box exactly as typed, so quotes and spaces survive. That means metacharacters need an explicit shell: `sfbox exec bash -lc 'gc session list | wc -l'`, never `sfbox exec 'gc session list | wc -l'`. Options go before the command; anything after it is the command's. The remote exit status is what the user gets back.
 
-## When a deploy is refused for size
+There is no dry run, no snapshot and no rollback here. If the user is about to run something they can't undo, say so before they run it, because `sfbox` won't.
 
-This is the failure that's worth recognising on sight, because the error the platform hands you is pretty misleading.
-
-Before restarting, `sfbox` renders every agent prompt on the box and measures it. A rendered prompt goes to the agent as a single argument, and Linux caps one argument at 131,072 bytes including its terminator. A pack over that limit can't start. Ever. It isn't flaky, and it isn't a timing problem either.
-
-If `sfbox` refuses, the box was left alone. The import's rolled back and the service was never restarted, so whatever factory the user had is still running happily. Do say that plainly, since the natural assumption is that a refused deploy broke something.
-
-The fix is shrinking the *rendered* prompt, not just the template. Much of the size usually arrives at render time, so cutting prose from the template tends to move the number far less than you'd expect. Measure on the box as you iterate:
-
-```
-sfbox start-session
-cd <city> && gc prime <agent> --strict --json | head -c 512 | sed 's/"content":.*//' | grep -o '"bytes":[0-9]*'
-```
-
-That leaves the `bytes` field on its own. It's the exact length of the string Gas City puts on the command line, so it's the number the kernel is actually comparing against the limit.
-
-Keep the pipe. Run bare, `--json` prints the whole rendered prompt as well, which on an oversized pack is several hundred kilobytes pulled into your context to read one number.
-
-Without `--strict`, `gc prime` quietly falls back to a short default prompt for any agent it can't resolve, and an oversized pack then measures small. Always pass it.
-
-Sometimes the user hits this outside `sfbox` entirely: a factory that won't start, with a log line about a session dying during startup. Check prompt size first. That message points at the session layer, but really the cause is the argument limit.
+Rig scope is the case worth knowing. `gc import add` installs at city scope unless it's given `--rig <rig>`, and this is the only route a participant has to a rig-scoped install on their own box.
 
 ## Looking at a box
 
@@ -96,10 +78,10 @@ Never suggest binding the API port publicly, or opening it up in the security gr
 ## Restarting
 
 ```
-sfbox restart-factory
+sfbox exec sudo systemctl restart gas-city.service
 ```
 
-A restart takes 30 to 90 seconds, and the stop phase can sit there a while tearing sessions down. That's the service working, not hanging. `sfbox` waits and reports when it's back, so don't interrupt it or retry early.
+A restart takes 30 to 90 seconds, and the stop phase can sit there a while tearing sessions down. That's the service working, not hanging, so don't interrupt it or retry early. Nothing waits for the user here: check it came back with `sfbox exec systemctl is-active gas-city.service`, or watch the whole picture with `sfbox get-box`.
 
 ## Things to leave alone
 

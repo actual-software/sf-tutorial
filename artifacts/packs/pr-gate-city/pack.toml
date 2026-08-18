@@ -1,19 +1,34 @@
-# pr-gate-city — city-scoped half of the pr-gate pair installed in
-# Progression page 01.
+# pr-gate-city — city-scoped half of the pr-gate pair installed in W3.
 #
-# Pairs with pr-gate-rig. Two packs because pack-v2 patches can only
-# target agents in the same composition pass: mayor is city-scoped, so
-# its prompt patch lives here; refinery is rig-scoped, so its patch
-# (and the polecat/refinery formulas) live in pr-gate-rig.
+# Pairs with pr-gate-rig. Two packs because a pack composes at one scope:
+# refinery is rig-scoped, so its prompt patch and the polecat/refinery
+# formulas live in pr-gate-rig; the mayor is city-scoped, so the mayor's
+# half lives here.
 #
 # What this pack contributes:
-#   1. A `[[patches.agent]]` that overrides the mayor's
-#      prompt_template, teaching the mayor about the PR-gate flow,
-#      the new dispatch recipe (`--on mol-polecat-pr`), and the
-#      blocked-bead triage path.
+#   1. agents/mayor — the city's mayor persona, teaching the PR-gate flow,
+#      the dispatch recipe (`--on mol-polecat-pr`), and the blocked-bead
+#      triage path.
+#
+# WHY THIS SHIPS A MAYOR RATHER THAN A [[patches.agent]] OVERRIDE. A pack
+# patch resolves only against that pack's own agents plus its declared
+# imports, which is why pr-gate-rig has to `[imports.setup]` before it can
+# patch `refinery`. The mayor has no such home to import: `gc init` writes it
+# into the city itself, at <city>/agents/mayor/, and `core` does not declare
+# one. A `[[patches.agent]] name = "mayor"` here fails composition outright:
+#
+#   city import "pr-gate-city": patches.agent[0]: agent "mayor" not found in pack
+#
+# So this pack supplies the mayor instead of amending one. W3 removes the
+# city's own agents/mayor/ and points the city's [[named_session]] at
+# `pr-gate-city.mayor`, which is what keeps the count at exactly one mayor.
+#
+# This pack declares NO [[named_session]] of its own, deliberately. The city
+# already declares the always-on mayor session, and a second declaration here
+# is a second mayor rather than a replacement for the first.
 #
 # Install:
-#   gc import add packs/pr-gate-city
+#   gc import add artifacts/packs/pr-gate-city
 #   (lands as [imports.pr-gate-city] in the city pack.toml)
 #
 # This pack is safe to import alone, but you almost certainly want
@@ -22,7 +37,3 @@
 [pack]
 name = "pr-gate-city"
 schema = 1
-
-[[named_session]]
-template = "mayor"
-mode = "always"

@@ -54,7 +54,12 @@ Put `sfbox` on your `PATH`, from the directory holding your clone.
 **Copy and paste**
 
 ```bash
-export PATH="$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/participant-box-cli:$PATH"
+cd $HOME && mkdir software-factory-intensive
+cd software-factory-intensive
+export SFI_PATH="$(pwd)"
+git clone https://github.com/actual-software/sf-tutorial.git
+
+export PATH="$SFI_PATH/sf-tutorial/participant-box-cli:$PATH"
 sfbox --help
 ```
 
@@ -65,6 +70,7 @@ Add both of these environment variables to your shell for future use:
 ```bash
 cat <<EOF >> ~/.zshrc
 export SFI_KEY=$HOME/Downloads/key.pem
+export SFI_PATH="$(pwd)"
 export PATH="$PWD/sf-tutorial/participant-box-cli:$PATH"
 EOF
 ```
@@ -74,6 +80,7 @@ EOF
 ```bash
 cat <<EOF >> ~/.bashrc
 export SFI_KEY=$HOME/Downloads/key.pem
+export SFI_PATH="$(pwd)"
 export PATH="$PWD/sf-tutorial/participant-box-cli:$PATH"
 EOF
 ```
@@ -169,7 +176,16 @@ Every command acts on your current box. Switch which one that is with `sfbox box
 | `sfbox get-box` | Service state, running sessions, and recent log (this will take a minute to run) | Seeing what the box is actually doing |
 | `sfbox start-session` | Opens a shell on the box | Running something on the box by hand |
 | `sfbox dashboard` | Tunnels the dashboard to `http://127.0.0.1:8372` | Watching your factory work in a browser |
-| `sfbox deploy-factory <url>` | Installs a pack as the top-level factory and restarts | Putting your own factory on the box |
-| `sfbox restart-factory` | Restarts the Gas City service | After a config change, or when the service is stopped |
+| `sfbox exec <command>` | Runs one command on the box and hands back its exit status | Restarting the service, or anything without a command of its own |
+| `sfbox gc <args>` | Runs a `gc` command inside the box's city | Importing a pack, listing sessions, reloading config |
+
+The last two are the ones you reach for most after setup, because between them they cover everything the list above doesn't:
+
+```bash
+sfbox exec sudo systemctl restart gas-city.service
+sfbox gc import add https://github.com/<org>/<repo>/tree/<ref>/<subdir> --rig <rig>
+```
+
+Your arguments arrive the way you typed them, so quotes and spaces survive. To pipe or redirect, ask for a shell: `sfbox exec bash -lc 'gc session list | wc -l'`. Nothing is checked on your behalf, and nothing is rolled back if it goes wrong: what you type is what runs.
 
 For more details about the `sfbox` CLI tool, see [`participant-box-cli/README.md`](./participant-box-cli/README.md).

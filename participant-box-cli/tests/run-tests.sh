@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 #
 # Tests for sfbox. These cover the parts that run on your laptop with no box
-# attached: local state, URL parsing, ssh config generation, preflight against
-# a stubbed box, and both halves of the prompt-size guardrail (the decision it
-# makes, and the ssh command it composes to gather the measurement).
+# attached: local state, ssh config generation, preflight against a stubbed box,
+# and the two passthroughs, whose job is to hand your command to the box without
+# altering it.
 #
 #   ./tests/run-tests.sh
 #
-# Anything that needs a live box (deploy, restart, tunnel) is not covered here.
+# Anything that needs a live box (an interactive session, the tunnel) is not
+# covered here.
 
 set -uo pipefail
 
@@ -104,27 +105,6 @@ fresh_state
 state_put b1 city_path "/home/ubuntu/my factory"
 is "$(state_get b1 city_path)" "/home/ubuntu/my factory" "keeps spaces in a value"
 
-# ---------------------------------------------------------- github urls ----
-
-echo "github url parsing"
-is "$(parse_github_url 'https://github.com/acme/packs/tree/main/factory')" \
-   "acme packs main factory" "tree url with ref and subdir"
-is "$(parse_github_url 'https://github.com/acme/packs/tree/v1.2.0/a/b')" \
-   "acme packs v1.2.0 a/b" "nested subdir"
-is "$(parse_github_url 'https://github.com/acme/packs')" \
-   "acme packs  " "bare repo url has no ref or subdir"
-is "$(parse_github_url 'https://github.com/acme/packs.git')" \
-   "acme packs  " "strips a .git suffix"
-is "$(parse_github_url 'https://github.com/acme/packs/tree/main')" \
-   "acme packs main " "ref with no subdir"
-
-rc_is 1 "rejects a non-github url"     parse_github_url 'https://gitlab.com/acme/packs'
-rc_is 1 "rejects a non-url"            parse_github_url 'acme/packs'
-rc_is 1 "rejects an unknown url shape" parse_github_url 'https://github.com/acme/packs/blob/main/x'
-rc_is 1 "rejects an org with no repo"  parse_github_url 'https://github.com/acme'
-rc_is 1 "rejects a trailing-slash org" parse_github_url 'https://github.com/acme/'
-rc_is 1 "rejects a bare host"          parse_github_url 'https://github.com/'
-
 # ------------------------------------------------------- flags need values ---
 
 # A flag given without its value used to leave $# at 1, where `shift 2` refuses
@@ -133,20 +113,16 @@ echo "flags that are missing their value"
 rc_is 1 "save-credential --box with no value" cmd_save_credential --box
 rc_is 1 "save-credential --host with no value" cmd_save_credential --box b --host
 rc_is 1 "get-box --lines with no value"       cmd_get_box --lines
-rc_is 1 "restart-factory --wait with no value" cmd_restart_factory --wait
 rc_is 1 "dashboard --port with no value"      cmd_dashboard --port
 rc_is 1 "preflight --box with no value"       cmd_preflight --box
-rc_is 1 "deploy-factory --version with no value" cmd_deploy_factory url --version
 
 # ------------------------------------------------- flags that count things ---
 
-# --wait is the one that matters. The restart poll compares it with -lt, which
-# errors on a non-numeric operand and falls out of the loop, so an unchecked
-# value made restart-factory report its verdict at once instead of waiting.
+# Both of these feed a numeric comparison that errors on a non-numeric operand
+# rather than refusing, so an unchecked value reads as a working command.
 echo "flags that have to be numbers"
-rc_is 1 "get-box rejects a non-numeric --lines"        cmd_get_box --lines abc
-rc_is 1 "restart-factory rejects a non-numeric --wait" cmd_restart_factory --wait soon
-rc_is 1 "dashboard rejects a non-numeric --port"       cmd_dashboard --port http
+rc_is 1 "get-box rejects a non-numeric --lines"  cmd_get_box --lines abc
+rc_is 1 "dashboard rejects a non-numeric --port" cmd_dashboard --port http
 
 # -------------------------------------------------- dashboard local port ---
 
@@ -266,59 +242,6 @@ is "$(cat "$SFBOX_TEST_ROOT/resolve-args")" "explicit=[]" "the default arrives a
 eval "$real_resolve_box"
 eval "$real_resolve_port"
 unset real_resolve_box real_resolve_port
-
-# ------------------------------------------------------ size guardrail -----
-
-echo "prompt-size guardrail"
-
-sizes() { printf '%b' "$1" | evaluate_prompt_sizes >/dev/null 2>&1; printf '%s' $?; }
-
-is "$(sizes 'manager\tOK\t1000\nbuilder\tOK\t2000\n')" "0" \
-   "passes when every prompt is small"
-is "$(sizes 'manager\tOK\t131071\n')" "0" \
-   "passes one byte under the limit"
-is "$(sizes 'manager\tOK\t131072\n')" "1" \
-   "refuses at exactly the limit, because the NUL terminator counts"
-is "$(sizes 'manager\tOK\t190327\n')" "1" \
-   "refuses a prompt well over the limit"
-is "$(sizes 'manager\tOK\t1000\nbuilder\tOK\t200000\n')" "1" \
-   "refuses when any single agent is too large, not just the manager"
-is "$(sizes 'manager\tERR\t0\n')" "1" \
-   "refuses when an agent cannot be rendered at all"
-is "$(sizes 'manager\tOK\tnope\n')" "1" \
-   "refuses a size that is not a number instead of reading it as fitting"
-is "$(sizes '')" "3" \
-   "reports could-not-measure on empty input"
-
-echo "prompt-size guardrail: reading the size out of gc prime --json"
-
-# Mirrors the reader inside check_prompt_sizes, which runs on the box inside a
-# remote command string and so cannot be called directly from here. The two
-# assertions below the fixtures check that the snippet in sfbox still matches.
-prime_bytes() { head -c 512 | sed 's/"content":.*//' | grep -o '"bytes":[0-9]*' | head -1 | tr -dc '0-9'; }
-
-is "$(printf '%s' '{"agent":"local-core.manager","bytes":299395,"content":"# Manager\n"}' | prime_bytes)" \
-   "299395" "reads the bytes field"
-is "$(printf '%s' '{"agent":"bd.dog","bytes":905,"content":""}' | prime_bytes)" \
-   "905" "reads a small prompt"
-is "$(printf '%s' '{"agent":"m","bytes":299395,"content":"a prompt quoting \"bytes\":1 in its own text"}' | prime_bytes)" \
-   "299395" "ignores a bytes-looking string inside the rendered prompt"
-is "$(printf '%s' '{"agent":"m","content":"no size here"}' | prime_bytes)" \
-   "" "reads empty when the field is gone, which the evaluator then refuses on"
-is "$(sizes "manager\tOK\t$(printf '%s' '{"agent":"m","content":"x"}' | prime_bytes)\n")" "1" \
-   "a missing bytes field refuses the deploy rather than passing it"
-
-# The quotes are backslashed in sfbox because the reader lives inside a
-# double-quoted remote command string, so match it the way it is written.
-contains "$(cat "$SFBOX")" '--strict --json'  "sfbox still asks gc prime for JSON"
-contains "$(cat "$SFBOX")" 'bytes\":[0-9]*'   "sfbox still reads the bytes field"
-
-echo "prompt-size guardrail: what it tells the participant"
-msg="$(printf 'manager\tOK\t190327\n' | evaluate_prompt_sizes 2>&1)"
-contains "$msg" "190327"                     "names the measured size"
-contains "$msg" "$SFBOX_MAX_PROMPT_BYTES"    "names the limit"
-contains "$msg" "session died during startup" "warns about the misleading error"
-contains "$msg" "rolled back"                "says the box was left alone"
 
 # ------------------------------------------------------------ ssh config ---
 
@@ -1034,41 +957,86 @@ is "$(parse_remote "$CAPTURED" 3)" \
    "cd /home/ubuntu/city && gc import add https://example.invalid/p.git --version v1\\ 2" \
                                           "box_gc reaches gc through the login shell"
 
-# The size guardrail is the last gc caller over ssh, and the one whose failure
-# is silent: it drops stderr, so a gc that does not resolve is indistinguishable
-# from a box with no agents, and the deploy refuses on a healthy factory rather
-# than reporting why. Its remote script is many lines rather than one, so it
-# also checks the wrapper on a command that has to survive embedded newlines.
+# ------------------------------------------------------------ passthrough ---
 #
-# It reads the command back from a file rather than a variable: this caller
-# wraps the ssh in a command substitution, so a stub that recorded into a
-# variable would set it in that subshell and leave the parent holding whatever
-# the previous case left behind — passing the shape assertions while proving
-# nothing about this one.
-CAPTURED_FILE="$SFBOX_TEST_ROOT/captured-remote"
-box_ssh() { shift; printf '%s' "$*" >"$CAPTURED_FILE"; }
-: >"$CAPTURED_FILE"
-check_prompt_sizes sfi-test-1 '/home/ubuntu/city' >/dev/null 2>&1
-CAPTURED="$(cat "$CAPTURED_FILE")"
+# The two passthroughs are the only commands whose whole job is to leave what
+# you typed alone, so their tests are about argv surviving the trip. Asserting
+# the quoted string byte for byte would pin the quoting style rather than the
+# property, so these do what the box does instead: take the command string out
+# of the `bash -lc` argument and let a shell rebuild the argv from it.
 
-# The wrapper check comes first and gates the parse. parse_remote evals what it
-# is handed, which is safe once the script is quoted into a single argument and
-# emphatically is not before: unwrapped, this particular script evals down to a
-# `while read` with nothing on stdin, so a regression here would hang the suite
-# rather than fail it.
-case "$CAPTURED" in
-  "bash -lc "*)
-    ok "the size guardrail reaches gc through a login shell"
-    contains "$(parse_remote "$CAPTURED" 3)" "gc agent list" \
-                                          "carries its gc calls into the login shell"
-    contains "$(parse_remote "$CAPTURED" 3)" "gc prime" \
-                                          "carries both gc calls, not just the first"
-    ;;
-  *)
-    bad "the size guardrail reaches gc through a login shell" \
-        "sent the script raw: [$(printf '%s' "$CAPTURED" | head -1)]"
-    ;;
-esac
+remote_argv() { # index -> that argument as the box's shell would see it
+  # Read the index into a local before the eval: `set --` rewrites this
+  # function's own positional parameters, so $1 stops being the index.
+  local idx="$1" cmd
+  cmd="$(parse_remote "$CAPTURED" 3)"
+  eval "set -- $cmd"
+  eval "printf '%s' \"\${$idx}\""
+}
+
+echo "exec: your command reaches the box the way you typed it"
+CAPTURED=""
+box_ssh() { shift; CAPTURED="$*"; }
+
+cmd_exec --box sfi-test-1 systemctl is-active gas-city.service
+is "$(parse_remote "$CAPTURED" 1)" "bash" "goes through a login shell like every other gc caller"
+is "$(remote_argv 1)" "systemctl"            "passes the command word"
+is "$(remote_argv 3)" "gas-city.service"     "passes its arguments"
+
+cmd_exec --box sfi-test-1 cat 'my notes.txt'
+is "$(remote_argv 2)" "my notes.txt" "an argument with a space arrives as one argument"
+
+cmd_exec --box sfi-test-1 grep -n 'a "quoted" thing' /etc/hosts
+is "$(remote_argv 3)" 'a "quoted" thing' "embedded quotes survive"
+is "$(remote_argv 4)" '/etc/hosts'       "and the argument after them is still separate"
+
+# A glob has to arrive unexpanded: expanding it here would match against the
+# laptop's files, which is never what the participant meant.
+cmd_exec --box sfi-test-1 ls '/var/log/*.log'
+is "$(remote_argv 2)" '/var/log/*.log' "a glob is left for the box to expand"
+
+echo "exec: where sfbox's options stop and yours begin"
+
+cmd_exec --box sfi-test-1 ls --box elsewhere
+is "$(remote_argv 2)" "--box"     "a flag after the command belongs to the command"
+is "$(remote_argv 3)" "elsewhere" "and keeps its value"
+
+cmd_exec --box sfi-test-1 -- --version
+is "$(remote_argv 1)" "--version" "-- lets the command itself start with a dash"
+
+rc_is 2 "no command at all prints usage"    cmd_exec --box sfi-test-1
+rc_is 1 "exec --box with no value"          cmd_exec --box
+rc_is 0 "exec --help is not a command"      cmd_exec --help
+
+echo "exec: the box's exit status is the one you get"
+box_ssh() { return 42; }
+rc_is 42 "hands back what the remote command exited with" cmd_exec --box sfi-test-1 false
+box_ssh() { shift; CAPTURED="$*"; }
+
+echo "gc: runs inside the city without you naming it"
+state_put sfi-test-1 city_path '/home/ubuntu/my city'
+
+# Rebuilding argv from this one would run the && rather than inspect it, so
+# these read the composed string, the way the box_gc case above already does.
+cmd_gc --box sfi-test-1 session list
+is "$(parse_remote "$CAPTURED" 3)" \
+   'cd /home/ubuntu/my\ city && gc session list' \
+   "runs gc inside the remembered city, whose space survives as one argument"
+
+cmd_gc --box sfi-test-1 --city-path '/srv/other city' session list
+is "$(parse_remote "$CAPTURED" 3)" \
+   'cd /srv/other\ city && gc session list' \
+   "--city-path overrides the remembered one"
+
+# The one the whole change exists for: deploy-factory ran gc import add with no
+# --rig and structurally could not pass one, so rig-scoped installs had no route
+# at all. Here the flag is just another argument.
+cmd_gc --box sfi-test-1 import add 'https://github.com/acme/packs/tree/main/f' --rig myrig
+contains "$(parse_remote "$CAPTURED" 3)" "--rig myrig" "a gc flag after the command reaches gc"
+
+rc_is 2 "gc with no arguments prints usage" cmd_gc --box sfi-test-1
+rc_is 1 "gc --city-path with no value"      cmd_gc --city-path
+rc_is 0 "gc --help is not a gc argument"    cmd_gc --help
 
 # ------------------------------------------------------- save-credential ---
 #
