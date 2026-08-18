@@ -13,8 +13,8 @@
 - [Curriculum Structure](#curriculum-structure)
   - [Day 1: run and explore a standard software factory](#day-1-run-and-explore-a-standard-software-factory)
   - [Day 2: build your own software factory](#day-2-build-your-own-software-factory)
-  - [The six options](#the-six-options)
-  - [The base factory](#the-base-factory)
+  - [Six Enhancement Ideas](#six-enhancement-ideas)
+  - [The Base Factory](#the-base-factory)
 
 ## Overview
 
@@ -59,15 +59,9 @@ You’ll need at least one coding agent subscription (or API key) to run the wor
 
 To prepare for the workshop, please install the [Actual Factory Demo](https://github.com/actual-software/actual-factory-demo) and follow the instructions to get it running. This proves your machine is ready to go and gives you a hands-on understanding of the basics of Gas City.
 
-### Running on a cloud box (optional)
-
-Doing the intensive on instructor-provided cloud boxes instead of your own laptop? Start at [`CLOUD_BOX_GUIDE.md`](./CLOUD_BOX_GUIDE.md). It takes the four values your instructor sends you through to a running factory, and it ends with the commands you'll use across the two days. No AWS account needed.
-
-The CLI it drives, plus an optional agent skill, is documented in [`participant-box-cli/`](./participant-box-cli/README.md): deploy a factory pack, restart the service, read box state, and tunnel the dashboard to your browser.
-
 ## Curriculum Structure
 
-Two days. Workshops (**W**) are taught; labs (**L**) are yours. Durations below are the general shape of a session rather than a fixed clock, since the curriculum runs at different events.
+Two days. Workshops (**W**) are instructor-led, while labs (**L**) are participant-led.
 
 ### Day 1: run and explore a standard software factory
 
@@ -92,24 +86,20 @@ Two days. Workshops (**W**) are taught; labs (**L**) are yours. Durations below 
 | W7 | Workshop | 45 min | Sharing Your Factory | [`W7`](./progression/W7-sharing-your-factory.md) |
 | L5 | Lab | 45 min | Third enhancement | [`L3-L5`](./progression/L3-L5-feature-labs.md) |
 
-Both days also carry a Gas City speaker session and breaks, which are not pages.
+### Six Enhancement Ideas
 
-### The six options
-
-The three feature labs draw on the same menu. **L3** is one of these six. **L4** and **L5** are each either an option you have not used yet, or a feature of your own from your capability map.
+The three feature labs draw on the same menu of options. In **L3** you pick one of these six, then in **L4** and **L5** you can either choose one you have not used yet, or a feature of your own from your capability map.
 
 | Option | Solves |
 |---|---|
-| [Bead gate checks](./hardening/06-bead-gate-checks.md) | Work reaches an implementer under-specified and it has to guess |
 | [Bead creation formula extensions](./hardening/01-bead-creation-formula-extensions.md) | Beads arrive with no design, test or docs thinking attached |
 | [Specialized domain reviewers](./hardening/02-specialize-reviewers-per-domain.md) | One reviewer judging everything reviews nothing well |
 | [Architecture best-practices loop](./hardening/03-architecture-best-practices-loop.md) | Reviews are opinions rather than scores against named principles |
 | [Strengthen the review system](./hardening/04-strengthen-review-system.md) | One model is one point of view, and it is confidently wrong sometimes |
 | [Self-improvement loop](./hardening/05-self-improvement-loop.md) | The factory produces evidence about itself and nobody reads it |
+| [Bead gate checks](./hardening/06-bead-gate-checks.md) | Work reaches an implementer under-specified and it has to guess |
 
-**Every option installs on the base factory alone.** None requires another and none has to be taken in order, so pick on the basis of which problem you actually have.
-
-### The base factory
+### The Base Factory
 
 W3 installs one pack, [`base-factory`](./artifacts/packs/base-factory/README.md), and gets a working multi-agent factory with an example of every Gas City primitive already running in it: formulas, an agent persona, orders, a rig, and mail. Day 2 extends it.
 
