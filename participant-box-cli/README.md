@@ -41,50 +41,22 @@ The participant command list, with a line each on what it does and when you'd re
 
 When something's wrong, start with `sfbox preflight`. It'll tell "my factory is broken" apart from "my ssh is broken", and honestly those two get mistaken for each other constantly.
 
-## Deploying a factory
+## Running commands on the box
 
-Point it at any public GitHub path:
-
-```bash
-sfbox deploy-factory https://github.com/actual-software/actual-factory-demo/tree/main/factory
-```
-
-Your pack becomes the top-level factory, so whatever imports you've already got on the box are replaced, with the single exception of Gas City's own `core` and `bd` imports, which get left alone because pulling those would break the city rather than swap the factory. You'll see the whole plan first. Nothing changes until you confirm it.
-
-```mermaid
-flowchart TD
-    A[resolve the ref to a commit] --> B[gc import add]
-    B --> C[gc import remove existing]
-    C --> D[gc import install]
-    D --> E{every rendered agent prompt<br/>under 131,072 bytes?}
-    E -- yes --> F[restart gas-city.service]
-    E -- no --> G[roll the imports back]
-    F --> H[factory running the new pack]
-    G --> I[refused, old factory still running]
-```
-
-That size check is the step worth understanding, and it's the reason the restart is deliberately the very last thing to happen: everything before it can be undone, so the one irreversible step waits until the check has already passed.
-
-## Why a deploy can be refused
-
-Gas City hands an agent's whole rendered prompt over as a single command-line argument. Linux caps one argument at 131,072 bytes, counting the terminator. So a pack whose rendered prompt crosses that line can't start. Not sometimes. Never.
-
-Here's why the guardrail earns its keep. The platform reports this failure as a session dying during startup, which points straight at the session layer and sends you hunting around in completely the wrong place, when what's really happening is just the kernel refusing to exec.
-
-So `sfbox` renders every agent on the box and measures it before restarting anything. If a prompt's too big, the deploy stops, the import gets rolled back, and **your box keeps running the factory it already had**. A refused deploy costs you nothing.
-
-Fixing an oversized pack means shrinking the prompt as *rendered*, not as written. Quite a lot of the size usually shows up at render time, so trimming prose out of the template often barely moves the number at all. Measure it directly as you iterate:
+Two commands hand the box your own command instead of running a recipe for you. `exec` runs anything; `gc` runs a `gc` command inside the city, so you don't have to know where the city lives.
 
 ```bash
-sfbox start-session
-cd <your-city> && gc prime <agent> --strict --json | head -c 512 | sed 's/"content":.*//' | grep -o '"bytes":[0-9]*'
+sfbox exec sudo systemctl restart gas-city.service
+sfbox gc import add https://github.com/<org>/<repo>/tree/<ref>/<subdir> --rig <rig>
+sfbox gc import install
+sfbox gc reload
 ```
 
-That prints the `bytes` field on its own, which is the number to watch. It's the exact length of the string Gas City puts on the command line, the same thing the kernel measures when it refuses.
+Your arguments arrive the way you typed them, quotes and spaces included, so `sfbox exec cat 'my notes.txt'` reads one file rather than two. Shell metacharacters are therefore yours to ask for: pipe or redirect by requesting a shell, as in `sfbox exec bash -lc 'gc session list | wc -l'`. Options go before the command and anything after it belongs to the command, with `--` to force the split when your command itself starts with a dash.
 
-Keep the trimming. `--json` prints the whole rendered prompt alongside the size, so running it bare buries the number under a few hundred kilobytes of output, and it does that worst on exactly the oversized packs you'd be here to debug.
+The box's exit status comes back to you, so these compose in a script the way a local command would.
 
-Do pass `--strict` as well. Without it, `gc prime` quietly falls back to a short default prompt for any agent it can't resolve, so an oversized pack measures small and looks perfectly healthy.
+Nothing is checked on your behalf. There is no dry run, no snapshot of your imports and no rollback: what you type is what runs on the box.
 
 ## The dashboard
 

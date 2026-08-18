@@ -12,6 +12,8 @@
   - [2. Install the pinned dependencies](#2-install-the-pinned-dependencies)
   - [3. Run preflight](#3-run-preflight)
 - [The cloud box (recommended)](#the-cloud-box-recommended)
+  - [Run preflight locally once complete](#run-preflight-locally-once-complete)
+  - [How you will drive the box](#how-you-will-drive-the-box)
 - [Running on your own machine (alternative)](#running-on-your-own-machine-alternative)
   - [1. Sign in to GitHub](#4-sign-in-to-github)
 - [Troubleshooting](#troubleshooting)
@@ -159,6 +161,24 @@ sfbox preflight
 ==>   Nothing is broken. This box supplies the environment and you build the
 ==>   city yourself, so the service stays down until there is one to run.
 ```
+
+### How you will drive the box
+
+The factory you build in [W3](./W3-run-your-factory.md) lives on the box, and you drive it from your laptop. `sfbox exec <command>` runs any command there. `sfbox gc <args>` runs a `gc` command inside the box's city once there is one, so you never have to remember where the city lives. When you would rather work on the box directly, `sfbox start-session` opens a full shell.
+
+**Copy and paste**
+
+```bash
+sfbox exec systemctl is-active gas-city.service
+```
+
+**Expected output**
+
+```text
+inactive
+```
+
+`inactive` is the right answer today, and the same thing preflight just told you in more words: there is no city on the box yet, so the service has nothing to supervise. W3 is where you build it one.
 
 ## Running on your own machine (alternative)
 

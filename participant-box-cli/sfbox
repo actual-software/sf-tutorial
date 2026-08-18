@@ -20,15 +20,6 @@ SFBOX_KEYS="$SFBOX_HOME/keys"
 SFBOX_KNOWN_HOSTS="$SFBOX_HOME/known_hosts"
 SFBOX_SSH_CONFIG="$SFBOX_HOME/ssh_config"
 
-# MAX_ARG_STRLEN on Linux. A rendered prompt is passed to the agent as a
-# single argv entry (prompt_mode = "arg"), and the kernel counts the NUL
-# terminator, so a prompt of exactly this many bytes already fails.
-SFBOX_MAX_PROMPT_BYTES=131072
-
-# Imports that belong to Gas City itself. deploy-factory never removes these;
-# removing them breaks the city rather than swapping the factory.
-SFBOX_PROTECTED_IMPORTS="core bd"
-
 SFBOX_DEFAULT_USER="ubuntu"
 SFBOX_DEFAULT_PORT="22"
 SFBOX_DEFAULT_DASHBOARD_PORT="8372"
@@ -709,60 +700,6 @@ cmd_get_box() {
   box_ssh "$box" "journalctl -u $SFBOX_SERVICE -n $(rq "$lines") --no-pager" 2>&1 || true
 }
 
-cmd_restart_factory() {
-  local box_arg="" wait_secs=180
-  while [ $# -gt 0 ]; do
-    case "$1" in
-      --box)  box_arg="${2:-}"; shift 2 || die "'$1' needs a value" ;;
-      --wait) wait_secs="${2:-}"; shift 2 || die "'$1' needs a value" ;;
-      -h|--help) echo "usage: sfbox restart-factory [--box <boxId>] [--wait <seconds>]"; return 0 ;;
-      *) die "restart-factory: unknown argument '$1'" ;;
-    esac
-  done
-  # An unvalidated --wait is worse than it looks: the poll below compares it
-  # with -lt, which errors on a non-numeric operand and drops straight out of
-  # the loop, so the restart would report its verdict immediately instead of
-  # waiting the 30 to 90 seconds it actually needs.
-  case "$wait_secs" in
-    ''|*[!0-9]*) die "restart-factory: --wait must be numeric (got '$wait_secs')" ;;
-  esac
-  state_init
-  local box; box="$(resolve_box "$box_arg")" || exit $?
-  restart_factory "$box" "$wait_secs"
-}
-
-# Shared by restart-factory and the tail of deploy-factory.
-restart_factory() { # box wait_secs
-  local box="$1" wait_secs="$2"
-
-  say "Restarting $SFBOX_SERVICE on '$box'."
-  say "This normally takes 30 to 90 seconds. The stop phase can sit there a while"
-  say "tearing sessions down — that is the service working, not hanging."
-
-  # sudo needs no TTY here: sudoers grants NOPASSWD and there is no requiretty.
-  if ! ssh -F "$SFBOX_SSH_CONFIG" -o ConnectTimeout=15 -o ServerAliveInterval=15 \
-        "$box" "sudo systemctl restart $SFBOX_SERVICE"; then
-    err "restart command failed on '$box'"
-    err "check the log with: sfbox get-box --box $box"
-    return 1
-  fi
-
-  local waited=0 active=""
-  while [ "$waited" -lt "$wait_secs" ]; do
-    active="$(box_ssh "$box" "systemctl is-active $SFBOX_SERVICE" 2>/dev/null || true)"
-    if [ "$active" = "active" ]; then
-      say "$SFBOX_SERVICE is active again after ${waited}s."
-      return 0
-    fi
-    sleep 5
-    waited=$((waited + 5))
-  done
-
-  warn "$SFBOX_SERVICE is '${active:-unknown}' after ${wait_secs}s."
-  warn "It may still be coming up. Check with: sfbox get-box --box $box"
-  return 1
-}
-
 # ------------------------------------------------------------- dashboard ----
 
 # Is something already listening on this local port?
@@ -856,282 +793,56 @@ cmd_dashboard() {
       -L "$port:127.0.0.1:$SFBOX_DEFAULT_DASHBOARD_PORT" "$box"
 }
 
-# ------------------------------------------------------- deploy-factory -----
-
-# Turn a GitHub tree/repo URL into "<org>/<repo>" and a ref, for sha lookup.
-parse_github_url() { # url -> prints "org repo ref subdir"
-  local url="$1" rest org repo ref="" subdir=""
-  case "$url" in
-    https://github.com/*) rest="${url#https://github.com/}" ;;
-    *) return 1 ;;
-  esac
-  rest="${rest%/}"
-  org="${rest%%/*}"
-  # A bare org with no repo segment is not a pack URL. Reject it here: "${rest#*/}"
-  # leaves $rest untouched when there is no slash, so the org would otherwise be
-  # reused as the repo name and fail much later as "could not resolve acme/acme".
-  [ "$rest" != "$org" ] || return 1
-  rest="${rest#*/}"
-  if [ -n "$rest" ]; then repo="${rest%%/*}"; rest="${rest#"$repo"}"; rest="${rest#/}"; fi
-  repo="${repo%.git}"
-  [ -n "$org" ] && [ -n "$repo" ] || return 1
-  if [ -n "$rest" ]; then
-    case "$rest" in
-      tree/*) rest="${rest#tree/}"; ref="${rest%%/*}"; subdir="${rest#"$ref"}"; subdir="${subdir#/}" ;;
-      *) return 1 ;;
-    esac
-  fi
-  printf '%s %s %s %s\n' "$org" "$repo" "$ref" "$subdir"
-}
-
-# Resolve a ref to a commit sha through the public GitHub API (no auth needed).
-resolve_commit_sha() { # org repo ref
-  local org="$1" repo="$2" ref="${3:-HEAD}"
-  command -v curl >/dev/null 2>&1 || return 1
-  curl -fsSL "https://api.github.com/repos/$org/$repo/commits/$ref" 2>/dev/null \
-    | sed -n 's/^[[:space:]]*"sha"[[:space:]]*:[[:space:]]*"\([0-9a-f]\{40\}\)".*/\1/p' \
-    | head -1
-}
-
-# The highest-value guardrail. Render every agent on the box and refuse if any
-# rendered prompt is too large to exec.
+# --------------------------------------------- running commands on the box ----
 #
-# Why --strict matters: without it, gc prime silently falls back to a short
-# default worker prompt for an agent it cannot resolve, so an oversized pack
-# would measure small and sail through the check it is supposed to fail.
+# Two passthroughs. Every other subcommand is a fixed recipe; these hand you the
+# box directly, which is how you reach anything sfbox has no subcommand for.
+# `gc import add --rig <rig>` is the one participants hit first: it installs a
+# pack at rig scope, and no recipe here has ever been able to do that.
 #
-# Why --json matters: the bytes field is the exact UTF-8 length of the string
-# that prompt_mode="arg" hands to execve, which is the thing the kernel is
-# measuring when it refuses. Piping the plain output through wc -c agrees
-# today, measured identical on nine agents from 905 to 299,395 bytes, but it
-# is a proxy on what gc happened to print rather than the length itself.
-#
-# The reader cuts the JSON at "content" before it looks for a size, so a
-# rendered prompt that itself contains the word bytes cannot be mistaken for
-# the measurement. If the field ever moves or disappears the size comes back
-# empty, and evaluate_prompt_sizes refuses on an unreadable size rather than
-# passing it, so the whole path stays fail-closed.
-check_prompt_sizes() { # box city_path -> 0 ok, 1 oversized, 3 could-not-measure
-  local box="$1" city="$2"
+# Both read their own options only up to the first operand. Flags written after
+# the command belong to the command, and `--` forces the split when the command
+# itself starts with a dash.
 
-  say "Rendering every agent prompt to check it can actually start ..."
-  local remote out
-  remote="cd $(rq "$city") || exit 3
-tmp=\$(mktemp) || exit 3
-gc agent list 2>/dev/null | awk '/^[[:space:]]/ {print \$1}' | while read -r a; do
-  [ -n \"\$a\" ] || continue
-  if gc prime \"\$a\" --strict --json >\"\$tmp\" 2>/dev/null; then
-    printf '%s\tOK\t%s\n' \"\$a\" \"\$(head -c 512 \"\$tmp\" | sed 's/\"content\":.*//' | grep -o '\"bytes\":[0-9]*' | head -1 | tr -dc '0-9')\"
-  else
-    printf '%s\tERR\t0\n' \"\$a\"
-  fi
-done
-rm -f \"\$tmp\""
-
-  out="$(box_ssh_login "$box" "$remote" 2>/dev/null)"
-  if [ -z "$out" ]; then
-    err "could not render any agent prompt on '$box'."
-    err "Without that measurement the size guardrail cannot run, so the deploy stops here."
-    return 3
-  fi
-  printf '%s\n' "$out" | evaluate_prompt_sizes
-}
-
-# The decision half of the guardrail, split out so it can be tested without a
-# box: reads "<agent>\t<OK|ERR>\t<bytes>" lines and returns 0 pass, 1 refuse.
-evaluate_prompt_sizes() {
-  local out oversized=0 unreadable=0 largest=0 agent status bytes
-  out="$(cat)"
-  [ -n "$out" ] || return 3
-  while IFS="$(printf '\t')" read -r agent status bytes; do
-    [ -n "$agent" ] || continue
-    if [ "$status" = "ERR" ]; then
-      warn "  $agent: could not render (gc prime --strict --json failed)"
-      unreadable=$((unreadable + 1))
-      continue
-    fi
-    # A size that is not a number means the measurement broke, not that the
-    # prompt fits. Without this the -ge test below errors and falls through to
-    # the "fits" branch, which is the one failure this guardrail must not have.
-    case "$bytes" in
-      ''|*[!0-9]*)
-        warn "  $agent: could not read a size (got '$bytes')"
-        unreadable=$((unreadable + 1))
-        continue ;;
-    esac
-    if [ "$bytes" -ge "$SFBOX_MAX_PROMPT_BYTES" ]; then
-      err "  $agent: $bytes bytes — TOO LARGE"
-      oversized=$((oversized + 1))
-    else
-      say "  $agent: $bytes bytes"
-      [ "$bytes" -gt "$largest" ] && largest="$bytes"
-    fi
-  done <<<"$out"
-
-  if [ "$oversized" -gt 0 ]; then
-    echo
-    err "This pack cannot start on the box. $oversized agent prompt(s) render to at least"
-    err "$SFBOX_MAX_PROMPT_BYTES bytes, and Linux caps a single argument at that size"
-    err "(MAX_ARG_STRLEN, counting the terminator). Gas City passes the whole rendered"
-    err "prompt as one argument, so exec fails every time — and it is reported as"
-    err "'session died during startup', which points at the wrong layer entirely."
-    err ""
-    err "Nothing was restarted, and the import has been rolled back, so your box is"
-    err "still running the factory it was running before."
-    err ""
-    err "To fix it, shrink the rendered prompt — not just the template. Most of the"
-    err "size usually comes from what gets injected at render time, so trimming prose"
-    err "in the template alone tends not to be enough."
-    return 1
-  fi
-  if [ "$unreadable" -gt 0 ]; then
-    echo
-    err "$unreadable agent(s) could not be rendered, so this pack is not safe to start."
-    err "Run 'gc prime <agent> --strict' on the box to see why."
-    return 1
-  fi
-  say "All agent prompts fit. Largest is $largest bytes of $SFBOX_MAX_PROMPT_BYTES."
-  return 0
-}
-
-cmd_deploy_factory() {
-  local box_arg="" pack_url="" version="" city_override="" assume_yes=0 keep_existing=0
+cmd_exec() {
+  local box_arg=""
   while [ $# -gt 0 ]; do
     case "$1" in
-      --box)        box_arg="${2:-}"; shift 2 || die "'$1' needs a value" ;;
-      --version)    version="${2:-}"; shift 2 || die "'$1' needs a value" ;;
-      --city-path)  city_override="${2:-}"; shift 2 || die "'$1' needs a value" ;;
-      --keep-existing) keep_existing=1; shift ;;
-      -y|--yes)     assume_yes=1; shift ;;
-      -h|--help)    usage_deploy_factory; return 0 ;;
-      -*)           die "deploy-factory: unknown argument '$1'" ;;
-      *)            [ -z "$pack_url" ] && pack_url="$1" || die "deploy-factory: unexpected argument '$1'"; shift ;;
+      --box)     box_arg="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      -h|--help) usage_exec; return 0 ;;
+      --)        shift; break ;;
+      *)         break ;;
     esac
   done
-  [ -n "$pack_url" ] || { usage_deploy_factory; exit 2; }
-
+  [ $# -gt 0 ] || { usage_exec; exit 2; }
   state_init
   local box; box="$(resolve_box "$box_arg")" || exit $?
 
-  local parsed org repo ref subdir
-  parsed="$(parse_github_url "$pack_url")" || die "not a GitHub URL: $pack_url
-Expected something like https://github.com/<org>/<repo>/tree/<ref>/<subdir>"
-  read -r org repo ref subdir <<<"$parsed"
-
-  # gc pins by commit, so resolve the ref unless the caller already pinned it.
-  if [ -z "$version" ]; then
-    say "Resolving ${ref:-default branch} of $org/$repo to a commit ..."
-    local sha
-    sha="$(resolve_commit_sha "$org" "$repo" "$ref")"
-    [ -n "$sha" ] || die "could not resolve $org/$repo@${ref:-HEAD} to a commit.
-Pass it yourself with --version sha:<commit>."
-    version="sha:$sha"
-  fi
-  say "Pack:    $pack_url"
-  say "Version: $version"
-
-  say "Checking connectivity to '$box' first ..."
-  box_ssh "$box" 'echo ok' >/dev/null 2>&1 \
-    || die "cannot reach '$box' over ssh. Run 'sfbox preflight --box $box' to see why."
-
-  local city
-  city="$(resolve_city_path "$box" "$city_override")" || exit 3
-  say "City:    $city"
-
-  # Snapshot the current imports. This is both the removal list and, if the
-  # size check refuses the pack, the rollback plan.
-  local snapshot
-  snapshot="$(box_gc "$box" "$city" import list 2>/dev/null)" \
-    || die "could not read the current imports on '$box'"
-
-  local to_remove=""
-  if [ "$keep_existing" = 0 ]; then
-    local name
-    while IFS="$(printf '\t')" read -r name _rest; do
-      [ -n "$name" ] || continue
-      case " $SFBOX_PROTECTED_IMPORTS " in
-        *" $name "*) continue ;;
-      esac
-      to_remove="$to_remove $name"
-    done <<<"$snapshot"
-  fi
-
-  echo
-  say "Plan for '$box':"
-  say "  1. add     $pack_url ($version)"
-  if [ -n "$to_remove" ]; then
-    say "  2. remove ${to_remove# } (so the new pack is the top-level one)"
-  else
-    say "  2. remove nothing"
-  fi
-  say "  3. install"
-  say "  4. check every rendered agent prompt fits in $SFBOX_MAX_PROMPT_BYTES bytes"
-  say "  5. restart $SFBOX_SERVICE — only if step 4 passes"
-  echo
-  if [ "$assume_yes" = 0 ]; then
-    printf '==> Continue? [y/N] '
-    local reply; read -r reply
-    case "$reply" in y|Y|yes|YES) ;; *) say "Nothing changed."; return 0 ;; esac
-  fi
-
-  local pack_name="$repo"
-  [ -n "$subdir" ] && pack_name="$(basename "$subdir")"
-
-  say "Adding the import ..."
-  box_gc "$box" "$city" import add "$pack_url" --version "$version" \
-    || die "gc import add failed — nothing changed on the box"
-
-  local n
-  for n in $to_remove; do
-    say "Removing '$n' ..."
-    box_gc "$box" "$city" import remove "$n" || warn "gc import remove $n failed; continuing"
-  done
-
-  say "Installing ..."
-  if ! box_gc "$box" "$city" import install; then
-    err "gc import install failed."
-    rollback_imports "$box" "$city" "$snapshot" "$pack_name"
-    exit 1
-  fi
-
-  # The guardrail runs here: after install so the pack is real, before the
-  # restart so a refusal leaves the running factory untouched.
-  check_prompt_sizes "$box" "$city"
-  local check_rc=$?
-  if [ "$check_rc" != 0 ]; then
-    rollback_imports "$box" "$city" "$snapshot" "$pack_name"
-    exit 1
-  fi
-
-  restart_factory "$box" 180 || exit 1
-  echo
-  say "Deployed. Look around with: sfbox get-box --box $box"
-  say "Or open the dashboard:      sfbox dashboard --box $box"
+  # Quote each word on the way out rather than joining raw. Joining is what
+  # plain `ssh box <cmd>` does, and it is why `ssh box cat 'my notes.txt'`
+  # arrives on the box as two arguments and fails. This is the idiom box_gc
+  # already uses, so both passthroughs preserve argv the same way.
+  local cmd="" a
+  for a in "$@"; do cmd="$cmd $(rq "$a")"; done
+  box_ssh_login "$box" "${cmd# }"
 }
 
-# Put the imports back the way we found them. Safe to call before the restart:
-# the service is still running the configuration it started with.
-rollback_imports() { # box city snapshot new_pack_name
-  local box="$1" city="$2" snapshot="$3" new_pack="$4"
-  warn "Rolling the imports back to how they were ..."
-  box_gc "$box" "$city" import remove "$new_pack" >/dev/null 2>&1 \
-    || warn "could not remove '$new_pack'; check 'gc import list' on the box"
-  local name source version _locked
-  while IFS="$(printf '\t')" read -r name source version _locked; do
-    [ -n "$name" ] || continue
-    case " $SFBOX_PROTECTED_IMPORTS " in
-      *" $name "*) continue ;;
+cmd_gc() {
+  local box_arg="" city_override=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --box)       box_arg="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      --city-path) city_override="${2:-}"; shift 2 || die "'$1' needs a value" ;;
+      -h|--help)   usage_gc; return 0 ;;
+      --)          shift; break ;;
+      *)           break ;;
     esac
-    box_gc "$box" "$city" import add "$source" --version "$version" >/dev/null 2>&1 \
-      || warn "could not restore import '$name' ($source $version)"
-  done <<<"$snapshot"
-  if box_gc "$box" "$city" import install >/dev/null 2>&1; then
-    warn "Imports restored. The factory was never restarted, so it is still running."
-  else
-    err "Could not reinstall the previous imports."
-    err "Your running factory is untouched, but the on-disk import list may be mixed."
-    err "Inspect it with: sfbox start-session --box $box, then 'gc import list'."
-  fi
+  done
+  [ $# -gt 0 ] || { usage_gc; exit 2; }
+  state_init
+  local box; box="$(resolve_box "$box_arg")" || exit $?
+  local city; city="$(resolve_city_path "$box" "$city_override")" || exit $?
+  box_gc "$box" "$city" "$@"
 }
 
 # ------------------------------------------------------------ instructor ----
@@ -1841,20 +1552,44 @@ three steps later as an SSH error that points nowhere near the key.
 EOF
 }
 
-usage_deploy_factory() {
+usage_exec() {
   cat <<'EOF'
-usage: sfbox deploy-factory <github-url> [--box <boxId>] [--version sha:<commit>]
-                            [--city-path <path>] [--keep-existing] [--yes]
+usage: sfbox exec [--box <boxId>] [--] <command> [args...]
 
-Makes a pack the top-level factory on your box, then restarts it.
+Runs one command on the box and exits with whatever it exited with.
 
-  <github-url>   https://github.com/<org>/<repo>/tree/<ref>/<subdir>
-  --version      Pin a commit yourself. Otherwise the ref is resolved for you.
-  --keep-existing  Leave the current imports in place instead of replacing them.
+  sfbox exec systemctl is-active gas-city.service
+  sfbox exec sudo systemctl restart gas-city.service
+  sfbox exec cat 'notes with spaces.txt'
 
-Before restarting, every agent prompt is rendered and measured. If one is too
-large to exec, the deploy is refused and the import rolled back, so your box
-keeps running the factory it already had.
+Your arguments reach the box exactly as you typed them, so quotes and spaces
+survive. Shell metacharacters are therefore yours to ask for: to pipe, redirect
+or chain, request a shell.
+
+  sfbox exec bash -lc 'gc session list | wc -l'
+
+Options go before the command. Anything after it is the command's. Use -- when
+the command itself starts with a dash.
+
+sfbox does not check what you run: no dry run, no snapshot, no rollback.
+EOF
+}
+
+usage_gc() {
+  cat <<'EOF'
+usage: sfbox gc [--box <boxId>] [--city-path <path>] [--] <gc-args...>
+
+Runs a gc command inside the box's city, so you do not have to know where the
+city lives. The path is looked up once and then remembered.
+
+  sfbox gc session list
+  sfbox gc import add https://github.com/acme/packs/tree/main/factory --rig myrig
+  sfbox gc import install
+
+Options go before the gc arguments. Anything after them is gc's. Use -- when
+the first gc argument starts with a dash.
+
+sfbox does not check what you run: no dry run, no snapshot, no rollback.
 EOF
 }
 
@@ -1874,8 +1609,8 @@ Setting up
 
 Working
   start-session     Open a shell on the box
-  deploy-factory    Install a pack as the top-level factory and restart
-  restart-factory   Restart the Gas City service
+  exec              Run one command on the box and get its exit status
+  gc                Run a gc command inside the box's city
   dashboard         Tunnel the dashboard to your browser
   get-box           Service state, sessions and recent log
 
@@ -1899,8 +1634,8 @@ main() {
     box)             cmd_box "$@" ;;
     preflight)       cmd_preflight "$@" ;;
     start-session)   cmd_start_session "$@" ;;
-    deploy-factory)  cmd_deploy_factory "$@" ;;
-    restart-factory) cmd_restart_factory "$@" ;;
+    exec)            cmd_exec "$@" ;;
+    gc)              cmd_gc "$@" ;;
     dashboard)       cmd_dashboard "$@" ;;
     get-box)         cmd_get_box "$@" ;;
     instructor)      cmd_instructor "$@" ;;
