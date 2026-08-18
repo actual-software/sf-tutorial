@@ -312,7 +312,7 @@ Hand the role over. Delete the city's mayor, then point the always-on session at
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
 rm -rf agents/mayor
 
 sed '/^\[\[named_session\]\]/,/^[[:space:]]*mode = /d' pack.toml > pack.toml.tmp
