@@ -36,34 +36,23 @@ This is the factory you build on for the rest of the curriculum. Everything from
 ## Prereqs
 
 - [W2](./W2-cloud-box-and-preflight.md) complete: `gc`, `bd` and `dolt` installed and preflight green, and `gh` signed in.
-- A **fresh, empty GitHub repository** for the `ascii-art` rig, in your own org or a sandbox.
-- The tutorial cloned somewhere you are happy to keep it.
 
 ## Context
 
-You are not assembling a factory by hand today. The base factory arrives as one pack, and it already contains a worked example of every Gas City primitive, so the rest of Day 1 is spent reading a factory that runs rather than debugging one that half does. [W4](./W4-tour-the-factory.md) walks through the pieces an hour from now.
+You are not assembling a factory by hand today. The base factory arrives as one pack, and it already contains a worked example of every Gas City primitive, so the rest of Day 1 is spent reading a factory that runs rather than debugging one that half does. [W4](./W4-tour-the-factory.md) will walk through the pieces in more detail.
 
-Run every step from a working directory you are happy to keep around. The city and the rig live as siblings under it.
+Majority of these steps will be run your local `$SOFTWARE_FACTORY_INTENSIVE_PATH` directory. For cloud box users you will initialize your factory remotely but import the pack from local. For local users you will both initialize the factory and import the pack locally.
 
 **Directory tree**
 
 ```text
-~/Projects/
- └── software-factory-intensive/      # Create this. Rename it later if you want.
-     ├── sf-tutorial/                 # Clone the tutorial repo here.
+~/
+ └── software-factory-intensive/
+     ├── sf-tutorial/
      ├── factory1/                    # gc init puts the city here.
      ├── ascii-art/                   # gc rig add puts the rig here.
      └── <your projects>              # Your own work can live here too.
 ```
-
-Four environment variables carry those paths between steps and between pages. You set them as you go and make them permanent in step 10.
-
-| Var | Set in | Used by |
-| --- | ------ | ------- |
-| `FACTORY_PATH` | step 1 | every command run from inside the city |
-| `ASCII_ART_PATH` | step 4 | every command run from inside the rig |
-| `TUTORIAL_PATH` | step 5 | locating the tutorial's own files |
-| `ARTIFACTS_PATH` | step 5 | copying packs, ADRs and scripts into your city or rig |
 
 ## Setup
 
@@ -80,10 +69,10 @@ gc init factory1
 
 Follow the interactive prompt. Select:
 
-- the **minimal** config template — pick it by name, since the menu also offers `gascity`, `gastown` and `custom`, and their order has changed between releases
-- Claude Code (recommended) or whatever provider you are using
+- the **minimal** config template — *2*
+- Claude Code (recommended) or whichever provider you are using (`claude`, `codex`, or `gemini`)
 
-**If your machine already has another city registered, `gc init` stops and asks before it continues.** Hosted workshop boxes arrive with a `~/city` already registered, so expect this one. Around step 7 of 8 you will see a warning that registering `factory1` reconciles the supervisor already managing that other city, worded in terms of a kill-and-respawn that "cycles those cities' in-flight work", followed by:
+Around step 7 of 8 you may see a warning that registering `factory1` reconciles the supervisor already managing that other city, worded in terms of a kill-and-respawn that "cycles those cities' in-flight work", followed by:
 
 ```text
 Continue? [y/N]
@@ -95,7 +84,6 @@ Continue? [y/N]
 
 ```bash
 cd factory1/
-export FACTORY_PATH="$(pwd)"
 gc start
 ```
 
@@ -172,11 +160,16 @@ The pinned `version` shas track the `gc` release you installed, so yours will di
 - **`[[named_session]]`** declares the always-on `mayor` you will talk to later in this session.
 - **There is no `[[agent]]` table, and there should not be.** Agents are discovered from the packs you import, so a schema-2 pack declares imports rather than individual agents.
 
-`city.toml` for the minimal template is two lines, and grows a `[[rigs]]` entry in step 4:
+`city.toml` for the minimal template is just a few lines, and grows a `[[rigs]]` entry in step 4:
 
 ```toml
 [workspace]
 provider = "claude"
+
+[providers]
+[providers.claude]
+base = "builtin:claude"
+ready_delay_ms = 0
 ```
 
 ### 3. Confirm Dolt is supervisor-managed
@@ -201,15 +194,11 @@ Register the rig as a **sibling** of the city rather than a child. This is the p
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
 
 mkdir ../ascii-art
 gc rig add ../ascii-art ascii-art
-export ASCII_ART_PATH="$(cd ../ascii-art && pwd)"
-echo "$ASCII_ART_PATH"
 ```
-
-The `export` matters: every later step references `$ASCII_ART_PATH`, and without it the value disappears the moment you open a new terminal.
 
 `gc rig add` resolves the relative path to an absolute one, creates the directory if it does not exist, adds a `[[rigs]]` entry to `city.toml`, and writes the absolute path to `.gc/site.toml`.
 
@@ -226,17 +215,19 @@ gc rig list
 [workspace]
 provider = "claude"
 
-[[rigs]]
-name = "ascii-art"
+[providers]
+[providers.claude]
+base = "builtin:claude"
+ready_delay_ms = 0
 
-Rigs in $FACTORY_PATH:
+Rigs in $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1:
 
   factory1 (HQ):
     Prefix: fa
     Beads:  initialized
 
   ascii-art:
-    Path:   $ASCII_ART_PATH
+    Path:   $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
     Prefix: aa
     Beads:  initialized
 ```
@@ -247,17 +238,14 @@ Rigs in $FACTORY_PATH:
 
 ```bash
 cd ../sf-tutorial
-export TUTORIAL_PATH="$(pwd)"
-export ARTIFACTS_PATH="$TUTORIAL_PATH/artifacts"
+mkdir -p "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/future" \
+         "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/current" \
+         "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/decision-records"
 
-mkdir -p "$ASCII_ART_PATH/docs/future" \
-         "$ASCII_ART_PATH/docs/current" \
-         "$ASCII_ART_PATH/docs/decision-records"
-
-cp "$ARTIFACTS_PATH/docs/decision-records/0001.ADR.ASCII.md" \
-   "$ASCII_ART_PATH/docs/decision-records/"
-cp "$ARTIFACTS_PATH/docs/future/0002.ADR.TESTING.md" \
-   "$ASCII_ART_PATH/docs/future/"
+cp "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/docs/decision-records/0001.ADR.ASCII.md" \
+   "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/decision-records/"
+cp "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/docs/future/0002.ADR.TESTING.md" \
+   "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/docs/future/"
 ```
 
 Those two decision records are what the architect reviews against once the factory starts working. `docs/current/` stays empty for now.
@@ -269,7 +257,7 @@ The base factory publishes its work as pull requests, so the rig needs an upstre
 **Copy and paste**
 
 ```bash
-cd "$ASCII_ART_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art"
 git init -b main
 git commit --allow-empty -m 'first commit'
 git add docs/ .gitignore
@@ -294,8 +282,8 @@ This is the step the whole session is built around. One import brings a complete
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
-gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/base-factory"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
+gc import add --rig ascii-art "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/base-factory"
 ```
 
 That single command installs four packs:
@@ -312,7 +300,7 @@ One more import goes in at **city** scope rather than rig scope, because it patc
 **Copy and paste**
 
 ```bash
-gc import add "$ARTIFACTS_PATH/packs/pr-gate-city"
+gc import add "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/packs/pr-gate-city"
 ```
 
 Confirm both landed:
@@ -349,7 +337,7 @@ Four commands, one per thing that could be wrong. Run them in order and read eac
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SOFTWARE_FACTORY_INTENSIVE_PATH/factory1"
 gc doctor
 ```
 
@@ -382,16 +370,28 @@ This is also the moment to see that the factory carries all five Gas City primit
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 bd status
 ```
 
-If that errors with `no beads database found`, run `bd init --prefix ascii-art` yourself.
+If that errors with `no beads database found`, run `bd init --prefix ascii-art` yourself. It should look like this:
+
+```bash
+📊 Issue Database Status
+
+Summary:
+  Total Issues:           0
+  Open:                   0
+  In Progress:            0
+  Blocked:                0
+  Closed:                 0
+  Ready to Work:          0
+```
 
 **Copy and paste**
 
 ```bash
-cp "$ARTIFACTS_PATH/beads/seed-epics.sh" ./seed-epics.sh
+cp "$SOFTWARE_FACTORY_INTENSIVE_PATH/sf-tutorial/artifacts/beads/seed-epics.sh" ./seed-epics.sh
 chmod +x ./seed-epics.sh
 ./seed-epics.sh
 ```
@@ -401,56 +401,9 @@ chmod +x ./seed-epics.sh
 ```text
 Seed complete.
   epics opened: 12
-  tasks opened: 126
-  total beads:  138
+  tasks opened: 26
+  total beads:  38
 ```
-
-### 10. Make the env vars survive a new terminal
-
-You will open and close terminals constantly. Persist the four paths rather than re-deriving them.
-
-First confirm all four are set in the shell you are standing in:
-
-**Copy and paste**
-
-```bash
-printenv | grep -E 'FACTORY_PATH|ASCII_ART_PATH|TUTORIAL_PATH|ARTIFACTS_PATH'
-```
-
-**Expected output**
-
-```text
-FACTORY_PATH=/absolute/path/to/factory1
-ASCII_ART_PATH=/absolute/path/to/ascii-art
-TUTORIAL_PATH=/absolute/path/to/sf-tutorial
-ARTIFACTS_PATH=/absolute/path/to/sf-tutorial/artifacts
-```
-
-**Four absolute paths, or do not continue.** The append below captures whatever is set right now, so running it against an empty shell writes four empty values, and that failure does not surface until a later session.
-
-**Copy and paste** (macOS / zsh)
-
-```bash
-cat <<EOF >> ~/.zshrc
-export FACTORY_PATH="$FACTORY_PATH"
-export ASCII_ART_PATH="$ASCII_ART_PATH"
-export TUTORIAL_PATH="$TUTORIAL_PATH"
-export ARTIFACTS_PATH="$ARTIFACTS_PATH"
-EOF
-```
-
-**Copy and paste** (Linux / bash)
-
-```bash
-cat <<EOF >> ~/.bashrc
-export FACTORY_PATH="$FACTORY_PATH"
-export ASCII_ART_PATH="$ASCII_ART_PATH"
-export TUTORIAL_PATH="$TUTORIAL_PATH"
-export ARTIFACTS_PATH="$ARTIFACTS_PATH"
-EOF
-```
-
-Open a new terminal and echo all four before you carry on. A [`direnv`](https://direnv.net/) `.envrc` in the working directory does the same job if you prefer it.
 
 ## Try It
 
@@ -461,11 +414,11 @@ To start work by hand you *sling* a bead at an agent. Two equivalent forms:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 bd list --type=epic                 # find the epic for numbers 1-10
 bd list --parent=<epic-id>          # find its child tasks
 
-cd $FACTORY_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
 
 # Name the rig and the agent. This form always works.
 gc sling --rig ascii-art polecat <id-for-1>
@@ -477,7 +430,7 @@ There is a second, fully qualified form, `<rig>/<binding>.<agent>`. The binding 
 
 ```bash
 gc agent list --rig ascii-art
-gc sling <the-qualified-name-printed-above> <id-for-2>
+gc sling ascii-art/base-factory.polecat <id-for-2>
 ```
 
 Worth doing once. The qualified form is what disambiguates two agents of the same name arriving from different packs, which is exactly the situation a Day 2 option can create.
@@ -491,7 +444,7 @@ The mayor is your factory's always-on assistant, running in a `tmux` session you
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
 gc session attach mayor
 ```
 
@@ -520,21 +473,21 @@ The two orders in the base pack write to one file, so you can see both trigger s
 gc order list
 gc order check
 gc order run factory-pulse
-cat "$ASCII_ART_PATH/FACTORY_LOG.md"
+cat "$SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art/FACTORY_LOG.md"
 ```
 
 `gc order check` prints which orders are due and, for the ones that are not, why not. `gc order run` fires one immediately instead of waiting for its trigger. Come back to that log later in the day: `pulse` lines arrive on the hour from a clock, and `closed` lines arrive whenever the factory closes a bead. Same file, two mechanisms.
 
 ### 4. Reflect
 
-You have a city, a rig on GitHub, a base factory carrying every primitive, 138 beads of real work, and at least one bead that moved through the pipeline while you watched. Nothing you build for the rest of the curriculum starts from scratch; it starts from here.
+You have a city, a rig on GitHub, a base factory carrying every primitive, 38 beads of real work, and at least one bead that moved through the pipeline while you watched. Nothing you build for the rest of the curriculum starts from scratch; it starts from here.
 
 ## Verification
 
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/factory1
 gc cities
 gc rig list
 gc import list --rig ascii-art
@@ -553,7 +506,7 @@ factory-pulse and bead-closed-log among the orders
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SOFTWARE_FACTORY_INTENSIVE_PATH/ascii-art
 bd list --type=epic
 git ls-remote --heads origin
 ```
@@ -561,7 +514,7 @@ git ls-remote --heads origin
 **Expected output**
 
 ```text
-12 rows, including: Letters a-m, Letters n-z, Numbers 1-10 ... Numbers 91-100
+2 rows: Letters a-m, Letters n-z
 <sha>    refs/heads/main
 ```
 
