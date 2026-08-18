@@ -225,17 +225,16 @@ Now hand the mayor's role to the pack. Remove the city's own `mayor` agent, then
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
-rm -rf agents/mayor
+rm -rf "$FACTORY_PATH/agents/mayor"
 
-sed '/^\[\[named_session\]\]/,/^[[:space:]]*mode = /d' pack.toml > pack.toml.tmp
-cat >> pack.toml.tmp <<'EOF'
+sed '/^\[\[named_session\]\]/,/^[[:space:]]*mode = /d' "$FACTORY_PATH/pack.toml" > "$FACTORY_PATH/pack.toml.tmp"
+cat >> "$FACTORY_PATH/pack.toml.tmp" <<'EOF'
 [[named_session]]
 name = "mayor"
 template = "pr-gate-city.mayor"
 mode = "always"
 EOF
-mv pack.toml.tmp pack.toml
+mv "$FACTORY_PATH/pack.toml.tmp" "$FACTORY_PATH/pack.toml"
 ```
 
 Keeping `name = "mayor"` preserves the session's alias, so `gc session attach mayor` still works. The template names the binding, because a bare `mayor` stops resolving once the city's own agent directory is gone.
