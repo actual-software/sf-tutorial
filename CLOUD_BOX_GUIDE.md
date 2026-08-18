@@ -54,6 +54,11 @@ Put `sfbox` on your `PATH`, from the directory holding your clone.
 **Copy and paste**
 
 ```bash
+cd $HOME && mkdir software-factory-intensive
+cd software-factory-intensive
+export SFI_PATH="$(pwd)"
+git clone https://github.com/actual-software/sf-tutorial.git
+
 export PATH="$SFI_PATH/sf-tutorial/participant-box-cli:$PATH"
 sfbox --help
 ```
@@ -65,6 +70,7 @@ Add both of these environment variables to your shell for future use:
 ```bash
 cat <<EOF >> ~/.zshrc
 export SFI_KEY=$HOME/Downloads/key.pem
+export SFI_PATH="$(pwd)"
 export PATH="$PWD/sf-tutorial/participant-box-cli:$PATH"
 EOF
 ```
@@ -74,6 +80,7 @@ EOF
 ```bash
 cat <<EOF >> ~/.bashrc
 export SFI_KEY=$HOME/Downloads/key.pem
+export SFI_PATH="$(pwd)"
 export PATH="$PWD/sf-tutorial/participant-box-cli:$PATH"
 EOF
 ```
