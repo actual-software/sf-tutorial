@@ -44,7 +44,7 @@ Regardless of whether you choose to run the factory in our instructor-provided c
 cd $HOME && mkdir software-factory-intensive
 cd software-factory-intensive
 export SOFTWARE_FACTORY_INTENSIVE_PATH="$(pwd)"
-git clone https://github.com/actual-software/sf-tutorial.git
+gh repo fork https://github.com/actual-software/sf-tutorial.git --clone
 cd sf-tutorial/bootstrap
 ```
 
