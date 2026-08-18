@@ -1282,7 +1282,9 @@ Deploy the directory without it, or pass a GitHub URL instead."
     dest="$(remote_pack_dest "$box" "$pack_name")" \
       || die "could not create $dest_display on '$box' — nothing changed"
     upload_pack_dir "$box" "$local_dir" "$dest" \
-      || die "nothing was imported, so the box is still running what it was"
+      || die "the copy did not finish, so nothing was imported and nothing was restarted.
+$dest_display on the box may hold a partial copy, and a pack already imported from there
+is read live rather than from a pinned commit. Deploy again before you start new work."
   fi
 
   if [ "$replacing" = 1 ]; then
