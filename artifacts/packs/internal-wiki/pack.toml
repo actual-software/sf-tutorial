@@ -23,7 +23,7 @@
 # fragment appended to their prompts by the patches below.
 #
 # Install (rig scope — it patches the rig's agents):
-#   gc import add --rig <rig-name> $SFI_PATH/artifacts/packs/internal-wiki
+#   gc import add --rig <rig-name> $SFI_PATH/sf-tutorial/artifacts/packs/internal-wiki
 #
 # WHERE THE WIKI LIVES. `team-wiki` inside the city by default, created on first
 # use, so the pack works on a factory with no shared repo behind it yet. Set

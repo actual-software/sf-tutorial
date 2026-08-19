@@ -41,7 +41,7 @@
 # most wanted it.
 #
 # Install (sits directly on the base factory):
-#   gc import add --rig <rig-name> $SFI_PATH/artifacts/packs/security-audit-matrix
+#   gc import add --rig <rig-name> $SFI_PATH/sf-tutorial/artifacts/packs/security-audit-matrix
 #
 # security-audit-matrix imports architect-rig, the base factory's top node, so
 # the architect that pours this formula and the polecat pool it routes to both
