@@ -61,7 +61,7 @@ Runs the setup work for 00.1, 00.2 and 00.3 on the way past, then stops at the e
 
 **Mental model:** `./bootstrap.sh <step>` answers "make my factory look like I just finished `<step>`," not "make my factory ready for me to start `<step>`."
 
-**Nothing to paste afterwards.** `$SFI_PATH` is the only path variable the curriculum asks for, and [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc. The script works out the factory, rig and artifact directories from it for its own use; every page writes them out the same way, so a run leaves your shell with nothing new to set.
+**Nothing to paste afterwards.** `$SFI_PATH` is the only path variable this script needs, and [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc. The script works out the factory, rig and artifact directories from it for its own use; every page writes them out the same way, so a run leaves your shell with nothing new to set. The curriculum asks for a second one later, `$MY_RIG_PATH`, which [L1 step 1](../progression/L1-plan-your-factory.md#1-register-your-repo-as-a-rig) sets and persists. Every step this script rebuilds sits before that point.
 
 ## About the Bootstrap Script
 
