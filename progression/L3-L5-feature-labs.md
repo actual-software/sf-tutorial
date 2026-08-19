@@ -60,18 +60,18 @@ Participant-led, no shared end state. The instructor circulates; say which layer
 
 ## Paths this page uses
 
-Every command below reads two path variables:
+Every command below is written out from one variable:
 
 | Variable | Points at | Set by |
 | --- | --- | --- |
 | `SFI_PATH` | your workspace directory | [W2](./W2-cloud-box-and-preflight.md) on your laptop, [W3 step 3](./W3-run-your-factory.md#3-open-a-shell-on-the-box) on the box. Both append it to a shell rc, so it survives |
-| `MY_RIG_PATH` | your own rig | [L1 step 1](./L1-plan-your-factory.md#1-register-your-repo-as-a-rig), as a plain `export` that a new shell forgets |
+
+Your factory is `$SFI_PATH/factory1` and your own rig is `$SFI_PATH/<your-rig-name>`. Nothing on this page asks you to export either.
 
 **Copy and paste**
 
 ```bash
-export MY_RIG_PATH="$SFI_PATH/<your-rig-name>"
-cd "$SFI_PATH/factory1" && gc rig list && ls "$MY_RIG_PATH"
+cd "$SFI_PATH/factory1" && gc rig list && ls "$SFI_PATH/<your-rig-name>"
 ```
 
 **Expected output**
@@ -90,7 +90,7 @@ If `gc rig list` comes back without your rig, or the `ls` cannot find the direct
 **Copy and paste**
 
 ```bash
-cd "$MY_RIG_PATH"
+cd "$SFI_PATH/<your-rig-name>"
 cat docs/current/capability-map.md
 ```
 
@@ -107,7 +107,7 @@ If you cannot fill that sentence in, the row is not ready for you to pursue prop
 **If you picked an option**, its page carries the install and the walkthrough. Every option is a single import onto the base factory, from the copy of this repo already on your box:
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SFI_PATH/factory1"
 gc import add --rig <your-rig-name> "$SFI_PATH/sf-tutorial/artifacts/packs/<the-option-pack>"
 gc reload
 gc import list --rig <your-rig-name>
@@ -165,21 +165,21 @@ Run the verification you wrote in the map's own column, not a different one that
 **Copy and paste**
 
 ```bash
-cd "$MY_RIG_PATH"
+cd "$SFI_PATH/<your-rig-name>"
 bd create --title "<a bead that exercises the change>" --type task --priority 2
 cd "$SFI_PATH/factory1"
 gc sling --rig <your-rig-name> polecat <the-new-bead-id>
-watch -n 5 'cd '"$MY_RIG_PATH"' && bd show <the-new-bead-id> --json | jq -r ".[0] | \"\(.status)  \(.assignee)\""'
+watch -n 5 'cd '"$SFI_PATH/<your-rig-name>"' && bd show <the-new-bead-id> --json | jq -r ".[0] | \"\(.status)  \(.assignee)\""'
 ```
 
 The important part is the negative case. **A gate you have only seen pass is a gate you have not tested.** Construct the input that *should* be rejected and confirm it is:
 
 ```bash
-cd "$MY_RIG_PATH"
+cd "$SFI_PATH/<your-rig-name>"
 bd create --title "<a bead your change should reject or catch>" --type task --priority 3
 cd "$SFI_PATH/factory1"
 gc sling --rig <your-rig-name> polecat <that-bead-id>
-cd "$MY_RIG_PATH"
+cd "$SFI_PATH/<your-rig-name>"
 bd show <that-bead-id> --json | jq -r '.[0] | .status, (.metadata.blocker_reason // "no blocker recorded")'
 ```
 
@@ -217,7 +217,7 @@ Across the three slots: at least one shipped option installed and working in you
 cd "$SFI_PATH/factory1"
 gc import list --rig <your-rig-name>
 gc doctor
-cd "$MY_RIG_PATH"
+cd "$SFI_PATH/<your-rig-name>"
 git log --oneline -3
 bd list --status blocked
 ```
@@ -236,7 +236,7 @@ the bead you deliberately made fail, still blocked with a reason
 - **The option's page refers to agents you do not have.** Each option page assumes the base factory plus that option. If it names an agent from a different option, you found a bug worth reporting; the options are meant to be independent.
 - **`gc import add` succeeds and the new agent never appears.** Check the scope. Options install at rig scope with `--rig`; installing at city scope puts the agent somewhere the rig cannot see.
 - **You installed from a URL and the agent never appears.** Run `gc import install`. A remote import is recorded by `gc import add` and fetched by `gc import install`, and until the fetch happens there is nothing on disk for `gc reload` to read.
-- **A command runs somewhere unexpected, or `ls` reports `cannot access '': No such file or directory`.** One of the four variables in [Paths this page uses](#paths-this-page-uses) is unset in this shell. `cd ""` exits 0 in both bash and zsh, so an unset `FACTORY_PATH` leaves you where you were rather than reporting an error. Re-run that block; a Day 2 shell almost never carries them from Day 1.
+- **A command runs somewhere unexpected, or `ls` reports `cannot access '': No such file or directory`.** `$SFI_PATH` is unset in this shell. `cd ""` exits 0 in both bash and zsh, so an unset variable leaves you where you were rather than reporting an error. `echo "$SFI_PATH"` settles it; [W2](./W2-cloud-box-and-preflight.md) and [W3](./W3-run-your-factory.md) both append it to a shell rc, so a Day 2 shell that has lost it never ran that step.
 - **Your change works on `ascii-art` and not on your rig.** Your rig needs the base factory imported too — L1 step 1. `gc import list --rig <your-rig-name>` settles it.
 - **The negative case passes when it should fail.** Either the input was better-formed than you thought, or the check is not on the path the bead took. Both are worth a map row.
 

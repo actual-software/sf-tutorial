@@ -25,7 +25,7 @@ Your factory runs without you. This session is about seeing what it did and why.
 ## Prereqs
 
 - [W4](./W4-tour-the-factory.md) complete, and at least one bead that has moved through the pipeline.
-- The four env vars exported.
+- `$SFI_PATH` set in your shell. [W2](./W2-cloud-box-and-preflight.md) and [W3](./W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
 
 ## Context
 

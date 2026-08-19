@@ -26,7 +26,8 @@ By the end of this exercise you will have installed the `bead-builders-rig` pack
 ## Prereqs
 
 - [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on a rig, with the polecat, refinery and architect running.
-- You are inside the rig directory, with `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH` and `$ARTIFACTS_PATH` exported, then `cd "$ASCII_ART_PATH"`.
+- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
+- You are inside the rig directory: `cd "$SFI_PATH/ascii-art"`.
 - `gh` is authenticated; `jq` is installed.
 - An open task bead to work with. `bd list --status open --limit 5` picks one.
 
@@ -76,11 +77,11 @@ Inspect the pack before installing.
 **Copy and paste**
 
 ```bash
-ls "$ARTIFACTS_PATH/packs/bead-builders-rig/"
-cat "$ARTIFACTS_PATH/packs/bead-builders-rig/pack.toml"
-ls "$ARTIFACTS_PATH/packs/bead-builders-rig/agents/"
-cat "$ARTIFACTS_PATH/packs/bead-builders-rig/agents/design-lead/agent.toml"
-cat "$ARTIFACTS_PATH/packs/bead-builders-rig/formulas/mol-design-spec.formula.toml"
+ls "$SFI_PATH/sf-tutorial/artifacts/packs/bead-builders-rig/"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/bead-builders-rig/pack.toml"
+ls "$SFI_PATH/sf-tutorial/artifacts/packs/bead-builders-rig/agents/"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/bead-builders-rig/agents/design-lead/agent.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/bead-builders-rig/formulas/mol-design-spec.formula.toml"
 # (similar for test-lead / mol-test-spec and doc-lead / mol-doc-spec)
 ```
 
@@ -95,13 +96,13 @@ Copy the pack into the city's `packs/` directory.
 **Copy and paste**
 
 ```bash
-mkdir -p "$FACTORY_PATH/packs"
+mkdir -p "$SFI_PATH/factory1/packs"
 
 # Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
-rm -rf "$FACTORY_PATH/packs/bead-builders-rig"
+rm -rf "$SFI_PATH/factory1/packs/bead-builders-rig"
 
-cp -r "$ARTIFACTS_PATH/packs/bead-builders-rig" \
-      "$FACTORY_PATH/packs/bead-builders-rig"
+cp -r "$SFI_PATH/sf-tutorial/artifacts/packs/bead-builders-rig" \
+      "$SFI_PATH/factory1/packs/bead-builders-rig"
 ```
 
 Confirm the pack landed flat, with a single `pack.toml` at its top level:
@@ -109,25 +110,25 @@ Confirm the pack landed flat, with a single `pack.toml` at its top level:
 **Copy and paste**
 
 ```bash
-find "$FACTORY_PATH/packs/bead-builders-rig" -name pack.toml
+find "$SFI_PATH/factory1/packs/bead-builders-rig" -name pack.toml
 ```
 
 **Expected output**
 
 ```text
-$FACTORY_PATH/packs/bead-builders-rig/pack.toml
+$SFI_PATH/factory1/packs/bead-builders-rig/pack.toml
 ```
 
-One line is the whole check. A second line ending in `bead-builders-rig/bead-builders-rig/pack.toml` is a nested copy left by an earlier run, and the fix is to delete `$FACTORY_PATH/packs/bead-builders-rig` and repeat the copy above. The `gc import list` check below cannot see it, because it reports the path recorded in `pack.toml` rather than what sits inside the directory.
+One line is the whole check. A second line ending in `bead-builders-rig/bead-builders-rig/pack.toml` is a nested copy left by an earlier run, and the fix is to delete `$SFI_PATH/factory1/packs/bead-builders-rig` and repeat the copy above. The `gc import list` check below cannot see it, because it reports the path recorded in `pack.toml` rather than what sits inside the directory.
 
 Register the new import at rig scope. Run from the city directory.
 
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SFI_PATH/factory1"
 
-gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/bead-builders-rig"
+gc import add --rig ascii-art "$SFI_PATH/sf-tutorial/artifacts/packs/bead-builders-rig"
 
 # Nothing is removed. This option sits alongside the base factory,
 # which keeps its orders and resolves the shared packs once.
@@ -196,7 +197,7 @@ Set `$BEAD_ID` to the next open `Implement j.md` task and inspect it.
 **Copy and paste**
 
 ```bash
-cd "$ASCII_ART_PATH"
+cd "$SFI_PATH/ascii-art"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement j\.md$" | awk '{print $2}')
 bd show $BEAD_ID
 ```
@@ -210,7 +211,7 @@ The Leads are independent and can be slung in any order. Run them sequentially f
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/bead-builders-rig.design-lead $BEAD_ID --on mol-design-spec
 gc sling ascii-art/bead-builders-rig.test-lead   $BEAD_ID --on mol-test-spec
 gc sling ascii-art/bead-builders-rig.doc-lead    $BEAD_ID --on mol-doc-spec
@@ -237,7 +238,7 @@ A file named `$BEAD_ID.md` should be present in each directory.
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 ls docs/design/ docs/testing/ docs/outlines/
 ```
 
@@ -282,7 +283,7 @@ A metadata stamp records a path; it does not publish the file. Anything that ope
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 git add docs/design docs/testing docs/outlines
 git commit -m "docs(specs): add design/test/docs specs for $BEAD_ID"
 git push origin main
@@ -297,7 +298,7 @@ The bead now carries `design_doc`, `test_plan` and `docs_outline`, each pointing
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/bead-builders-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -336,7 +337,7 @@ From here, the polecat / refinery / architect chain runs as in the base factory.
 ```bash
 watch -n 5 'gc bd show $BEAD_ID'
 
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view "$PR" --web
 gh pr merge "$PR" --merge
@@ -349,10 +350,10 @@ To feel what the specs buy you, run only two of the three Leads on the next lett
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 export PARTIAL_BEAD=$(bd list --type=task --status=open --limit 0 | grep -E "Implement k\.md$" | awk '{print $2}')
 
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/bead-builders-rig.design-lead $PARTIAL_BEAD --on mol-design-spec
 gc sling ascii-art/bead-builders-rig.test-lead   $PARTIAL_BEAD --on mol-test-spec
 # Skip doc-lead deliberately.
@@ -380,9 +381,9 @@ Nothing blocks. The bead moves with two specs instead of three, and the missing 
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/bead-builders-rig.doc-lead $PARTIAL_BEAD --on mol-doc-spec
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 git add docs/outlines && git commit -m "docs(specs): outline for $PARTIAL_BEAD" && git push
 ```
 
@@ -393,7 +394,7 @@ Turning "better" into "required" needs a gate in front of the polecat, and that 
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/bead-gate-rig.project-manager $BEAD_ID --on mol-bead-review
 ```
 

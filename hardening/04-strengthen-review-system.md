@@ -42,12 +42,13 @@ By the end of this exercise you will have:
   If any provider is missing, you can either pick a different option and stay on the single-vendor flow, or run with two providers (majority rule still works at 2/2; at 1/1 the synthesizer always says `false` — see Troubleshooting).
 
 **This option needs no other option.** It installs on the base factory and replaces the single architecture reviewer with three. The synthesizer stamps `architect_approved`, which is the field the base factory's refinery patrol already gates on, so the fan-out is invisible from the refinery's side: it sees one architecture verdict, the same as before.
-- You're inside the rig directory. If a fresh shell, re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and `$ARTIFACTS_PATH` per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then:
+- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
+- You're inside the rig directory:
 
   **Copy and paste**
 
   ```bash
-  cd "$ASCII_ART_PATH"
+  cd "$SFI_PATH/ascii-art"
   ```
 - `gh` is authenticated; `jq` is installed.
 - Letters consumed so far: a–m. The next two open task beads are `Implement n.md` (clean sanity check) and `Implement o.md` (the weak-bead demo).
@@ -106,12 +107,12 @@ Inspect the pack:
 **Copy and paste**
 
 ```bash
-ls "$ARTIFACTS_PATH/packs/multi-vendor-rig/"
-cat "$ARTIFACTS_PATH/packs/multi-vendor-rig/pack.toml"
-ls "$ARTIFACTS_PATH/packs/multi-vendor-rig/agents/"
-cat "$ARTIFACTS_PATH/packs/multi-vendor-rig/agents/reviewer-codex/agent.toml"
-cat "$ARTIFACTS_PATH/packs/multi-vendor-rig/agents/shared/vendor-reviewer.template.md"
-cat "$ARTIFACTS_PATH/packs/multi-vendor-rig/agents/synthesizer/prompt.template.md"
+ls "$SFI_PATH/sf-tutorial/artifacts/packs/multi-vendor-rig/"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/multi-vendor-rig/pack.toml"
+ls "$SFI_PATH/sf-tutorial/artifacts/packs/multi-vendor-rig/agents/"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/multi-vendor-rig/agents/reviewer-codex/agent.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/multi-vendor-rig/agents/shared/vendor-reviewer.template.md"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/multi-vendor-rig/agents/synthesizer/prompt.template.md"
 ```
 
 What to notice:
@@ -125,13 +126,13 @@ Copy the pack into the city's `packs/` directory:
 **Copy and paste**
 
 ```bash
-mkdir -p "$FACTORY_PATH/packs"
+mkdir -p "$SFI_PATH/factory1/packs"
 
 # Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
-rm -rf "$FACTORY_PATH/packs/multi-vendor-rig"
+rm -rf "$SFI_PATH/factory1/packs/multi-vendor-rig"
 
-cp -r "$ARTIFACTS_PATH/packs/multi-vendor-rig" \
-      "$FACTORY_PATH/packs/multi-vendor-rig"
+cp -r "$SFI_PATH/sf-tutorial/artifacts/packs/multi-vendor-rig" \
+      "$SFI_PATH/factory1/packs/multi-vendor-rig"
 ```
 
 Confirm the pack landed flat, with a single `pack.toml` at its top level:
@@ -139,13 +140,13 @@ Confirm the pack landed flat, with a single `pack.toml` at its top level:
 **Copy and paste**
 
 ```bash
-find "$FACTORY_PATH/packs/multi-vendor-rig" -name pack.toml
+find "$SFI_PATH/factory1/packs/multi-vendor-rig" -name pack.toml
 ```
 
 **Expected output**
 
 ```text
-$FACTORY_PATH/packs/multi-vendor-rig/pack.toml
+$SFI_PATH/factory1/packs/multi-vendor-rig/pack.toml
 ```
 
 Register the new import at rig scope:
@@ -153,9 +154,9 @@ Register the new import at rig scope:
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SFI_PATH/factory1"
 
-gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/multi-vendor-rig"
+gc import add --rig ascii-art "$SFI_PATH/sf-tutorial/artifacts/packs/multi-vendor-rig"
 
 # Nothing is removed. This option sits alongside the base factory,
 # which keeps its orders and resolves the shared packs once.
@@ -200,10 +201,10 @@ Same recipe as Hardening 1 / 2 / 3 up through the polecat publishing a branch.
 **Copy and paste**
 
 ```bash
-cd "$ASCII_ART_PATH"
+cd "$SFI_PATH/ascii-art"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement n\.md$" | awk '{print $2}')
 
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/multi-vendor-rig.polecat $BEAD_ID --on mol-polecat-pr
 # Wait for the polecat to publish a branch and hand back to the refinery.
 watch -n 5 'gc bd show $BEAD_ID | grep -E "branch|pr_url|_approved"'
@@ -218,7 +219,7 @@ Run all three slings without waiting between them. Each spawns a separate sessio
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/multi-vendor-rig.reviewer-codex  $BEAD_ID --on mol-vendor-codex-review
 gc sling ascii-art/multi-vendor-rig.reviewer-claude $BEAD_ID --on mol-vendor-claude-review
 gc sling ascii-art/multi-vendor-rig.reviewer-gemini $BEAD_ID --on mol-vendor-gemini-review
@@ -276,7 +277,7 @@ After all three vendors have stamped, sling the synthesizer.
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/multi-vendor-rig.synthesizer $BEAD_ID --on mol-synthesize-reviews
 ```
 
@@ -325,7 +326,7 @@ dispatch them itself:
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/domain-reviewers-rig.design-reviewer  $BEAD_ID --on mol-design-review
 gc sling ascii-art/domain-reviewers-rig.testing-reviewer $BEAD_ID --on mol-testing-review
 gc sling ascii-art/domain-reviewers-rig.docs-reviewer    $BEAD_ID --on mol-docs-review
@@ -339,7 +340,7 @@ Wait for the PR:
 watch -n 5 'gc bd show $BEAD_ID | grep -E "pr_url|pr_number"'
 # Ctrl-C once metadata.pr_number is set.
 
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view "$PR" --web
 gh pr merge "$PR" --merge
@@ -352,7 +353,7 @@ Hand-craft a violation-rich implementation on `Implement o.md` so the three vend
 **Copy and paste**
 
 ```bash
-cd "$ASCII_ART_PATH"
+cd "$SFI_PATH/ascii-art"
 export WEAK_BEAD=$(bd list --type=task --status=open --limit 0 | grep -E "Implement o\.md$" | awk '{print $2}')
 
 git checkout -b weak/o
@@ -371,7 +372,7 @@ Run the standard pipeline:
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/multi-vendor-rig.polecat $WEAK_BEAD --on mol-polecat-pr
 # Wait for the polecat to publish the (weak) branch.
 watch -n 5 'gc bd show $WEAK_BEAD | grep -E "branch"'

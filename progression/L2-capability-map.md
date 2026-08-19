@@ -49,8 +49,8 @@ Thirty minutes at the end of Day 1 to get the rows down, and thirty on Day 2 mor
 **Copy and paste**
 
 ```bash
-cp "$SFI_PATH/sf-tutorial/artifacts/docs/capability-map.template.md" "$MY_RIG_PATH/docs/current/capability-map.md"
-nano "$MY_RIG_PATH/docs/current/capability-map.md"
+cp "$SFI_PATH/sf-tutorial/artifacts/docs/capability-map.template.md" "$SFI_PATH/<your-rig-name>/docs/current/capability-map.md"
+nano "$SFI_PATH/<your-rig-name>/docs/current/capability-map.md"
 ```
 
 One row per change you want to make. Each row names the change, which layer it touches, what it costs, and how you will know it worked.
@@ -86,18 +86,14 @@ A useful tiebreak: rank by how much you would trust the factory afterwards, not 
 Commit it:
 
 ```bash
-cd "$MY_RIG_PATH"
+cd "$SFI_PATH/<your-rig-name>"
 git add docs/current/capability-map.md
 git commit -m "Add capability map for factory changes"
 ```
 
 ### 4. Day 2: finish and review
 
-Come back to the map with a night's distance. A new shell has forgotten the variable [L1](./L1-plan-your-factory.md#1-register-your-repo-as-a-rig) exported, so set it again before the commands on this page or in the labs that follow:
-
-```bash
-export MY_RIG_PATH="$SFI_PATH/<your-rig-name>"
-```
+Come back to the map with a night's distance. A new shell only needs `$SFI_PATH`, which [W2](./W2-cloud-box-and-preflight.md) and [W3](./W3-run-your-factory.md) both append to a shell rc; every path on this page and in the labs that follow is written out from it.
 
 Then three things to do, in order:
 
@@ -118,9 +114,9 @@ The map is a factory design document that took two days of contact to write and 
 ## Verification
 
 ```bash
-test -f "$MY_RIG_PATH/docs/current/capability-map.md" && echo "capability map: present"
-grep -c '^|' "$MY_RIG_PATH/docs/current/capability-map.md"
-cd "$MY_RIG_PATH" && git log --oneline -1 -- docs/current/capability-map.md
+test -f "$SFI_PATH/<your-rig-name>/docs/current/capability-map.md" && echo "capability map: present"
+grep -c '^|' "$SFI_PATH/<your-rig-name>/docs/current/capability-map.md"
+cd "$SFI_PATH/<your-rig-name>" && git log --oneline -1 -- docs/current/capability-map.md
 ```
 
 **Expected output**
