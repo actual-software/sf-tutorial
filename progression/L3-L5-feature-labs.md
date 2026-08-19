@@ -234,9 +234,17 @@ graph TB
 
 **Without it**, there are no step beads. The whole formula lands as a single bead carrying `gc.formula_name` and your variables, and one agent works all of it in one session.
 
-**Every formula shipped in this repo is that second shape**, because none of them declares the compiler line. That's what you install and what runs when you sling one. It matters before you go hunting, because anyone who reads about per-step routing first will go looking for step beads that were never created, find nothing, and reasonably conclude their factory is broken rather than differently shaped.
+**Almost every formula in this repo is that second shape.** Check it in your own checkout rather than taking it from this page:
 
-`gc formula show <name>` won't settle it either. It prints a step tree for both shapes, finalize step included, because it's showing the compiled recipe rather than the beads. The `[requires]` line answers the question. A cook proves it.
+```bash
+cd "$SFI_PATH/sf-tutorial" && grep -rl formula_compiler artifacts/packs/*/formulas/
+```
+
+One file comes back: `artifacts/packs/self-improvement/formulas/daily-introspect.toml`, which ships with the [self-improvement loop](../hardening/05-self-improvement-loop.md). Everything else you install is the one-bead shape, and that is what runs when you sling one. It matters before you go hunting, because anyone who reads about per-step routing first will go looking for step beads that were never created, find nothing, and reasonably conclude their factory is broken rather than differently shaped.
+
+If you install that option, its formula is also the one to cook when you want to watch the five-bead shape appear, since it has exactly the three steps described above.
+
+`gc formula show <name>` won't settle it either, because it prints the compiled recipe rather than the beads. The `[requires]` line answers the question. A cook proves it.
 
 ### Cook one to see it, without waking an agent
 
@@ -284,7 +292,7 @@ The difference between the first two is worth keeping. `assignee` says "this nam
 
 This one's deliberate and it catches people out. Point two steps at the same pool and they don't scatter across that pool's instances. The first agent to claim either one takes both.
 
-The mechanism sits on the beads, so a cook shows it to you. Every pool-routed step carries `gc.continuation_group` and `gc.root_bead_id`. When an agent claims one, it lists the siblings sharing that root and group and assigns them to itself, skipping any that are already claimed, no longer open, or routed somewhere it doesn't match. So the first claimer takes the whole group, and the later steps never reach the pool as free work.
+The mechanism sits on the beads, so a cook shows it to you. Every pool-routed step carries `gc.continuation_group = "pool-workflow"` and `gc.root_bead_id`. When an agent claims one, it lists the siblings sharing that root and group and assigns them to itself, skipping any that are already claimed, no longer open, or routed somewhere it doesn't match. So the first claimer takes the whole group, and the later steps never reach the pool as free work.
 
 That last filter is the useful half. It's why pointing a step at a *different* pool works: the route doesn't match, the step is skipped, and it stays available for the pool you actually named.
 
