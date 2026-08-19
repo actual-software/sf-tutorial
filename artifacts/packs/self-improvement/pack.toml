@@ -1,0 +1,37 @@
+# self-improvement — an optional Day 2 pack: the factory looks at itself once a
+# day and is allowed to propose at most three fixes for what it finds.
+#
+# This is the packaged form of the loop you build by hand in the Self-Improvement
+# Loop lab. The lab has you read a signal your factory already emits, ask an
+# agent for the pattern, and put a person in front of the proposal. This pack
+# puts the reading on a schedule and keeps the person.
+#
+# It is a simplified version of the loop the authors run on their own factory,
+# cut down to what fits in a lab block. Where the production one carries a
+# six-category audit checklist and several hundred lines of Python, this reads
+# one signal and its check is 62 lines of shell.
+#
+# WHAT IT ADDS, on top of a base-factory installation:
+#
+#   orders/daily-introspect.toml   A condition-trigger order whose action is a
+#                                  formula rather than an exec. base-factory's
+#                                  two orders are both exec, one on a clock and
+#                                  one on an event, so this is the pair of
+#                                  primitives they do not show.
+#   formulas/daily-introspect.toml A three-step workflow: read one signal,
+#                                  decide what each finding deserves, stamp the
+#                                  pass and stop.
+#   assets/scripts/                One shell script, called by the order's check,
+#                                  holding the environment gate and the cadence.
+#
+# It contributes no agents. The pass runs on an agent you already have, named by
+# the `pool` field in the order, and the mayor is the default because every city
+# has one.
+#
+# NO IMPORTS, deliberately. The pack composes on top of whatever you already
+# have rather than pulling a chain in behind it, so it can be installed and
+# removed without touching the base factory. See README.md for the install.
+
+[pack]
+name = "self-improvement"
+schema = 1
