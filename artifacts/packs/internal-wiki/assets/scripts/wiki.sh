@@ -29,28 +29,51 @@ USAGE
 }
 
 # ── Paths ─────────────────────────────────────────────────────────────
-# Three contexts run this script — an agent session, the order's exec, and the
-# participant's own shell — and all three have to resolve the same root, or the
-# order counts a wiki nobody is writing to. GC_CITY_PATH covers the first two,
-# because the controller sets it for a session and for an exec order alike, and
-# FACTORY_PATH covers the third.
+# Four contexts run this script and all four have to resolve the same root, or
+# the order ends up counting a wiki nobody is writing to. An agent session and
+# the order's exec both get GC_CITY_PATH from the controller. A shell that ran
+# bootstrap.sh has FACTORY_PATH. A participant's own Day 2 shell has neither,
+# and that one resolves from where the script was invoked instead, so no lesson
+# has to ask anybody to export anything.
 #
 # GC_STORE_ROOT is deliberately not in that chain. For a rig-scoped order it is
 # the RIG root rather than the city root, and this pack installs rig-scoped, so
 # reading it first is what splits the order off from everything else.
 #
-# `setup` also takes the root as an argument, which is how the agents' pre_start
-# passes {{.CityRoot}} before either variable is guaranteed to be there.
-# Resolving to empty is a real state rather than an error, because `setup` has
-# to survive it: a pre_start that exits non-zero is a pre_start that stops the
-# agent from starting.
+# `setup` also takes the root as an argument and that argument wins, which is
+# how the agents' pre_start passes {{.CityRoot}}. Resolving to empty is still a
+# real state rather than an error, because `setup` has to survive it: a
+# pre_start that exits non-zero is a pre_start that stops the agent starting.
+
+# `setup` links this script into the city root, and both the prompt fragment
+# and the lesson call it back from there as ./wiki.sh, so the directory holding
+# $0 IS the city root. Read the invocation path and never the resolved one:
+# resolving the symlink lands in the pack directory instead, which is the one
+# place the wiki must not go.
+city_from_symlink() {
+    [ -L "$0" ] || return 0
+    (CDPATH='' cd -- "$(dirname -- "$0")" 2>/dev/null && pwd) || return 0
+}
+
+# The first call of all, before any symlink exists: the participant runs the
+# real script by its pack path from inside the city. A stray team-wiki/ in
+# whatever directory someone happened to be standing in would be worse than the
+# error this otherwise falls through to, so it fires only on a directory
+# carrying both marks `gc init` leaves behind.
+city_from_cwd() {
+    [ -f "$PWD/city.toml" ] && [ -d "$PWD/.gc" ] || return 0
+    printf '%s' "$PWD"
+}
+
 CITY="${GC_CITY_PATH:-${FACTORY_PATH:-}}"
+[ -n "$CITY" ] || CITY="$(city_from_symlink)"
+[ -n "$CITY" ] || CITY="$(city_from_cwd)"
 WIKI="${TEAM_WIKI_PATH:-${CITY:+$CITY/team-wiki}}"
 LOG="${WIKI_ACCESS_LOG:-${CITY:+$CITY/wiki-access.jsonl}}"
 
 require_city() {
     [ -n "$WIKI" ] || {
-        echo "wiki.sh: set TEAM_WIKI_PATH, or run this where GC_CITY_PATH or FACTORY_PATH is set" >&2
+        echo "wiki.sh: run this from your city root, or set TEAM_WIKI_PATH to where the wiki lives" >&2
         exit 2
     }
 }
@@ -91,10 +114,17 @@ require_wiki() {
 # missing when the agent reaches for it.
 cmd_setup() {
     local root="${1:-$CITY}"
+    # An explicit root beats the environment, because the pre_start line passes
+    # {{.CityRoot}} and means it. TEAM_WIKI_PATH still beats both, since it
+    # names the wiki itself rather than a city to derive one from.
+    if [ -n "${1-}" ]; then
+        WIKI="${TEAM_WIKI_PATH:-$1/team-wiki}"
+        LOG="${WIKI_ACCESS_LOG:-$1/wiki-access.jsonl}"
+    fi
     [ -n "$WIKI" ] || WIKI="${root:+$root/team-wiki}"
     [ -n "$LOG" ] || LOG="${root:+$root/wiki-access.jsonl}"
     if [ -z "$WIKI" ]; then
-        echo "wiki.sh: no city root to hang the wiki off, so nothing was created" >&2
+        echo "wiki.sh: no city root to hang the wiki off, so nothing was created — run it from the city root, or name one as 'wiki.sh setup <city-root>'" >&2
         return 0
     fi
     if [ ! -d "$WIKI/.git" ]; then
