@@ -60,18 +60,18 @@ Participant-led, no shared end state. The instructor circulates; say which layer
 
 ## Paths this page uses
 
-Every command below is written out from one variable:
+Every command below is written out from two variables:
 
 | Variable | Points at | Set by |
 | --- | --- | --- |
 | `SFI_PATH` | your workspace directory | [W2](./W2-cloud-box-and-preflight.md) on your laptop, [W3 step 3](./W3-run-your-factory.md#3-open-a-shell-on-the-box) on the box. Both append it to a shell rc, so it survives |
-
-Your factory is `$SFI_PATH/factory1` and your own rig is `$SFI_PATH/<your-rig-name>`. Nothing on this page asks you to export either.
+| `MY_RIG_PATH` | your own rig | [L1 step 1](./L1-plan-your-factory.md#1-register-your-repo-as-a-rig), as a plain `export` that a new shell forgets |
 
 **Copy and paste**
 
 ```bash
-cd "$SFI_PATH/factory1" && gc rig list && ls "$SFI_PATH/<your-rig-name>"
+export MY_RIG_PATH="$SFI_PATH/<your-rig-name>"
+cd "$SFI_PATH/factory1" && gc rig list && ls "$MY_RIG_PATH"
 ```
 
 **Expected output**
@@ -90,7 +90,7 @@ If `gc rig list` comes back without your rig, or the `ls` cannot find the direct
 **Copy and paste**
 
 ```bash
-cd "$SFI_PATH/<your-rig-name>"
+cd "$MY_RIG_PATH"
 cat docs/current/capability-map.md
 ```
 
