@@ -29,7 +29,8 @@ By the end of this exercise you will have installed a `bead-gate-rig` pack that 
 ## Prereqs
 
 - [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on a rig, with the polecat, refinery and architect running.
-- You are inside the rig directory, with `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH` and `$ARTIFACTS_PATH` exported, then `cd "$ASCII_ART_PATH"`.
+- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
+- You are inside the rig directory: `cd "$SFI_PATH/ascii-art"`.
 - `gh` is authenticated and can create PRs against the rig's GitHub
   repo. Verify with `gh auth status` and `gh repo view`.
 - `jq` is installed (the new formula uses it).
@@ -97,7 +98,7 @@ cd path/to/sf-tutorial/bootstrap
 
 The script reproduces every step up through this lesson — `bead-gate-rig` is added at rig scope, `architect-rig` is removed from the rig's direct imports (still resolved transitively), and the city is restarted.
 
-After it finishes, re-export the four env vars per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then jump to [Try It](#try-it).
+After it finishes, jump to [Try It](#try-it).
 
 ### Build Factory1 by Hand
 
@@ -141,11 +142,11 @@ Inspect the pack before installing.
 **Copy and paste**
 
 ```bash
-ls "$ARTIFACTS_PATH/packs/bead-gate-rig/"
-cat "$ARTIFACTS_PATH/packs/bead-gate-rig/pack.toml"
-cat "$ARTIFACTS_PATH/packs/bead-gate-rig/agents/project-manager/agent.toml"
-cat "$ARTIFACTS_PATH/packs/bead-gate-rig/agents/project-manager/prompt.template.md"
-cat "$ARTIFACTS_PATH/packs/bead-gate-rig/formulas/mol-bead-review.formula.toml"
+ls "$SFI_PATH/sf-tutorial/artifacts/packs/bead-gate-rig/"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/bead-gate-rig/pack.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/bead-gate-rig/agents/project-manager/agent.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/bead-gate-rig/agents/project-manager/prompt.template.md"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/bead-gate-rig/formulas/mol-bead-review.formula.toml"
 ```
 
 You should see `pack.toml`, an `agents/project-manager/` directory
@@ -169,13 +170,13 @@ Copy the pack into the city's `packs/` directory.
 **Copy and paste**
 
 ```bash
-mkdir -p "$FACTORY_PATH/packs"
+mkdir -p "$SFI_PATH/factory1/packs"
 
 # Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
-rm -rf "$FACTORY_PATH/packs/bead-gate-rig"
+rm -rf "$SFI_PATH/factory1/packs/bead-gate-rig"
 
-cp -r "$ARTIFACTS_PATH/packs/bead-gate-rig" \
-      "$FACTORY_PATH/packs/bead-gate-rig"
+cp -r "$SFI_PATH/sf-tutorial/artifacts/packs/bead-gate-rig" \
+      "$SFI_PATH/factory1/packs/bead-gate-rig"
 ```
 
 Confirm the pack landed flat, with a single `pack.toml` at its top level:
@@ -183,13 +184,13 @@ Confirm the pack landed flat, with a single `pack.toml` at its top level:
 **Copy and paste**
 
 ```bash
-find "$FACTORY_PATH/packs/bead-gate-rig" -name pack.toml
+find "$SFI_PATH/factory1/packs/bead-gate-rig" -name pack.toml
 ```
 
 **Expected output**
 
 ```text
-$FACTORY_PATH/packs/bead-gate-rig/pack.toml
+$SFI_PATH/factory1/packs/bead-gate-rig/pack.toml
 ```
 
 Now register the new import at rig scope and remove the now-redundant
@@ -198,10 +199,10 @@ direct `architect-rig` import. Run from the city directory.
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SFI_PATH/factory1"
 
 # Add the new pack at rig scope.
-gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/bead-gate-rig"
+gc import add --rig ascii-art "$SFI_PATH/sf-tutorial/artifacts/packs/bead-gate-rig"
 
 # Nothing is removed. This option sits alongside the base factory,
 # which keeps its orders and resolves the shared packs once.
@@ -274,7 +275,7 @@ Letters a–g have merged through the base factory. List the remaining open
 **Copy and paste**
 
 ```bash
-cd "$ASCII_ART_PATH"
+cd "$SFI_PATH/ascii-art"
 bd list --type=task --status=open --limit 0 | grep "Implement [h-j]\.md"
 ```
 
@@ -299,7 +300,7 @@ directory.
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/bead-gate-rig.project-manager $BEAD_ID --on mol-bead-review
 ```
 
@@ -386,7 +387,7 @@ refinery publishes a PR. Wait for the PR and merge as before.
 watch -n 5 'gc bd show $BEAD_ID'
 
 # When ready:
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view "$PR" --web
 gh pr merge "$PR" --merge
@@ -400,7 +401,7 @@ To see the project-manager block a bead, deliberately strip
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 export BAD_BEAD=$(bd list --type=task --status=open --limit 0 | grep -E "Implement i\.md$" | awk '{print $2}')
 
 # Wipe target_file so the bead fails the task-checklist's
@@ -416,7 +417,7 @@ Sling the project-manager at the broken bead.
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/bead-gate-rig.project-manager $BAD_BEAD --on mol-bead-review
 ```
 
@@ -469,11 +470,11 @@ clean re-review.
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 bd update $BAD_BEAD --set-metadata target_file=ascii/i.md
 bd update $BAD_BEAD --status=open
 
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/bead-gate-rig.project-manager $BAD_BEAD --on mol-bead-review
 ```
 
@@ -498,7 +499,7 @@ blocked anyway.
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 export VAGUE_BEAD=$(bd create --title "Improve the rendering of j.md" \
   --description "Make the output for j.md nicer and more consistent with the others." \
   --type task --priority 2 --json | jq -r '.id')
@@ -514,7 +515,7 @@ test-generation check has anything to object to.
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/bead-gate-rig.project-manager $VAGUE_BEAD --on mol-bead-review
 ```
 
@@ -537,11 +538,11 @@ Now answer the question the feedback asked, and re-sling:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 bd update $VAGUE_BEAD --description "Create ascii/j.md containing a 5-line ASCII block for the letter J and a two-line rhyme, matching the line count and front-matter of ascii/i.md."
 bd update $VAGUE_BEAD --status=open --unset-metadata bead_review_passed
 
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/bead-gate-rig.project-manager $VAGUE_BEAD --on mol-bead-review
 ```
 
@@ -605,7 +606,7 @@ For Claude Code, project-scoped, which is what this tutorial assumes:
 **Copy and paste**
 
 ```bash
-cd "$ASCII_ART_PATH"
+cd "$SFI_PATH/ascii-art"
 mkdir -p .claude/skills/grill-me
 cp ~/grill-me-skill/skills/productivity/grill-me/SKILL.md \
    .claude/skills/grill-me/SKILL.md
@@ -693,7 +694,7 @@ Confirm the new letter on `origin/main`.
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 git fetch origin && git pull
 git log --oneline origin/main -1
 ls ascii/h.md

@@ -22,7 +22,6 @@
   - [7. Install the base factory](#7-install-the-base-factory)
   - [8. Run the factory checks](#8-run-the-factory-checks)
   - [9. Seed the beads queue](#9-seed-the-beads-queue)
-  - [10. Make the env vars survive a new terminal](#10-make-the-env-vars-survive-a-new-terminal)
 - [Try It](#try-it)
   - [1. Sling your first bead](#1-sling-your-first-bead)
   - [2. Attach to a session and watch it move](#2-attach-to-a-session-and-watch-it-move)
@@ -740,15 +739,7 @@ Check the scope you asked about: `base-factory` is a rig import (`gc import list
 
 ### `bd list` returns "No issues found" right after `seed-epics.sh`
 
-You ran the script outside the rig, so the beads went into a different database. Run `pwd`; if you are not at `$ASCII_ART_PATH`, `cd` there and re-run it.
-
-### A fresh shell prints `FACTORY_PATH=` with nothing after it
-
-Step 10's append ran from a shell where the four vars were empty, so it wrote four empty exports. Re-running it appends four more rather than fixing anything. Find the bad lines, delete them by hand, re-export, then re-run step 10:
-
-```bash
-grep -n 'export \(FACTORY\|ASCII_ART\|TUTORIAL\|ARTIFACTS\)_PATH=""' ~/.bashrc ~/.zshrc
-```
+You ran the script outside the rig, so the beads went into a different database. Run `pwd`; if you are not at `$SFI_PATH/ascii-art`, `cd` there and re-run it.
 
 ### Recurring breakage after reinstalling `gc` or `bd`
 

@@ -32,10 +32,8 @@ By the end of this exercise you will have an architecture-aware `architect` agen
 - Page [the branch-protection appendix](./03-branch-protection.md) complete: branch protection on
   `main` is live, the `epic/*` ruleset is active, `.github/CODEOWNERS`
   is on `main` with your handle, and `f.md` merged through the gate.
-- You're inside the rig directory. If you opened a fresh shell,
-  re-export `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH`, and
-  `$ARTIFACTS_PATH` per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then
-  `cd "$ASCII_ART_PATH"`.
+- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
+- You're inside the rig directory: `cd "$SFI_PATH/ascii-art"`.
 - `gh` is authenticated and can create PRs against the rig's GitHub
   repo. Verify with `gh auth status` and `gh repo view`.
 - `jq` is installed (the new formulas use it).
@@ -134,7 +132,7 @@ cd path/to/sf-tutorial/bootstrap
 
 The script reproduces every step up through this lesson — `architect-rig` is added at rig scope, `review-loop-rig` is removed from the rig's direct imports (still resolved transitively via `architect-rig`), and the city is restarted.
 
-After it finishes, re-export the four env vars per [W3 Run Your Factory](../progression/W3-run-your-factory.md), then jump to [Try It](#try-it).
+After it finishes, jump to [Try It](#try-it).
 
 ### Build Factory1 by Hand
 
@@ -210,12 +208,12 @@ Inspect the pack before installing:
 **Copy and paste**
 
 ```bash
-ls "$ARTIFACTS_PATH/packs/architect-rig/"
-cat "$ARTIFACTS_PATH/packs/architect-rig/pack.toml"
-cat "$ARTIFACTS_PATH/packs/architect-rig/agents/architect/agent.toml"
-cat "$ARTIFACTS_PATH/packs/architect-rig/agents/architect/prompt.template.md"
-cat "$ARTIFACTS_PATH/packs/architect-rig/formulas/mol-architect-review.formula.toml"
-cat "$ARTIFACTS_PATH/packs/architect-rig/formulas/mol-refinery-architect-patrol.formula.toml"
+ls "$SFI_PATH/sf-tutorial/artifacts/packs/architect-rig/"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/architect-rig/pack.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/architect-rig/agents/architect/agent.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/architect-rig/agents/architect/prompt.template.md"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/architect-rig/formulas/mol-architect-review.formula.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/architect-rig/formulas/mol-refinery-architect-patrol.formula.toml"
 ```
 
 You should see `pack.toml`, an `agents/architect/` directory with
@@ -244,13 +242,13 @@ Copy the pack into the city's `packs/` directory:
 **Copy and paste**
 
 ```bash
-mkdir -p "$FACTORY_PATH/packs"
+mkdir -p "$SFI_PATH/factory1/packs"
 
 # Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
-rm -rf "$FACTORY_PATH/packs/architect-rig"
+rm -rf "$SFI_PATH/factory1/packs/architect-rig"
 
-cp -r "$ARTIFACTS_PATH/packs/architect-rig" \
-      "$FACTORY_PATH/packs/architect-rig"
+cp -r "$SFI_PATH/sf-tutorial/artifacts/packs/architect-rig" \
+      "$SFI_PATH/factory1/packs/architect-rig"
 ```
 
 Confirm the pack landed flat, with a single `pack.toml` at its top level:
@@ -258,13 +256,13 @@ Confirm the pack landed flat, with a single `pack.toml` at its top level:
 **Copy and paste**
 
 ```bash
-find "$FACTORY_PATH/packs/architect-rig" -name pack.toml
+find "$SFI_PATH/factory1/packs/architect-rig" -name pack.toml
 ```
 
 **Expected output**
 
 ```text
-$FACTORY_PATH/packs/architect-rig/pack.toml
+$SFI_PATH/factory1/packs/architect-rig/pack.toml
 ```
 
 Now register the new import at rig scope and remove the now-superseded
@@ -273,7 +271,7 @@ Now register the new import at rig scope and remove the now-superseded
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SFI_PATH/factory1"
 
 # Add the new pack at rig scope.
 gc import add --rig ascii-art packs/architect-rig
@@ -352,7 +350,7 @@ Letters a–f have merged through pages 01–03. List the remaining open
 **Copy and paste**
 
 ```bash
-cd "$ASCII_ART_PATH"
+cd "$SFI_PATH/ascii-art"
 bd list --type=task --status=open --limit 0 | grep "Implement [g-i]\.md"
 ```
 
@@ -378,7 +376,7 @@ reassignment from the refinery, not by a new dispatch verb:
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/architect-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -541,7 +539,7 @@ merge:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view "$PR" --web
 ```
@@ -579,9 +577,9 @@ Commit and push to `main`. Then sling `h.md`:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement h\.md$" | awk '{print $2}')
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/architect-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -674,7 +672,7 @@ Confirm the new letter on `origin/main`:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 git fetch origin && git pull
 git log --oneline origin/main -1
 ls ascii/g.md

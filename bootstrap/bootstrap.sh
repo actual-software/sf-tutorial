@@ -117,14 +117,20 @@ fi
 
 source .env
 
-export TUTORIAL_PATH="$(pwd)/.."
-export ARTIFACTS_PATH="$TUTORIAL_PATH/artifacts"
+TUTORIAL_SRC="$(pwd)/.."
+ARTIFACTS_SRC="$TUTORIAL_SRC/artifacts"
 
 TUTORIAL_STEP=$(echo "$TUTORIAL_STEP" | sed 's/\.md$//')
 
-if ! [[ "$TUTORIAL_STEP" =~ ^(00\.1-setup-foundation|00\.2-setup-foundation|00\.3-setup-foundation|01-basic-flow|02-first-review-loop|03-branch-protection|04-adr-reviewer|05\.1-bead-gate-checks|05\.2-bead-gate-checks)$ ]]; then
+if ! [[ "$TUTORIAL_STEP" =~ ^(W3-run-your-factory|00\.1-setup-foundation|00\.2-setup-foundation|00\.3-setup-foundation|01-basic-flow|02-first-review-loop|03-branch-protection|04-adr-reviewer|05\.1-bead-gate-checks|05\.2-bead-gate-checks)$ ]]; then
   echo "==> TUTORIAL_STEP argument is not valid"
   echo "==> Please pass one of the following values as the first argument:
+
+Progression, the taught path:
+
+W3-run-your-factory
+
+Appendix, which assembles the same factory one pack at a time:
 
 00.1-setup-foundation
 00.2-setup-foundation
@@ -150,7 +156,7 @@ fi
 # create two parallel software-factory-intensive trees (one with sf-tutorial,
 # another with factory1/ascii-art). Most of the time this is misconfiguration,
 # not intent — so stop and let the user confirm or abort.
-DERIVED_SFI_PATH="$(cd "$TUTORIAL_PATH/.." && pwd -P)"
+DERIVED_SFI_PATH="$(cd "$TUTORIAL_SRC/.." && pwd -P)"
 if [ -d "$SFI_PATH" ]; then
   NORMALIZED_ENV_SFI="$(cd "$SFI_PATH" && pwd -P)"
 else
@@ -286,7 +292,7 @@ rm -rf ascii-art
 
 # Check `gc init`, because a failure here cascades. This script has no `set -e`,
 # so an unchecked failure let the `cd` below fail too and everything after it
-# ran in the parent directory: FACTORY_PATH recorded the wrong path, and the
+# ran in the parent directory: FACTORY_DIR recorded the wrong path, and the
 # git init/add/commit block committed sf-tutorial into a stray repo. Stopping
 # at the first failure keeps the damage to nothing.
 if ! gc init factory1 --provider $MODEL_PROVIDER; then
@@ -298,7 +304,7 @@ fi
 # without leaving a factory1 directory behind still stops here.
 cd factory1 || exit 1
 
-export FACTORY_PATH="$(pwd)"
+FACTORY_DIR="$(pwd)"
 
 if [ $(ps aux | grep "dolt sql-server" | grep factory1 | grep -v grep | wc -l) -gt 1 ]; then
   echo "==> You have more than one Dolt process for factory1"
@@ -328,32 +334,28 @@ CITY_READY_TIMEOUT="${CITY_READY_TIMEOUT:-60}"
 # the controller line only then. Pass the city path explicitly so the answer
 # does not depend on which directory the calling step left us in.
 city_is_up() {
-  gc status "$FACTORY_PATH" 2>/dev/null | grep -q 'Controller: supervisor-managed (PID'
+  gc status "$FACTORY_DIR" 2>/dev/null | grep -q 'Controller: supervisor-managed (PID'
 }
 
-# This script runs as a child process, so every `export` above dies with it and
-# the caller's shell comes back from a bootstrap run with none of the four paths
-# set. That is what makes the rc append on page 00.3 write four empty values:
-# the append succeeds, so nothing reports an error, and the failure only shows
-# up a lesson later as an empty `$FACTORY_PATH`. Printing the resolved values
-# here gives the participant something to paste, and keeps the tutorial from
-# restating a derivation that lives in this file.
-print_reexport_block() {
-  local var val
-
-  echo
-  echo "==> Paste these into your shell before you continue:"
-  echo
-  for var in FACTORY_PATH ASCII_ART_PATH TUTORIAL_PATH ARTIFACTS_PATH; do
-    val="${!var}"
-    if [ -z "$val" ]; then
-      echo "# $var is not set yet — a later lesson creates it"
-    else
-      # Normalize away the `/..` segments the derivations above leave behind,
-      # falling back to the raw value if the directory has gone missing.
-      echo "export $var=\"$( (cd "$val" 2>/dev/null && pwd -P) || printf '%s' "$val" )\""
-    fi
-  done
+# Hand the always-on mayor session over to the pack's mayor. `gc init` gives the
+# city a mayor in agents/mayor and pack.toml's [[named_session]] runs it, and
+# pr-gate-city ships one too, so leaving both in place brings the city up with
+# two. Rewrite the block rather than delete it: pr-gate-city deliberately
+# declares no named_session of its own, so dropping this one leaves the city
+# with no mayor at all. The replacement template names its binding because a
+# bare `mayor` stops resolving once the city's own agent directory is gone, and
+# a named session whose template does not resolve is disabled quietly rather
+# than reported as an error.
+hand_mayor_to_pack() {
+  rm -rf "$FACTORY_DIR/agents/mayor"
+  sed '/^\[\[named_session\]\]/,/^[[:space:]]*mode = /d' "$FACTORY_DIR/pack.toml" > "$FACTORY_DIR/pack.toml.tmp"
+  cat >> "$FACTORY_DIR/pack.toml.tmp" <<'EOF'
+[[named_session]]
+name = "mayor"
+template = "pr-gate-city.mayor"
+mode = "always"
+EOF
+  mv "$FACTORY_DIR/pack.toml.tmp" "$FACTORY_DIR/pack.toml"
 }
 
 # Start the city, confirm it came up, then announce the finished step. This
@@ -385,15 +387,13 @@ finish_step() {
     if [ "$SECONDS" -ge "$deadline" ]; then
       echo "==> The city did not come up within ${CITY_READY_TIMEOUT}s of 'gc start'." >&2
       echo "==> '$step' is NOT ready. Look at what the supervisor is doing with:" >&2
-      echo "==>   gc status $FACTORY_PATH" >&2
+      echo "==>   gc status $FACTORY_DIR" >&2
       exit 1
     fi
     sleep 2
   done
 
   echo "==> Ready to test on $step"
-
-  print_reexport_block
   exit 0
 }
 
@@ -406,14 +406,14 @@ fi
 mkdir ../ascii-art
 gc rig add ../ascii-art ascii-art
 cd ../ascii-art
-export ASCII_ART_PATH="$(pwd)"
+ASCII_ART_DIR="$(pwd)"
 git init -b main
 mkdir -p "docs/future" \
          "docs/current" \
          "docs/decision-records"
-cp "$ARTIFACTS_PATH/docs/decision-records/0001.ADR.ASCII.md" \
+cp "$ARTIFACTS_SRC/docs/decision-records/0001.ADR.ASCII.md" \
    "docs/decision-records/"
-cp "$ARTIFACTS_PATH/docs/future/0002.ADR.TESTING.md" \
+cp "$ARTIFACTS_SRC/docs/future/0002.ADR.TESTING.md" \
    "docs/future/"
 git add docs/
 git commit -m "Add docs describing initial vision for ASCII Art project"
@@ -446,24 +446,64 @@ else
   git push -u origin main
 fi
 
-cd $FACTORY_PATH
-mkdir -p packs
-cp -r $ARTIFACTS_PATH/packs/setup/ packs/setup
-chmod +x packs/setup/assets/scripts/worktree-setup.sh
+cd $FACTORY_DIR
 # Defensive strip: cities from gc releases predating agent auto-discovery can
 # carry [[agent]] tables. A no-op on current gc, which is why 00.1 no longer teaches it.
+# Hoisted above the branch below because it is about the city gc init wrote,
+# not about whichever pack the requested step installs on top of it.
 sed "${SED_I[@]}" '/^\[\[agent\]\]$/,/^$/d' pack.toml
-if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
-  git add .
-  git commit -m "00.2-setup-foundation packs"
+
+# The rig, its docs, its GitHub remote and the seeded beads queue below are the
+# same on both tracks. What the packs look like is where they part company, so
+# that is where this branches.
+if [ "$TUTORIAL_STEP" == "W3-run-your-factory" ]; then
+  SETUP_STEP_LABEL="W3-run-your-factory"
+
+  # W3 installs the factory the way the page teaches it: one rig-scoped import,
+  # because packs import transitively and base-factory sits on top of the chain
+  # base-factory -> architect-rig -> pr-gate-rig -> setup. Imported straight
+  # from the tutorial's artifacts directory rather than copied under packs/,
+  # which is what the page tells participants to run, and which keeps the
+  # helper scripts on the exec bit they already carry in the repo.
+  if ! gc import add --rig ascii-art "$ARTIFACTS_SRC/packs/base-factory"; then
+    echo "==> 'gc import add --rig ascii-art $ARTIFACTS_SRC/packs/base-factory' failed." >&2
+    echo "==> The rig has no factory installed. Fix the error above, then re-run this script." >&2
+    exit 1
+  fi
+
+  # The mayor is city-scoped and a pack composes at one scope, so the mayor's
+  # half of the PR gate cannot ride in on the rig-scoped import above.
+  if ! gc import add "$ARTIFACTS_SRC/packs/pr-gate-city"; then
+    echo "==> 'gc import add $ARTIFACTS_SRC/packs/pr-gate-city' failed." >&2
+    echo "==> The city would come up without the mayor that knows the PR gate." >&2
+    echo "==> Fix the error above, then re-run this script." >&2
+    exit 1
+  fi
+
+  hand_mayor_to_pack
+
+  if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+    git add .
+    git commit -m "W3-run-your-factory packs"
+  fi
+else
+  SETUP_STEP_LABEL="00.2-setup-foundation"
+
+  mkdir -p packs
+  cp -r $ARTIFACTS_SRC/packs/setup/ packs/setup
+  chmod +x packs/setup/assets/scripts/worktree-setup.sh
+  if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+    git add .
+    git commit -m "00.2-setup-foundation packs"
+  fi
+  gc import add --rig ascii-art packs/setup
 fi
-gc import add --rig ascii-art packs/setup
-cd $ASCII_ART_PATH
-cp "$ARTIFACTS_PATH/beads/seed-epics.sh" ./seed-epics.sh
+cd $ASCII_ART_DIR
+cp "$ARTIFACTS_SRC/beads/seed-epics.sh" ./seed-epics.sh
 chmod +x ./seed-epics.sh
 ./seed-epics.sh # You will see `Warning: auto-export: git add failed: exit status 1`, but you can ignore it.
 ts=$(date +%s)
-for rig_path in "$FACTORY_PATH" "$ASCII_ART_PATH"; do
+for rig_path in "$FACTORY_DIR" "$ASCII_ART_DIR"; do
   rig_name=$(basename "$rig_path")
   pre=$(cd "$rig_path" && bd config get export.auto 2>&1 || echo "<unset>")
   echo "    $rig_name export.auto (pre):  $pre"
@@ -481,9 +521,16 @@ for rig_path in "$FACTORY_PATH" "$ASCII_ART_PATH"; do
 done
 
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
-  cd $FACTORY_PATH
+  cd $FACTORY_DIR
   git add .
-  git commit -m "00.2-setup-foundation complete"
+  git commit -m "$SETUP_STEP_LABEL complete"
+fi
+
+# W3 ends here. Everything below this line is the appendix track assembling the
+# same factory one pack at a time, which is a different sequence rather than a
+# continuation of the one above.
+if [ "$TUTORIAL_STEP" == "W3-run-your-factory" ]; then
+  finish_step "W3-run-your-factory"
 fi
 
 if [ "$TUTORIAL_STEP" == "00.2-setup-foundation" ]; then
@@ -498,10 +545,10 @@ fi
 
 # Run 01-basic-flow
 
-cd "$FACTORY_PATH"
+cd "$FACTORY_DIR"
 mkdir -p packs
-cp -r $ARTIFACTS_PATH/packs/pr-gate-city/ packs/pr-gate-city
-cp -r $ARTIFACTS_PATH/packs/pr-gate-rig/ packs/pr-gate-rig
+cp -r $ARTIFACTS_SRC/packs/pr-gate-city/ packs/pr-gate-city
+cp -r $ARTIFACTS_SRC/packs/pr-gate-rig/ packs/pr-gate-rig
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   # packs/ is not gitignored, so a plain add stages it. gc import add needs the
   # pack committed at HEAD before it can resolve a path inside a git worktree.
@@ -511,18 +558,7 @@ fi
 gc import add packs/pr-gate-city
 gc import add --rig ascii-art packs/pr-gate-rig
 gc import remove --rig ascii-art setup
-rm -rf "$FACTORY_PATH/agents/mayor"
-# Point the always-on mayor session at the pack's mayor. Deleting the block
-# outright would leave the city with no mayor at all, because pr-gate-city
-# deliberately declares no named_session of its own.
-sed '/^\[\[named_session\]\]/,/^[[:space:]]*mode = /d' "$FACTORY_PATH/pack.toml" > "$FACTORY_PATH/pack.toml.tmp"
-cat >> "$FACTORY_PATH/pack.toml.tmp" <<'EOF'
-[[named_session]]
-name = "mayor"
-template = "pr-gate-city.mayor"
-mode = "always"
-EOF
-mv "$FACTORY_PATH/pack.toml.tmp" "$FACTORY_PATH/pack.toml"
+hand_mayor_to_pack
 
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   git add .
@@ -535,9 +571,9 @@ fi
 
 # Run 02-first-review-loop
 
-cd $FACTORY_PATH
+cd $FACTORY_DIR
 mkdir -p packs
-cp -r $ARTIFACTS_PATH/packs/review-loop-rig/ packs/review-loop-rig
+cp -r $ARTIFACTS_SRC/packs/review-loop-rig/ packs/review-loop-rig
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   git add .
   git commit -m "02-first-review-loop packs"
@@ -556,9 +592,9 @@ fi
 
 # Run 03-branch-protection
 
-cd $ASCII_ART_PATH
+cd $ASCII_ART_DIR
 mkdir -p .github
-cp $ARTIFACTS_PATH/github/CODEOWNERS \
+cp $ARTIFACTS_SRC/github/CODEOWNERS \
   .github/CODEOWNERS
 # Double quotes so $GITHUB_USERNAME expands, and keep the leading @ — an owner
 # without it is not a valid CODEOWNERS entry and silently matches nobody.
@@ -573,7 +609,7 @@ if ! gh api "repos/$GITHUB_USERNAME/ascii-art/contents/.github/CODEOWNERS" \
   echo "==> Branch protection would block every merge with no reviewer able to approve." >&2
   exit 1
 fi
-OWNER=$GITHUB_USERNAME REPO=ascii-art $ARTIFACTS_PATH/github/branch-protection.sh
+OWNER=$GITHUB_USERNAME REPO=ascii-art $ARTIFACTS_SRC/github/branch-protection.sh
 
 if [ "$TUTORIAL_STEP" == "03-branch-protection" ]; then
   finish_step "03-branch-protection"
@@ -581,9 +617,9 @@ fi
 
 # Run 04-adr-reviewer
 
-cd $FACTORY_PATH
+cd $FACTORY_DIR
 mkdir -p packs
-cp -r $ARTIFACTS_PATH/packs/architect-rig/ packs/architect-rig
+cp -r $ARTIFACTS_SRC/packs/architect-rig/ packs/architect-rig
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   git add .
   git commit -m "04-adr-reviewer packs"
@@ -602,9 +638,9 @@ fi
 
 # Run 05.1-bead-gate-checks
 
-cd $FACTORY_PATH
+cd $FACTORY_DIR
 mkdir -p packs
-cp -r $ARTIFACTS_PATH/packs/bead-gate-rig/ packs/bead-gate-rig
+cp -r $ARTIFACTS_SRC/packs/bead-gate-rig/ packs/bead-gate-rig
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   git add .
   git commit -m "05.1-bead-gate-checks packs"
@@ -636,7 +672,7 @@ if [ ! -d $SFI_PATH/mp-skills ]; then
     exit 1
   fi
 fi
-cd "$ASCII_ART_PATH"
+cd "$ASCII_ART_DIR"
 mkdir -p .claude/skills/grill-me
 if [ ! -f .claude/skills/grill-me/SKILL.md ]; then
   cp $SFI_PATH/mp-skills/skills/productivity/grill-me/SKILL.md \

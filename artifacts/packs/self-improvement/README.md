@@ -32,7 +32,7 @@ The arrow back to the check is the part worth copying. The window opens relative
 You need a factory from [W3](../../../progression/W3-run-your-factory.md), which is the base-factory install. Nothing else, and no changes to what you already have.
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SFI_PATH/factory1"
 gc import add $SFI_PATH/sf-tutorial/artifacts/packs/self-improvement
 gc reload
 ```
