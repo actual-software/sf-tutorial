@@ -1,50 +1,46 @@
-# Daily factory-introspection tick.
+# daily-introspect — the factory's once-a-day look at itself.
 #
-# The order dispatches the `daily-introspect` formula directly. It does not send
-# an agent a sentence asking it to run the pass, and that distinction is the
-# whole point of this file, so it is worth stating why before you edit it.
+# Same two-part shape as the two orders in base-factory: a trigger, and an
+# action. Both halves differ from those, and each difference is the lesson.
 #
-# An order pairs a trigger with either a formula or a shell command, and
-# validation treats the two as mutually exclusive. The shell form is the one most
-# factories reach for first, usually as a nudge: fire on a timer, send an agent a
-# prose instruction, hope it acts. That has two failure modes and they compound.
-# The pass only happens if some agent reads the sentence, recognises what it is
-# asking for, and chooses to invoke the workflow. And the order's clock resets on
-# dispatch, so a tick that produced no pass still advances the schedule. The
-# factory this pack came from ran exactly that shape and drifted until its most
-# recent firing had produced no pass and its most recent pass had no firing
-# behind it.
+# THE ACTION IS A FORMULA, NOT AN EXEC. An order runs either a formula or a
+# shell command, and validation treats the two as mutually exclusive. The base
+# factory's orders both use `exec`, because appending a line to a log is a shell
+# one-liner's worth of work. This one needs an agent's judgement, so it names a
+# `formula` and the runtime dispatches that workflow to `pool`.
 #
-# The formula action removes the interpretation step: the runtime dispatches the
-# workflow to `pool` and the trigger and the pass become the same event.
+# Reach for the exec form and the tempting thing to write is a nudge: fire on a
+# timer and send an agent a sentence asking it to run the audit. That only
+# produces a pass if some agent reads the sentence and chooses to act on it, and
+# the order's clock advances either way. The formula action removes the
+# interpretation step, so the trigger and the pass are the same event.
 #
-# WHY THE CHECK OWNS BOTH THE GATE AND THE CADENCE. Trigger evaluation is a
-# switch on trigger type, so exactly one branch runs: a `cooldown` order never
-# consults `check`, and a `condition` order never consults `interval`. The two do
-# not compose, so a formula order cannot get a 24-hour interval and an
-# environment gate by declaring both. A condition check is a shell command
-# though, so it can evaluate them together — and reading the cadence from the
-# state bead is better than reading it from the runtime's firing clock, because
-# the window then opens relative to the last completed pass. `&&` short-circuits,
-# so an operator who has opted out never pays for the bd query.
+# THE TRIGGER IS A CONDITION, NOT CRON. Trigger evaluation is a switch on the
+# trigger type, so exactly one branch runs and the other fields are silently
+# ignored: a `cron` order never consults `check`, and a `condition` order never
+# consults `schedule`. This pass needs two things to be true at once, an
+# environment gate and a cadence, and no trigger offers both. A condition check
+# is a shell command though, so one script can answer both. `check` calls
+# assets/scripts/introspect_due.sh, and that file's comments explain each half.
 #
-# TUNING. The interval is the `--interval` argument below rather than an
-# `interval` field, since a condition order has no interval field to set. Change
-# it there and reload the pack.
+# TUNING. The cadence is the second argument on the check line, in hours, since
+# a condition order has no `interval` field to set. Change it there and reload.
 #
-# TURNING IT OFF. Installing this pack is the opt-in. Set `DAILY_INTROSPECT=false`
-# in `$FACTORY_ROOT/.env` to opt back out; the gate exits non-zero, the check
-# fails, and nothing is dispatched. Any other value, including unset, leaves the
-# pass running.
+# TURNING IT OFF. Installing the pack is the opt-in. Set DAILY_INTROSPECT=false
+# in $FACTORY_ROOT/.env to opt back out, and the check exits non-zero before it
+# asks anything else. Any other value, including unset, leaves the pass running.
 #
-# THE POOL. `pool` names the agent that runs the pass and it is required here.
-# The default is the mayor because this is coordination work rather than a unit
-# of work. Point it at whichever agent in your factory holds that role.
+# THE POOL names the agent that runs the pass. The mayor is the default because
+# this is coordination work rather than a unit of work, and every city has one.
+#
+# WATCHING IT. `gc order run daily-introspect` fires it now, bypassing both
+# halves of the check, which is how you see it work without waiting a day.
+# `gc order check` prints whether it is due and why not.
 
 [order]
-description = "Daily factory-introspection pass — bounded once-per-day audit (on by default; opt out with DAILY_INTROSPECT=false)"
+description = "Once-a-day look at the factory's own signals (on by default; opt out with DAILY_INTROSPECT=false)"
 trigger = "condition"
-check = "$PACK_DIR/assets/scripts/order_env_gate.py DAILY_INTROSPECT && $PACK_DIR/assets/scripts/introspect_due.py --interval 24h"
+check = "$PACK_DIR/assets/scripts/introspect_due.sh DAILY_INTROSPECT 24"
 check_timeout = "30s"
 formula = "daily-introspect"
 pool = "mayor"

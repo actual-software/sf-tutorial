@@ -1,37 +1,35 @@
-# self-improvement — a factory that audits itself once a day, on a schedule,
-# with bounds on what it is allowed to do about what it finds.
+# self-improvement — an optional Day 2 pack: the factory looks at itself once a
+# day and is allowed to propose at most three fixes for what it finds.
 #
-# This is the packaged form of the loop in the Self-Improvement Loop lab
-# (hardening/05-self-improvement-loop.md): the factory reads signals it already
-# emits, and a proposal to change its own configuration goes through a gate
-# rather than straight into effect. The lab has you run that loop by hand once.
-# This pack runs the observation half on a schedule and leaves the decision half
-# where the lab leaves it, with a person.
+# This is the packaged form of the loop you build by hand in the Self-Improvement
+# Loop lab. The lab has you read a signal your factory already emits, ask an
+# agent for the pattern, and put a person in front of the proposal. This pack
+# puts the reading on a schedule and keeps the person.
 #
-# What this pack contributes:
-#   1. `daily-introspect` — a condition-trigger order whose check owns both the
-#      environment gate and the cadence, dispatching the formula directly rather
-#      than nudging an agent in prose. The order file explains why at length;
-#      that comment is the most transferable thing in the pack.
-#   2. `daily-introspect` — a six-step workflow formula: enter the mode, walk a
-#      bounded audit, sort each finding into one of three dispositions, post a
-#      digest only when there is something to say, carry state forward, stop.
-#   3. `assets/scripts/order_env_gate.py` — an environment gate that loads the
-#      city's `.env` itself, because an order's shell line does not.
-#   4. `assets/scripts/introspect_due.py` — the cadence check, which reads the
-#      last *completed pass* rather than the last dispatch.
+# It is a simplified version of the loop the authors run on their own factory,
+# cut down to what fits in a lab block. Where the production one carries a
+# six-category audit checklist and several hundred lines of Python, this reads
+# one signal and its check is 62 lines of shell.
+#
+# WHAT IT ADDS, on top of a base-factory installation:
+#
+#   orders/daily-introspect.toml   A condition-trigger order whose action is a
+#                                  formula rather than an exec. base-factory's
+#                                  two orders are both exec on a clock, so this
+#                                  is the pair of primitives they do not show.
+#   formulas/daily-introspect.toml A three-step workflow: read one signal,
+#                                  decide what each finding deserves, stamp the
+#                                  pass and stop.
+#   assets/scripts/                One shell script, called by the order's check,
+#                                  holding the environment gate and the cadence.
 #
 # It contributes no agents. The pass runs on an agent you already have, named by
-# the `pool` field in the order (default: `mayor`), plus one line in that agent's
-# prompt. See README.md for the line and for the three optional dependencies.
+# the `pool` field in the order, and the mayor is the default because every city
+# has one.
 #
-# Install (city scope — the pass audits the whole factory, not one rig):
-#   gc import add ../sf-tutorial/artifacts/packs/self-improvement
-#
-# Two bounds hold every pass: roughly five minutes of agent time, and at most
-# three structural-fix beads minted. Whichever fires first stops it. Those
-# numbers live in the workflow steps and are meant to be edited, but read the
-# README's note on the lab's ceiling before you raise the second one.
+# NO IMPORTS, deliberately. The pack composes on top of whatever you already
+# have rather than pulling a chain in behind it, so it can be installed and
+# removed without touching the base factory. See README.md for the install.
 
 [pack]
 name = "self-improvement"

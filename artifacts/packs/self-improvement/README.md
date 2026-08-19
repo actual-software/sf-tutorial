@@ -1,86 +1,106 @@
 # self-improvement
 
-A factory that audits itself once a day and is allowed to mint at most three fixes for what it finds.
+An optional Day 2 pack. Once a day the factory reads one of the signals it's already writing, and it may propose at most three fixes for what it finds. Everything it proposes still goes past a person.
 
-This is the scheduled form of the loop you build by hand in [L-4 Self-Improvement Loop](../../../hardening/05-self-improvement-loop.md). The lab has you read a signal your factory already emits, ask an agent for the pattern, and put a gate in front of the proposal. This pack automates the reading and the proposing, keeps the gate, and adds bounds so a daily schedule cannot turn into a daily backlog.
+This is the scheduled form of the loop you build by hand in [the Self-Improvement Loop lab](../../../hardening/05-self-improvement-loop.md), and it's a simplified version of the one the authors run on their own factory. That one walks six audit categories and carries several hundred lines of Python. This one reads a single signal, and its check is 62 lines of shell you'll get through in a sitting.
 
-## Install
+## What it demonstrates
+
+Two primitives the [base factory](../base-factory/README.md) installs but doesn't show you, plus one idea that's the reason the pack exists at all.
+
+| | base-factory shows | this pack adds |
+|---|---|---|
+| Action | `exec`, a shell one-liner | `formula`, dispatching a workflow to an agent |
+| Trigger | `cron` and `event` | `condition`, a shell check that owns two gates at once |
+
+The idea is the third answer in `assets/workflows/daily-introspect/decide-and-gate.md`. A factory that can change itself needs somewhere to put the finding that deserves no change, and most days that's where every finding goes. Report something every day and you'll stop reading it.
+
+```mermaid
+flowchart LR
+    T["Controller tick"] --> C{"check<br/>introspect_due.sh"}
+    C -->|"gate shut"| X["Nothing"]
+    C -->|"less than 24h<br/>since last pass"| X
+    C -->|"exit 0"| D["Runtime dispatches<br/>the workflow to the mayor"]
+    D --> P["Pass: read one signal,<br/>decide, stamp"]
+    P -->|"stamps last_pass_at<br/>when it finishes"| C
+```
+
+The arrow back to the check is the part worth copying. The window opens relative to the last *completed pass*, not the last time the order fired, so a pass that never happened doesn't advance the clock. Wire it the other way and the two drift apart in silence: the schedule keeps its rhythm while the work quietly stops, and nothing reports an error because from the order's point of view every tick went fine.
+
+## Adding it to your base factory
+
+You need a factory from [W3](../../../progression/W3-run-your-factory.md), which is the base-factory install. Nothing else, and no changes to what you already have.
 
 ```bash
 cd "$FACTORY_PATH"
 gc import add ../sf-tutorial/artifacts/packs/self-improvement
+gc reload
 ```
 
-City scope, no `--rig` flag, because the pass audits the whole factory rather than one rig.
+City scope, so no `--rig` flag, because the pass reads the whole factory rather than one rig. The pack imports nothing and patches no agent, so it'll compose on top of whatever you installed earlier and come back out cleanly.
 
-Then add one line to the prompt of whichever agent the order dispatches to (the `pool` field in `orders/daily-introspect.toml`, `mayor` by default):
+Confirm the runtime sees it:
 
-> When you are dispatched into the `daily-introspect` workflow, follow its steps and stay inside its bounds; a pass that finds nothing correctly produces no output at all.
-
-That's the whole prompt-side contribution. Everything else the pass needs travels in the workflow steps, which load when the workflow runs rather than sitting in the agent's prompt on every wake.
-
-## How the trigger is wired, and why it is worth copying
-
-```mermaid
-flowchart LR
-    subgraph nudge["The shape most factories write first"]
-        T1["Timer fires"] --> G1["Environment gate"]
-        G1 --> N1["Prose sentence<br/>to an agent"]
-        N1 -.->|"agent must read,<br/>recognise, choose"| P1["Pass runs"]
-        N1 ==>|"clock resets here,<br/>pass or no pass"| C1["Next window"]
-    end
-    subgraph here["What this pack ships"]
-        T2["Check runs<br/>every tick"] --> G2["Gate and cadence<br/>evaluated together"]
-        G2 -->|"exit 0"| D2["Runtime dispatches<br/>the workflow"]
-        D2 --> P2["Pass runs"]
-        P2 ==>|"pass stamps<br/>its own finish time"| C2["Next window"]
-    end
+```bash
+gc order list          # daily-introspect, type formula, trigger condition, target mayor
+gc formula list        # daily-introspect
 ```
 
-An order pairs a trigger with either a formula or a shell command. Reach for the shell command and the natural thing to write is a nudge, which makes the pass conditional on an agent reading a sentence and deciding to act. Worse, the order's clock resets on dispatch, so a tick that produced no pass still advances the schedule. Those two drift apart quietly: the factory this pack was carved from reached a state where its most recent firing hadn't produced a pass and its most recent pass had no firing behind it, five and a half hours apart, with nothing reporting an error.
+## Seeing it work without waiting a day
 
-The formula action removes the interpretation step. The cadence check removes the drift by reading the timestamp the pass writes when it finishes, so a pass that doesn't happen doesn't advance the clock.
+The pass is on a 24-hour cadence, which is the right cadence and the wrong one when you're sitting in a lab block. Run it by hand instead:
 
-One constraint shapes the result, and it'll bite you if you write your own. Trigger evaluation is a switch on trigger type, so exactly one branch runs: a `cooldown` order never consults `check`, and a `condition` order never consults `interval`. You can't compose an interval with an environment gate by declaring both. A condition check is a shell command, though, so it can own both concerns at once, which is what the `check` line does.
+```bash
+gc order run daily-introspect
+```
 
-## Variables
+`gc order run` bypasses the trigger entirely, so neither the environment gate nor the cadence gets a say. The order's action is a formula, so this instantiates the three-step workflow and routes it to the mayor. You'll watch the pass happen from there:
 
-All of these live in `$FACTORY_ROOT/.env`, and the pack imports and runs fine if you don't set a single one of them.
+```bash
+gc order history                  # that the order fired
+bd list --status open             # the workflow's steps, and any fix the pass proposed
+```
 
-| Variable | Default | What it does |
-|---|---|---|
-| `DAILY_INTROSPECT` | on | Set it to `false` to turn the pass off. Anything else, including unset, and it's still running. |
-| `SELF_IMPROVEMENT_DELIVERABLE_ROOT` | unset | The repo or directory holding your factory's configuration, cited in structural-fix beads so the next builder doesn't have to guess where the change lands. |
-| `SELF_IMPROVEMENT_DIGEST_CHANNEL` | unset | Where the digest goes. If you haven't set it, the pass files the digest with `bd human` instead. |
-| `SELF_IMPROVEMENT_DIGEST_CLOSER` | unset | A closing line on the digest. Leave it unset and there isn't one. |
+Expect the pass to find nothing on a factory that is a few hours old, and expect it to say so. That is the pack working rather than the pack failing. To give it something to find, block a couple of beads with the same reason first and run it again:
 
-Two more settings live in `orders/daily-introspect.toml` rather than the environment, because they change how the order itself is wired: `pool` names the agent that runs the pass, and `--interval` on the check line sets the cadence. A condition order hasn't got an `interval` field, so that argument is the only place the cadence lives.
+```bash
+bd update <some-bead> --status blocked --set-metadata blocker_reason="waiting on the same thing"
+```
 
-## Optional dependencies
+To see the trigger side rather than the action side, ask the runtime whether the pass is due and why:
 
-Three steps want tooling a stock city doesn't have. None of them is required, and each says what it does without it.
+```bash
+gc order check
+```
 
-| Step | Wants | Without it |
-|---|---|---|
-| Store and transport health | A chat-transport status helper | It's `bd stats` alone, compared against yesterday's snapshot, and that's still worth walking. |
-| Insight-capture rate | A shared knowledge repo you can query | The probe ships commented out, since it can't know your repo name. Uncomment and fill it in, or skip the bullet. |
-| The digest | A chat channel | Falls back to `bd human`, which is stock, so the digest still reaches a person even if you haven't wired up chat. |
+Right after a pass it will tell you the pass is not due, which is the cadence reading the timestamp the pass just wrote.
 
-Everything else the pass uses is stock, so you won't need to install anything: `bd` for the queue and state queries, `bd stats` for the store snapshot, `bd human` for operator-decision items, and `gc session list` for spotting an assignee whose session is gone.
+## Settings
 
-## What a pass actually turns up
+| Where | Setting | Default | What it does |
+|---|---|---|---|
+| `$FACTORY_ROOT/.env` | `DAILY_INTROSPECT` | on | Set it to `false` to turn the pass off. Anything else, including unset, leaves it running. |
+| `orders/daily-introspect.toml` | `pool` | `mayor` | The agent the workflow is dispatched to. |
+| `orders/daily-introspect.toml` | check argument | `24` | Hours between passes. A condition order has no `interval` field, so the cadence lives on the check line. |
 
-From the factory this was carved from, on one day: three findings against an otherwise clean queue-health sweep. A watcher was filtering for open work only, so it couldn't see the in-progress owner it was meant to deduplicate against. The same watcher wasn't re-appending its status line on the state change but on every tick, and that one got folded into the first fix instead of minted separately, so two builders wouldn't end up in one file. Then the third, which is the shape worth showing: a free-text field carried six different spellings of one cause across fourteen work items, while an agent elsewhere branched on that exact string.
+The environment gate is a script rather than an inline shell test for a reason worth knowing before you write your own. The controller runs a check line with its own environment, and your city's `.env` is never loaded into it, so `test "$DAILY_INTROSPECT" != false` reads an unset variable on every tick and the on-by-default branch always wins. The knob appears to work in the one direction that needs no knob, and the failure surfaces the first time somebody tries to turn it off.
 
-You can't see that third one in any single work item, and it's obvious in aggregate. That gap is the reason to run the pass at all.
+## Turning it off
 
-## On the lab's ceiling
+Either the knob or the removal, and they differ in what they leave behind:
 
-The lab tells you to automate the observation half and stop before automating the proposal half, because "a factory that proposes on a schedule generates a queue of proposals nobody reads, which is worse than none". That warning's correct, and this pack crosses the line it draws, so it ought to say how it answers it.
+```bash
+echo 'DAILY_INTROSPECT=false' >> "$FACTORY_ROOT/.env"     # keep the pack, stop the pass
+gc import remove self-improvement && gc reload            # take the pack back out
+```
 
-Three ways. The three-bead cap means a pass can't generate a queue. The still-healthy disposition is a real outcome rather than a fallback, so on most days the pass ends in silence. And the third disposition routes anything needing a judgement call to a person, instead of minting a fix that presupposes their answer.
+The state bead the pass keeps is metadata rather than work, so it stays open across passes. Leaving it there costs nothing and makes turning the pass back on free.
 
-None of that changes the part the lab is actually protecting: a proposal may become a pull request automatically, and it may not become a merge automatically. This pack mints work items and dispatches builders. Whatever gate stands between a builder's branch and your default branch is still what keeps the loop safe, and it's still yours.
+## What this leaves to you
+
+The lab's ceiling section tells you to automate the observation half and stop before the proposal half, because a factory that proposes on a schedule generates a queue nobody reads. This pack crosses that line, so it should say how it answers it. The three-per-pass cap means a pass cannot generate a queue. Silence is a real outcome rather than a fallback. And anything needing a judgement call is routed to you instead of becoming a fix that presupposes your answer.
+
+None of that touches the part the ceiling is really protecting. A proposal may become a pull request on its own; it may not become a merge on its own. Whatever review stands between a branch and your default branch is still what keeps this safe, and it is still yours.
 
 ---
 > Generated by the operator's software factory.

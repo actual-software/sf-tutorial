@@ -1,18 +1,17 @@
 formula = "daily-introspect"
 type = "workflow"
 description = """
-The daily factory-introspection pass: walk a bounded audit of the factory, sort each finding
-into one of three dispositions, post a digest only when something warrants the operator's
-attention, then carry state forward and exit.
+The once-a-day look at the factory itself: read one signal the factory already writes, decide
+what each finding deserves, then stamp the pass and stop. On a healthy factory the pass finds
+nothing and says nothing, and that is the expected outcome rather than a skipped step.
 
-The `daily-introspect` order owns the trigger, the `DAILY_INTROSPECT` gate and the cadence.
-What lives here is the body of the pass. Each step's procedure sits in its own markdown file
-under assets/workflows/daily-introspect/, so the prose loads when the workflow runs rather
-than riding along in every system prompt.
+The `daily-introspect` order owns the trigger, the environment gate and the cadence. What lives
+here is the body of the pass. Each step's procedure sits in its own markdown file under
+assets/workflows/daily-introspect/, so the prose loads when the workflow runs rather than riding
+along in the agent's prompt on every wake.
 
-Two bounds hold the pass: roughly five minutes of agent time, and at most three structural-fix
-beads per pass. Whichever fires first stops it. Silence on a healthy factory is the correct
-outcome rather than a skipped step.
+One bound holds the pass: at most three fixes per run. A pass that would propose a fourth writes
+the rest down for a person instead.
 """
 
 [requires]
@@ -20,41 +19,23 @@ formula_compiler = ">=2.0.0"
 
 [catalog]
 name = "daily-introspect"
-description = "Bounded factory-wide audit that mints structural-fix beads, surfaces operator decisions, and stays silent when nothing is wrong."
+description = "Read one factory signal, propose at most three fixes for what it shows, and stay quiet when nothing is wrong."
 
 [vars]
 
 [[steps]]
-id = "enter-mode"
-title = "Confirm this is an introspection pass and enter the mode"
-description_file = "../assets/workflows/daily-introspect/enter-mode.md"
+id = "read-one-signal"
+title = "Read one signal the factory already writes"
+description_file = "../assets/workflows/daily-introspect/read-one-signal.md"
 
 [[steps]]
-id = "audit-pass"
-title = "Walk the bounded audit checklist"
-description_file = "../assets/workflows/daily-introspect/audit-pass.md"
-depends_on = ["enter-mode"]
+id = "decide-and-gate"
+title = "Decide what each finding deserves"
+description_file = "../assets/workflows/daily-introspect/decide-and-gate.md"
+depends_on = ["read-one-signal"]
 
 [[steps]]
-id = "findings-disposition"
-title = "Sort each finding into one of three dispositions"
-description_file = "../assets/workflows/daily-introspect/findings-disposition.md"
-depends_on = ["audit-pass"]
-
-[[steps]]
-id = "digest-post"
-title = "Post the digest only if a finding warrants operator visibility"
-description_file = "../assets/workflows/daily-introspect/digest-post.md"
-depends_on = ["findings-disposition"]
-
-[[steps]]
-id = "state-across-passes"
-title = "Carry state forward on the introspection-state bead"
-description_file = "../assets/workflows/daily-introspect/state-across-passes.md"
-depends_on = ["digest-post"]
-
-[[steps]]
-id = "stop-conditions"
-title = "Stop on the first bound and exit the pass"
-description_file = "../assets/workflows/daily-introspect/stop-conditions.md"
-depends_on = ["state-across-passes"]
+id = "stamp-and-stop"
+title = "Stamp the pass and stop"
+description_file = "../assets/workflows/daily-introspect/stamp-and-stop.md"
+depends_on = ["decide-and-gate"]
