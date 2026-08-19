@@ -242,6 +242,8 @@ cd "$SFI_PATH/sf-tutorial" && grep -rl formula_compiler artifacts/packs/*/formul
 
 One file comes back: `artifacts/packs/self-improvement/formulas/daily-introspect.toml`, which ships with the [self-improvement loop](../hardening/05-self-improvement-loop.md). Everything else you install is the one-bead shape, and that is what runs when you sling one. It matters before you go hunting, because anyone who reads about per-step routing first will go looking for step beads that were never created, find nothing, and reasonably conclude their factory is broken rather than differently shaped.
 
+**Grep for `formula_compiler`, never for the string `v2`.** One file here would fool you. `artifacts/packs/setup/formulas/mol-refinery-patrol.toml` declares `contract = "graph.v2"` and requires no compiler version at all, and its own header says its steps are not materialised as child beads, which is the one-bead shape. Those are two different axes wearing similar names, so the `[requires]` line is the one that answers this question.
+
 If you install that option, its formula is also the one to cook when you want to watch the five-bead shape appear, since it has exactly the three steps described above.
 
 `gc formula show <name>` won't settle it either, because it prints the compiled recipe rather than the beads. The `[requires]` line answers the question. A cook proves it.
