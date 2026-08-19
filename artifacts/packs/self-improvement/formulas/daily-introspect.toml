@@ -1,0 +1,41 @@
+formula = "daily-introspect"
+type = "workflow"
+description = """
+The once-a-day look at the factory itself: read one signal the factory already writes, decide
+what each finding deserves, then stamp the pass and stop. On a healthy factory the pass finds
+nothing and says nothing, and that is the expected outcome rather than a skipped step.
+
+The `daily-introspect` order owns the trigger, the environment gate and the cadence. What lives
+here is the body of the pass. Each step's procedure sits in its own markdown file under
+assets/workflows/daily-introspect/, so the prose loads when the workflow runs rather than riding
+along in the agent's prompt on every wake.
+
+One bound holds the pass: at most three fixes per run. A pass that would propose a fourth writes
+the rest down for a person instead.
+"""
+
+[requires]
+formula_compiler = ">=2.0.0"
+
+[catalog]
+name = "daily-introspect"
+description = "Read one factory signal, propose at most three fixes for what it shows, and stay quiet when nothing is wrong."
+
+[vars]
+
+[[steps]]
+id = "read-one-signal"
+title = "Read one signal the factory already writes"
+description_file = "../assets/workflows/daily-introspect/read-one-signal.md"
+
+[[steps]]
+id = "decide-and-gate"
+title = "Decide what each finding deserves"
+description_file = "../assets/workflows/daily-introspect/decide-and-gate.md"
+depends_on = ["read-one-signal"]
+
+[[steps]]
+id = "stamp-and-stop"
+title = "Stamp the pass and stop"
+description_file = "../assets/workflows/daily-introspect/stamp-and-stop.md"
+depends_on = ["decide-and-gate"]
