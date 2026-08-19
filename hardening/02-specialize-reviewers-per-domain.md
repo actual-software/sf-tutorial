@@ -24,7 +24,8 @@ Install the `domain-reviewers-rig` pack into the `ascii-art` rig, replacing the 
 ## Prereqs
 
 - [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on a rig, with the polecat, refinery and architect running.
-- You are inside the rig directory, with `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH` and `$ARTIFACTS_PATH` exported, then `cd "$ASCII_ART_PATH"`.
+- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
+- You are inside the rig directory: `cd "$SFI_PATH/ascii-art"`.
 - `gh` is authenticated; `jq` is installed.
 - An open task bead to work with. `bd list --status open --limit 5` picks one.
 
@@ -158,12 +159,12 @@ Inspect the pack before installing.
 **Copy and paste**
 
 ```bash
-ls "$ARTIFACTS_PATH/packs/domain-reviewers-rig/"
-cat "$ARTIFACTS_PATH/packs/domain-reviewers-rig/pack.toml"
-ls "$ARTIFACTS_PATH/packs/domain-reviewers-rig/agents/"
-cat "$ARTIFACTS_PATH/packs/domain-reviewers-rig/agents/adr-reviewer/agent.toml"
-cat "$ARTIFACTS_PATH/packs/domain-reviewers-rig/agents/design-reviewer/agent.toml"
-cat "$ARTIFACTS_PATH/packs/domain-reviewers-rig/formulas/mol-refinery-domain-patrol.formula.toml"
+ls "$SFI_PATH/sf-tutorial/artifacts/packs/domain-reviewers-rig/"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/domain-reviewers-rig/pack.toml"
+ls "$SFI_PATH/sf-tutorial/artifacts/packs/domain-reviewers-rig/agents/"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/domain-reviewers-rig/agents/adr-reviewer/agent.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/domain-reviewers-rig/agents/design-reviewer/agent.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/domain-reviewers-rig/formulas/mol-refinery-domain-patrol.formula.toml"
 ```
 
 What to notice:
@@ -186,13 +187,13 @@ Copy the pack into the city's `packs/` directory.
 **Copy and paste**
 
 ```bash
-mkdir -p "$FACTORY_PATH/packs"
+mkdir -p "$SFI_PATH/factory1/packs"
 
 # Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
-rm -rf "$FACTORY_PATH/packs/domain-reviewers-rig"
+rm -rf "$SFI_PATH/factory1/packs/domain-reviewers-rig"
 
-cp -r "$ARTIFACTS_PATH/packs/domain-reviewers-rig" \
-      "$FACTORY_PATH/packs/domain-reviewers-rig"
+cp -r "$SFI_PATH/sf-tutorial/artifacts/packs/domain-reviewers-rig" \
+      "$SFI_PATH/factory1/packs/domain-reviewers-rig"
 ```
 
 Confirm the pack landed flat, with a single `pack.toml` at its top level:
@@ -200,13 +201,13 @@ Confirm the pack landed flat, with a single `pack.toml` at its top level:
 **Copy and paste**
 
 ```bash
-find "$FACTORY_PATH/packs/domain-reviewers-rig" -name pack.toml
+find "$SFI_PATH/factory1/packs/domain-reviewers-rig" -name pack.toml
 ```
 
 **Expected output**
 
 ```text
-$FACTORY_PATH/packs/domain-reviewers-rig/pack.toml
+$SFI_PATH/factory1/packs/domain-reviewers-rig/pack.toml
 ```
 
 Register the new import at rig scope and remove the now-redundant
@@ -215,9 +216,9 @@ direct `bead-builders-rig` import.
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SFI_PATH/factory1"
 
-gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/domain-reviewers-rig"
+gc import add --rig ascii-art "$SFI_PATH/sf-tutorial/artifacts/packs/domain-reviewers-rig"
 
 # Nothing is removed. This option sits alongside the base factory,
 # which keeps its orders and resolves the shared packs once.
@@ -287,10 +288,10 @@ the polecat at it.
 **Copy and paste**
 
 ```bash
-cd "$ASCII_ART_PATH"
+cd "$SFI_PATH/ascii-art"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement k\.md$" | awk '{print $2}')
 
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/domain-reviewers-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -376,7 +377,7 @@ Once the PR is up, merge as before.
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view "$PR" --web
 gh pr merge "$PR" --merge
@@ -392,11 +393,11 @@ one is enough to arm the lane.
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 export NEXT_BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement l\.md$" | awk '{print $2}')
 
 # Add a DESIGN ADR carrying a rule the polecat has no way to know about.
-cat > $ASCII_ART_PATH/docs/decision-records/0002.ADR.DESIGN.md <<'EOF'
+cat > $SFI_PATH/ascii-art/docs/decision-records/0002.ADR.DESIGN.md <<'EOF'
 # 0002. Letter files carry a rendering attribution
 
 ## Status
@@ -405,9 +406,9 @@ Accepted
 ## Decision
 Every letter file MUST include a 'Rendered by: <author>' line directly under the heading.
 EOF
-git -C $ASCII_ART_PATH add docs/decision-records && git -C $ASCII_ART_PATH commit -m "docs(adr): require a rendering attribution line" && git -C $ASCII_ART_PATH push
+git -C $SFI_PATH/ascii-art add docs/decision-records && git -C $SFI_PATH/ascii-art commit -m "docs(adr): require a rendering attribution line" && git -C $SFI_PATH/ascii-art push
 
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/domain-reviewers-rig.polecat $NEXT_BEAD_ID --on mol-polecat-pr
 ```
 

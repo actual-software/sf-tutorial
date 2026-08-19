@@ -25,7 +25,8 @@ By the end of this exercise you will have installed the `principles-loop-rig` pa
 - [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on a rig, with the polecat, refinery and architect running.
 - `python3` available; `PyYAML` installed
   (`python3 -m pip install pyyaml`).
-- You are inside the rig directory, with `$FACTORY_PATH`, `$ASCII_ART_PATH`, `$TUTORIAL_PATH` and `$ARTIFACTS_PATH` exported, then `cd "$ASCII_ART_PATH"`.
+- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
+- You are inside the rig directory: `cd "$SFI_PATH/ascii-art"`.
 - `gh` is authenticated; `jq` is installed.
 - Two open task beads: one you expect to pass cleanly, one you expect to score badly.
 
@@ -138,10 +139,10 @@ Inspect the pack:
 **Copy and paste**
 
 ```bash
-ls "$ARTIFACTS_PATH/packs/principles-loop-rig/"
-cat "$ARTIFACTS_PATH/packs/principles-loop-rig/pack.toml"
-cat "$ARTIFACTS_PATH/packs/principles-loop-rig/formulas/mol-principles-review.formula.toml"
-cat "$ARTIFACTS_PATH/packs/principles-loop-rig/checks/aggregate-score.sh"
+ls "$SFI_PATH/sf-tutorial/artifacts/packs/principles-loop-rig/"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/principles-loop-rig/pack.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/principles-loop-rig/formulas/mol-principles-review.formula.toml"
+cat "$SFI_PATH/sf-tutorial/artifacts/packs/principles-loop-rig/checks/aggregate-score.sh"
 ```
 
 What to notice:
@@ -165,13 +166,13 @@ to here is the path those steps expect:
 **Copy and paste**
 
 ```bash
-mkdir -p "$FACTORY_PATH/packs"
+mkdir -p "$SFI_PATH/factory1/packs"
 
 # Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
-rm -rf "$FACTORY_PATH/packs/principles-loop-rig"
+rm -rf "$SFI_PATH/factory1/packs/principles-loop-rig"
 
-cp -r "$ARTIFACTS_PATH/packs/principles-loop-rig" \
-      "$FACTORY_PATH/packs/principles-loop-rig"
+cp -r "$SFI_PATH/sf-tutorial/artifacts/packs/principles-loop-rig" \
+      "$SFI_PATH/factory1/packs/principles-loop-rig"
 ```
 
 Confirm the pack landed flat, with a single `pack.toml` at its top level:
@@ -179,13 +180,13 @@ Confirm the pack landed flat, with a single `pack.toml` at its top level:
 **Copy and paste**
 
 ```bash
-find "$FACTORY_PATH/packs/principles-loop-rig" -name pack.toml
+find "$SFI_PATH/factory1/packs/principles-loop-rig" -name pack.toml
 ```
 
 **Expected output**
 
 ```text
-$FACTORY_PATH/packs/principles-loop-rig/pack.toml
+$SFI_PATH/factory1/packs/principles-loop-rig/pack.toml
 ```
 
 Register the new import at rig scope:
@@ -193,9 +194,9 @@ Register the new import at rig scope:
 **Copy and paste**
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SFI_PATH/factory1"
 
-gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/principles-loop-rig"
+gc import add --rig ascii-art "$SFI_PATH/sf-tutorial/artifacts/packs/principles-loop-rig"
 
 # Nothing is removed. This option sits alongside the base factory,
 # which keeps its orders and resolves the shared packs once.
@@ -237,8 +238,8 @@ Check the aggregator script exists, and run it bare to confirm it prints a usage
 **Copy and paste**
 
 ```bash
-ls "$FACTORY_PATH/packs/principles-loop-rig/checks/aggregate-score.sh"
-bash "$FACTORY_PATH/packs/principles-loop-rig/checks/aggregate-score.sh"
+ls "$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh"
+bash "$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh"
 ```
 
 **Expected output**
@@ -272,7 +273,7 @@ not, write a short one inline:
 **Copy and paste**
 
 ````bash
-cd "$ASCII_ART_PATH"
+cd "$SFI_PATH/ascii-art"
 mkdir -p docs/reviews docs/reviews/principles
 cat > docs/reviews/principles-schema.md <<'EOF'
 # Principles audit trail schema
@@ -308,10 +309,10 @@ publishing a branch:
 **Copy and paste**
 
 ```bash
-cd "$ASCII_ART_PATH"
+cd "$SFI_PATH/ascii-art"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement l\.md$" | awk '{print $2}')
 
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/principles-loop-rig.polecat $BEAD_ID --on mol-polecat-pr
 # Wait for the polecat to publish a branch and hand back to the refinery.
 watch -n 5 'gc bd show $BEAD_ID | grep -E "_approved|branch|review"'
@@ -325,7 +326,7 @@ waiting for the refinery's auto-dispatch (which would sling
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/principles-loop-rig.architect $BEAD_ID --on mol-principles-review
 ```
 
@@ -353,7 +354,7 @@ findings:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 cat docs/reviews/principles.$BEAD_ID.yaml | head -50
 ls docs/reviews/principles/$BEAD_ID.*.md
 ```
@@ -365,7 +366,7 @@ You should see `rc=0` and a JSON line on stdout with `aggregate>=0.9`.
 **Copy and paste**
 
 ```bash
-$FACTORY_PATH/packs/principles-loop-rig/checks/aggregate-score.sh \
+$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh \
   docs/reviews/principles.$BEAD_ID.yaml --target=0.9 --min-per-principle=3
 echo "rc=$?"
 ```
@@ -395,7 +396,7 @@ let the patrol dispatch them itself:
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/domain-reviewers-rig.design-reviewer  $BEAD_ID --on mol-design-review
 gc sling ascii-art/domain-reviewers-rig.testing-reviewer $BEAD_ID --on mol-testing-review
 gc sling ascii-art/domain-reviewers-rig.docs-reviewer    $BEAD_ID --on mol-docs-review
@@ -409,7 +410,7 @@ Wait for the refinery to aggregate and publish the PR:
 watch -n 5 'gc bd show $BEAD_ID'
 # Ctrl-C once metadata.pr_number is set.
 
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view "$PR" --web
 gh pr merge "$PR" --merge
@@ -424,7 +425,7 @@ Stage a bad version of the file before the polecat runs:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
+cd $SFI_PATH/ascii-art
 export WEAK_BEAD=$(bd list --type=task --status=open --limit 0 | grep -E "Implement m\.md$" | awk '{print $2}')
 
 git checkout -b weak/m
@@ -444,7 +445,7 @@ bad code:
 **Copy and paste**
 
 ```bash
-cd $FACTORY_PATH
+cd $SFI_PATH/factory1
 gc sling ascii-art/principles-loop-rig.polecat $WEAK_BEAD --on mol-polecat-pr
 
 # Wait for the polecat to publish the (weak) branch...
@@ -486,8 +487,8 @@ Run the aggregator between iterations:
 **Copy and paste**
 
 ```bash
-cd $ASCII_ART_PATH
-$FACTORY_PATH/packs/principles-loop-rig/checks/aggregate-score.sh \
+cd $SFI_PATH/ascii-art
+$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh \
   docs/reviews/principles.$WEAK_BEAD.yaml --target=0.9 --min-per-principle=3
 # Iteration 1: rc=1, JSON shows aggregate ~0.5, lowest 3 principles named.
 # Iteration 2: rc=1, aggregate ~0.7, lowest principles changing.
@@ -527,7 +528,7 @@ Pack is installed and the formula is loaded.
 
 ```bash
 gc formula list | grep mol-principles-review
-ls "$FACTORY_PATH/packs/principles-loop-rig/checks/aggregate-score.sh"
+ls "$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh"
 python3 -c "import yaml" && echo "PyYAML ok"
 ```
 
@@ -537,7 +538,7 @@ After slinging on a clean bead, 23 rows in the YAML and PASS.
 
 ```bash
 wc -l docs/reviews/principles.$BEAD_ID.yaml
-$FACTORY_PATH/packs/principles-loop-rig/checks/aggregate-score.sh \
+$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh \
   docs/reviews/principles.$BEAD_ID.yaml
 echo "rc=$?"
 ```

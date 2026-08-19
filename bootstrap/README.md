@@ -61,7 +61,7 @@ Runs the setup work for 00.1, 00.2 and 00.3 on the way past, then stops at the e
 
 **Mental model:** `./bootstrap.sh <step>` answers "make my factory look like I just finished `<step>`," not "make my factory ready for me to start `<step>`."
 
-**Then paste the export block the run prints.** The script sets `FACTORY_PATH`, `ASCII_ART_PATH`, `TUTORIAL_PATH` and `ARTIFACTS_PATH` in its own child process, so they do not reach the shell you launched it from. Every run ends by printing them in paste-ready form; do that before you continue, and before you append them to a shell rc on [W3 Run Your Factory](../progression/W3-run-your-factory.md).
+**Nothing to paste afterwards.** `$SFI_PATH` is the only path variable the curriculum asks for, and [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc. The script works out the factory, rig and artifact directories from it for its own use; every page writes them out the same way, so a run leaves your shell with nothing new to set.
 
 ## About the Bootstrap Script
 
@@ -71,7 +71,7 @@ Run this script from this folder to bootstrap your factory into the **end state*
 
 ### How a run reports success
 
-A finished run prints `==> Ready to test on <step>`, then the export block described above, and exits 0, so you can chain `./bootstrap.sh <step> && <next thing>`.
+A finished run prints `==> Ready to test on <step>` and exits 0, so you can chain `./bootstrap.sh <step> && <next thing>`.
 
 The banner appears only after the script confirms your city actually came up. Earlier versions printed it straight after `gc start` without checking anything, so a run whose city never started still reported success. The script now reads two signals: the `fatal=` field in the `gc start` output, which names the failure, and the controller line from `gc status`, which confirms the city is live. Both are more specific than the exit code on its own, and the second also catches a city that starts but never becomes ready. A run that fails either one says what went wrong and exits 1, with no banner.
 

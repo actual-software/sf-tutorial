@@ -1,0 +1,38 @@
+# audit-matrix-scan — the observing half of this pack's gate.
+#
+# `trigger = "event"` with `on = "bead.created"` runs the scan whenever a bead
+# appears. That is the moment the matrix is cheapest to write, before anyone has
+# built anything against the description.
+#
+# THE EVENT DOES NOT TELL THE SCRIPT WHICH BEAD. An exec order is handed the
+# rig's environment rather than the event payload, so the script asks `bd` for
+# the open beads and works out the answer itself. `base-factory`'s
+# `bead-closed-log` order has the same shape and its comments go further into
+# why. The upshot for this order is that one firing can cover several new beads,
+# and re-running it by hand re-reports rather than double-reports, because the
+# scan derives its answer from the board each time instead of accumulating.
+#
+# IT REPORTS AND CHANGES NOTHING. No status is flipped, no metadata is written.
+# An order fires on its own schedule with nobody watching, and a factory that
+# silently blocks beads while you are looking somewhere else is a factory you
+# stop trusting. The formula in this pack is the half that changes a bead, and
+# you pour it deliberately.
+#
+# `timeout` bounds the exec. The scan reads the whole open board, so give it
+# more than the file-append orders in `base-factory` need.
+#
+# WATCHING IT. `gc order run audit-matrix-scan` fires it now, which is the
+# fastest way to see what it says about your current board.
+# `gc events --type bead.created` shows the events that would have fired it, and
+# `gc order history` shows what has fired.
+#
+# The findings go to stderr and stdout, so `gc order history` is where you read
+# them. To keep a copy, append a redirect to the exec line below and point it at
+# the rig's `FACTORY_LOG.md`, which is where the `base-factory` orders write.
+
+[order]
+description = "Report security-shaped beads that arrived without an audit matrix"
+trigger = "event"
+on = "bead.created"
+exec = "$PACK_DIR/assets/scripts/audit_matrix_check.py scan"
+timeout = "120s"

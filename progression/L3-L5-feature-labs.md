@@ -9,6 +9,7 @@
 - [The three slots, and what each allows](#the-three-slots-and-what-each-allows)
 - [The six options](#the-six-options)
 - [How each lab runs](#how-each-lab-runs)
+- [Paths this page uses](#paths-this-page-uses)
 - [Try It](#try-it)
   - [1. Pick from the map](#1-pick-from-the-map)
   - [2. Build it](#2-build-it)
@@ -34,13 +35,13 @@ Three slots, three changes to your own factory, each one verified. This page ser
 
 | Slot | You may build |
 | --- | --- |
-| **L3** | One of the six options below. Nothing else. |
+| **L3** | One of the six options below. |
 | **L4** | An option you have not used yet, **or** a feature of your own from the map. |
 | **L5** | Same as L4: an option you have not used yet, or a feature of your own. |
 
-L3 is constrained on purpose. Each option is a worked, tested capability with a page explaining what problem it solves, so the first slot buys you a working extension and a model to copy. The two later slots are where the factory becomes yours.
+L3 is intended to give you a sense of the scope of possible features and changes you can introduce within a single pack, beyond the base factory. The two later slots allow you to explore other capabilities relevant to your capabilities map.
 
-**Every option installs on the base factory alone.** None requires another, none has to be done in order, and you never remove one to add the next. Pick on the basis of which problem you actually have.
+**Every option installs on the base factory alone.** None requires another, none has to be done in order, and you don't need to remove one to add the next. Pick on the basis of which problem you actually have.
 
 ## The six options
 
@@ -53,13 +54,34 @@ L3 is constrained on purpose. Each option is a worked, tested capability with a 
 | [Strengthen the review system](../hardening/04-strengthen-review-system.md) | One model is one point of view, and it is confidently wrong sometimes | `multi-vendor-rig` |
 | [Self-improvement loop](../hardening/05-self-improvement-loop.md) | The factory produces evidence about itself and nobody reads it | none — it is a loop, not a pack |
 
-If your rank-1 row said "install option X", this is where you find X. If it did not, L3 is still an option slot: pick the one whose problem statement is closest to a row on your map.
-
 ## How each lab runs
 
 Participant-led, no shared end state. The instructor circulates; say which layer you are working in when they reach you, because the failure modes differ per layer and pairing works best within one.
 
-A slot is enough to build one change properly. It is not enough for two. The ranking you did in L2 is what makes that survivable.
+## Paths this page uses
+
+Every command below is written out from one variable:
+
+| Variable | Points at | Set by |
+| --- | --- | --- |
+| `SFI_PATH` | your workspace directory | [W2](./W2-cloud-box-and-preflight.md) on your laptop, [W3 step 3](./W3-run-your-factory.md#3-open-a-shell-on-the-box) on the box. Both append it to a shell rc, so it survives |
+
+Your factory is `$SFI_PATH/factory1` and your own rig is `$SFI_PATH/<your-rig-name>`. Nothing on this page asks you to export either.
+
+**Copy and paste**
+
+```bash
+cd "$SFI_PATH/factory1" && gc rig list && ls "$SFI_PATH/<your-rig-name>"
+```
+
+**Expected output**
+
+```text
+your rig listed alongside ascii-art, with a path and a prefix
+your rig's own files
+```
+
+If `gc rig list` comes back without your rig, or the `ls` cannot find the directory, you are on a box where [L1](./L1-plan-your-factory.md) has not run yet, and that is where to fix it rather than here.
 
 ## Try It
 
@@ -68,30 +90,57 @@ A slot is enough to build one change properly. It is not enough for two. The ran
 **Copy and paste**
 
 ```bash
-cd "$MY_RIG_PATH"
-nano docs/current/capability-map.md
+cd "$SFI_PATH/<your-rig-name>"
+cat docs/current/capability-map.md
 ```
 
-Re-rank if the morning changed your mind, and commit the re-rank before you build. A map with a stale ranking is a map you will stop trusting.
-
-Then commit to one row out loud, to yourself or to whoever you are pairing with, in this shape:
+Commit to one row out loud, to yourself or to whoever you are pairing with, in this shape:
 
 > I am changing the **\<pack | agent | formula | order\>** layer so that **\<the factory does X\>**, and I will know it worked when **\<the verification from the map's own column\>**.
 
-If you cannot fill that sentence in, the row is not ready and the next one probably is.
+If you cannot fill that sentence in, the row is not ready for you to pursue proper implementation.
 
 ### 2. Build it
 
-**If you picked an option**, its page carries the install and the walkthrough. Every option is a single import onto the base factory:
+#### Option A: Import from local path
+
+**If you picked an option**, its page carries the install and the walkthrough. Every option is a single import onto the base factory, from the copy of this repo already on your box:
 
 ```bash
-cd "$FACTORY_PATH"
-gc import add --rig <your-rig-name> "$ARTIFACTS_PATH/packs/<the-option-pack>"
+cd "$SFI_PATH/factory1"
+gc import add --rig <your-rig-name> "$SFI_PATH/sf-tutorial/artifacts/packs/<the-option-pack>"
 gc reload
 gc import list --rig <your-rig-name>
 ```
 
-Then follow that page's Try It against your own rig rather than `ascii-art`.
+#### Option B: Import from remote GitHub URL
+
+**Or install the same pack straight from its repository.** `gc import add` takes a GitHub URL wherever it takes a directory, so a pack you have not cloned installs in one command. The options that ship as a pack are all published, so you can run this now against your own rig:
+
+**Copy and paste**
+
+```bash
+cd "$SFI_PATH/factory1"
+gc import add --rig <your-rig-name> https://github.com/actual-software/sf-tutorial/tree/main/artifacts/packs/domain-reviewers-rig
+gc import install
+gc reload
+gc import list --rig <your-rig-name>
+```
+
+**Expected output**
+
+```text
+Added import "domain-reviewers-rig" from https://github.com/actual-software/sf-tutorial/tree/main/artifacts/packs/domain-reviewers-rig
+a count of the remote imports fetched
+your new import, its URL, and the same commit sha twice
+```
+
+Swap the last path segment for the pack named in [the six options](#the-six-options). Four things about that command are worth carrying home:
+
+- **The URL is the one GitHub's address bar shows you.** Browse to the pack's directory in any repo and copy what you see: `https://github.com/<org>/<repo>/tree/<ref>/<path-to-the-pack>`. The `<ref>` is a branch, a tag or a commit.
+- **`gc import install` is the extra step.** A directory import is read where it sits; a remote one has to be fetched first. Skipping it is the single most common way this path fails.
+- **The import is pinned the moment you add it.** `gc import list` prints the resolved commit, and the pack stays on that commit until you move it, so a change upstream cannot rewrite your factory overnight. Pass `--version sha:<commit>` to pick a different one, or a constraint like `--version '^1.2.0'` on a repo that tags releases.
+- **The binding name comes from the last path segment.** That is `domain-reviewers-rig` above, and it is the name `gc import list` and `gc import remove` want. Use `--name <name>` when two packs would otherwise collide.
 
 **If you are building your own**, where you work depends on the layer, and each has a worked example in the repo to copy the shape from.
 
@@ -104,7 +153,7 @@ Then follow that page's Try It against your own rig rather than `ascii-art`.
 Whichever layer, reload and check before you test:
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SFI_PATH/factory1"
 gc reload
 gc doctor
 ```
@@ -116,21 +165,21 @@ Run the verification you wrote in the map's own column, not a different one that
 **Copy and paste**
 
 ```bash
-cd "$MY_RIG_PATH"
+cd "$SFI_PATH/<your-rig-name>"
 bd create --title "<a bead that exercises the change>" --type task --priority 2
-cd "$FACTORY_PATH"
+cd "$SFI_PATH/factory1"
 gc sling --rig <your-rig-name> polecat <the-new-bead-id>
-watch -n 5 'cd '"$MY_RIG_PATH"' && bd show <the-new-bead-id> --json | jq -r ".[0] | \"\(.status)  \(.assignee)\""'
+watch -n 5 'cd '"$SFI_PATH/<your-rig-name>"' && bd show <the-new-bead-id> --json | jq -r ".[0] | \"\(.status)  \(.assignee)\""'
 ```
 
 The important part is the negative case. **A gate you have only seen pass is a gate you have not tested.** Construct the input that *should* be rejected and confirm it is:
 
 ```bash
-cd "$MY_RIG_PATH"
+cd "$SFI_PATH/<your-rig-name>"
 bd create --title "<a bead your change should reject or catch>" --type task --priority 3
-cd "$FACTORY_PATH"
+cd "$SFI_PATH/factory1"
 gc sling --rig <your-rig-name> polecat <that-bead-id>
-cd "$MY_RIG_PATH"
+cd "$SFI_PATH/<your-rig-name>"
 bd show <that-bead-id> --json | jq -r '.[0] | .status, (.metadata.blocker_reason // "no blocker recorded")'
 ```
 
@@ -165,10 +214,10 @@ Across the three slots: at least one shipped option installed and working in you
 ## Verification
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SFI_PATH/factory1"
 gc import list --rig <your-rig-name>
 gc doctor
-cd "$MY_RIG_PATH"
+cd "$SFI_PATH/<your-rig-name>"
 git log --oneline -3
 bd list --status blocked
 ```
@@ -182,16 +231,12 @@ your commits from this slot
 the bead you deliberately made fail, still blocked with a reason
 ```
 
-## Ceiling
-
-Make what you built survive someone else. Write the three sentences explaining it into your rig's docs, so a colleague reading the file in a month knows why it exists.
-
-That is also most of the work for [W7](./W7-sharing-your-factory.md) already done.
-
 ## Troubleshooting
 
 - **The option's page refers to agents you do not have.** Each option page assumes the base factory plus that option. If it names an agent from a different option, you found a bug worth reporting; the options are meant to be independent.
 - **`gc import add` succeeds and the new agent never appears.** Check the scope. Options install at rig scope with `--rig`; installing at city scope puts the agent somewhere the rig cannot see.
+- **You installed from a URL and the agent never appears.** Run `gc import install`. A remote import is recorded by `gc import add` and fetched by `gc import install`, and until the fetch happens there is nothing on disk for `gc reload` to read.
+- **A command runs somewhere unexpected, or `ls` reports `cannot access '': No such file or directory`.** `$SFI_PATH` is unset in this shell. `cd ""` exits 0 in both bash and zsh, so an unset variable leaves you where you were rather than reporting an error. `echo "$SFI_PATH"` settles it; [W2](./W2-cloud-box-and-preflight.md) and [W3](./W3-run-your-factory.md) both append it to a shell rc, so a Day 2 shell that has lost it never ran that step.
 - **Your change works on `ascii-art` and not on your rig.** Your rig needs the base factory imported too — L1 step 1. `gc import list --rig <your-rig-name>` settles it.
 - **The negative case passes when it should fail.** Either the input was better-formed than you thought, or the check is not on the path the bead took. Both are worth a map row.
 
