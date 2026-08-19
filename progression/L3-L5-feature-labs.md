@@ -123,7 +123,7 @@ gc reload
 gc import list --rig <your-rig-name>
 ```
 
-**Or install the same pack straight from its repository.** `gc import add` takes a GitHub URL wherever it takes a directory, so a pack you have not cloned installs in one command. This is the path you will use after the workshop, when the pack you want belongs to a colleague or to a project you only ever read. Every option on this page is published, so you can run this now against your own rig:
+**Or install the same pack straight from its repository.** `gc import add` takes a GitHub URL wherever it takes a directory, so a pack you have not cloned installs in one command. This is the path you will use after the workshop, when the pack you want belongs to a colleague or to a project you only ever read. The five options that ship as a pack are all published, so you can run this now against your own rig:
 
 **Copy and paste**
 
@@ -143,12 +143,14 @@ a count of the remote imports fetched
 your new import, its URL, and the same commit sha twice
 ```
 
-Swap the last path segment for whichever option you picked. Four things about that command are worth carrying home, because they are what make a URL install behave differently from a directory one:
+Swap the last path segment for the pack named in [the six options](#the-six-options). The self-improvement loop is a loop rather than a pack, so it is the one option this command cannot install. Four things about that command are worth carrying home, because they are what make a URL install behave differently from a directory one:
 
 - **The URL is the one GitHub's address bar shows you.** Browse to the pack's directory in any repo and copy what you see: `https://github.com/<org>/<repo>/tree/<ref>/<path-to-the-pack>`. The `<ref>` is a branch, a tag or a commit.
 - **`gc import install` is the extra step.** A directory import is read where it sits; a remote one has to be fetched first, and the agents do not exist until it has been. Skipping it is the single most common way this path appears to do nothing.
 - **The import is pinned the moment you add it.** `gc import list` prints the resolved commit, and the pack stays on that commit until you move it, so a change upstream cannot rewrite your factory overnight. Pass `--version sha:<commit>` to pick a different one, or a constraint like `--version '^1.2.0'` on a repo that tags releases.
 - **The binding name comes from the last path segment.** That is `domain-reviewers-rig` above, and it is the name `gc import list` and `gc import remove` want. Use `--name <name>` when two packs would otherwise collide.
+
+Two pages go further when you need them. [W7](./W7-sharing-your-factory.md#a-git-repository) covers the other side of this, how a pack you wrote gets a URL of its own, and [the `gc import add` troubleshooting page](../troubleshooting/gc-import-add.md) carries the full table of source locations, including the local-path cases that behave differently inside a git worktree.
 
 Then follow that page's Try It against your own rig rather than `ascii-art`.
 
@@ -252,7 +254,7 @@ That is also most of the work for [W7](./W7-sharing-your-factory.md) already don
 - **The option's page refers to agents you do not have.** Each option page assumes the base factory plus that option. If it names an agent from a different option, you found a bug worth reporting; the options are meant to be independent.
 - **`gc import add` succeeds and the new agent never appears.** Check the scope. Options install at rig scope with `--rig`; installing at city scope puts the agent somewhere the rig cannot see.
 - **You installed from a URL and the agent never appears.** Run `gc import install`. A remote import is recorded by `gc import add` and fetched by `gc import install`, and until the fetch happens there is nothing on disk for `gc reload` to read.
-- **A command fails with an empty path, like `cd: : No such file or directory`.** One of the four variables in [Paths this page uses](#paths-this-page-uses) is unset in this shell. Re-run that block; a Day 2 shell almost never carries them from Day 1.
+- **A command runs somewhere unexpected, or `ls` reports `cannot access '': No such file or directory`.** One of the four variables in [Paths this page uses](#paths-this-page-uses) is unset in this shell. `cd ""` exits 0 in both bash and zsh, so an unset `FACTORY_PATH` leaves you where you were rather than reporting an error. Re-run that block; a Day 2 shell almost never carries them from Day 1.
 - **Your change works on `ascii-art` and not on your rig.** Your rig needs the base factory imported too — L1 step 1. `gc import list --rig <your-rig-name>` settles it.
 - **The negative case passes when it should fail.** Either the input was better-formed than you thought, or the check is not on the path the bead took. Both are worth a map row.
 
