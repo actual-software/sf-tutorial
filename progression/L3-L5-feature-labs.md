@@ -16,6 +16,7 @@
   - [3. Prove it worked](#3-prove-it-worked)
   - [4. Put it behind a gate](#4-put-it-behind-a-gate)
   - [5. Reflect](#5-reflect)
+- [Tinkering with formula configuration](#tinkering-with-formula-configuration)
 - [Deliverable](#deliverable)
 - [Verification](#verification)
 - [Ceiling](#ceiling)
@@ -146,7 +147,7 @@ Swap the last path segment for the pack named in [the six options](#the-six-opti
 
 **Agent layer.** You are changing what an agent knows or how it judges. The files are a prompt template and an `agent.toml` under a pack's `agents/<name>/`. Most agent-layer changes are prompt edits, and the highest-value edit is almost always giving a reviewer a real document to cite rather than more adjectives.
 
-**Formula layer.** You are changing what steps a job has. The files are `*.formula.toml` under a pack's `formulas/`. Copy [`mol-polecat-pr`](../artifacts/packs/pr-gate-rig/formulas/mol-polecat-pr.formula.toml) specifically, because it uses `extends` to replace exactly one step of a base formula and inherit the rest. Reach for `extends` before writing a formula from scratch: a short diff is easier to debug and it does not fork the base.
+**Formula layer.** You are changing what steps a job has. The files are `*.formula.toml` under a pack's `formulas/`. Copy [`mol-polecat-pr`](../artifacts/packs/pr-gate-rig/formulas/mol-polecat-pr.formula.toml) specifically, because it uses `extends` to replace exactly one step of a base formula and inherit the rest. Reach for `extends` before writing a formula from scratch: a short diff is easier to debug and it does not fork the base. Read [tinkering with formula configuration](#tinkering-with-formula-configuration) before you edit one, because a single line in the file decides whether your formula becomes one bead or a bead per step.
 
 **Order layer.** You are changing when something happens. The file is an `order.toml` with one trigger. Use `condition` when the factory should react to its own bead store, `cron` or `cooldown` for a proactive sweep, `event` to react to something the factory announced. The two in [`base-factory/orders/`](../artifacts/packs/base-factory/orders/) are deliberately minimal and are the easiest shape to copy.
 
@@ -204,6 +205,90 @@ You have changed a factory on the basis of evidence it produced about itself. Th
 Two questions before the slot ends. Which layer did the change land in, and was that the layer you predicted in L2? And what did building it add to the map that was not there this morning?
 
 Write the second answer into the map now. It is the first row of the next version of this exercise, and unlike today you will not have a room full of people to help you rediscover it.
+
+## Tinkering with formula configuration
+
+If you picked the formula layer, here's the shape of the thing you're editing. These notes come from cooking real formulas on a factory rather than from reading the spec, so they describe what a formula *becomes* when you instantiate it. How a run then behaves is a separate question, and a cook can't answer it.
+
+### One line decides what a formula becomes
+
+Look at the top of any `*.formula.toml` for this block:
+
+```toml
+[requires]
+formula_compiler = ">=2.0.0"
+```
+
+That one declaration decides the shape you get, and the two shapes are further apart than the files look.
+
+```mermaid
+graph TB
+    F["A formula file<br/>*.formula.toml"]
+    F -->|"declares the v2 compiler"| V2["A root bead<br/>plus one bead per step<br/>plus a finalize step you didn't author"]
+    F -->|"doesn't declare it"| V1["One bead<br/>carrying the formula name and your variables<br/>no step beads at all"]
+    V2 --> R2["Steps are independently routable,<br/>so they can go to different agents"]
+    V1 --> R1["One agent works the whole formula<br/>in one session"]
+```
+
+**With the declaration**, a three-step formula cooks into five beads: a root, the three steps you wrote, and a `workflow-finalize` step the compiler adds itself. Each one gets an independent id rather than a suffix of the root's, and that's what makes the steps separately routable.
+
+**Without it**, there are no step beads. The whole formula lands as a single bead carrying `gc.formula_name` and your variables, and one agent works all of it in one session.
+
+**Every formula shipped in this repo is that second shape**, because none of them declares the compiler line. That's what you install and what runs when you sling one. It matters before you go hunting, because anyone who reads about per-step routing first will go looking for step beads that were never created, find nothing, and reasonably conclude their factory is broken rather than differently shaped.
+
+`gc formula show <name>` won't settle it either. It prints a step tree for both shapes, finalize step included, because it's showing the compiled recipe rather than the beads. The `[requires]` line answers the question. A cook proves it.
+
+### Cook one to see it, without waking an agent
+
+`gc formula cook` creates beads and routes nothing. Nothing's claimed, no agent wakes, and that's what makes it safe against your own live factory. Cook whichever formula you're about to edit, ideally, since that's the one whose shape you care about.
+
+**Copy and paste**
+
+```bash
+cd "$SFI_PATH/factory1"
+gc formula list
+gc formula cook <a-formula-name> --rig <your-rig-name>
+cd "$SFI_PATH/<your-rig-name>"
+bd list --json | jq -r '.[] | "\(.id)  kind=\(.metadata."gc.kind" // "-")  routed=\(.metadata."gc.routed_to" // "-")  \(.title)"'
+```
+
+**Expected output**
+
+```text
+the formulas your factory has installed
+the beads the cook created
+one line per bead, with its kind and where it is routed
+```
+
+Read the kind column first. Step beads don't carry a kind at all, and that absence is exactly what makes them ordinary claimable work. The control beads the compiler owns (check, retry, fanout, drain, and the finalize step) are marked, and they come out routed to `core.control-dispatcher` rather than to any agent pool, because the orchestrator runs them itself, outside any agent session. They don't wake anybody.
+
+Then put things back:
+
+```bash
+bd delete <the-ids-the-cook-created> --force
+```
+
+Run the same `bd list` again and confirm the count returns to where it started. If you'd rather look before you delete, swap `--dry-run` for `--force`.
+
+### Which agent a step goes to
+
+On a formula that declares the v2 compiler, the target is resolved per step, and the resolver takes the first of three answers it finds.
+
+1. **`assignee` on the step**, after your `{{var}}` substitutions. It has to name a concrete session. When it doesn't, the sling fails outright with `step <step-id>: assignee target "<x>" did not resolve to a concrete session; use gc.run_target for config routing`, which is the first wall most people hit here.
+2. **`gc.run_target` in the step's `metadata` table.** This one resolves against your city config, so it's the knob that can name a pool.
+3. **The sling target**, inherited by every step that asked for nothing.
+
+The difference between the first two is worth keeping. `assignee` says "this named session". `gc.run_target` says "this pool, you choose": naming a pool binds by metadata only, stamping `gc.routed_to` and leaving the runtime to pick which instance wakes, while naming a single-session agent gets that session looked up and bound at sling time. Either way `gc.routed_to` is the routing key that persists, so that's the field to read when you want to know where a step went.
+
+### Steps pointed at the same pool are worked by the same agent
+
+This one's deliberate and it catches people out. Point two steps at the same pool and they don't scatter across that pool's instances. The first agent to claim either one takes both.
+
+The mechanism sits on the beads, so a cook shows it to you. Every pool-routed step carries `gc.continuation_group` and `gc.root_bead_id`. When an agent claims one, it lists the siblings sharing that root and group and assigns them to itself, skipping any that are already claimed, no longer open, or routed somewhere it doesn't match. So the first claimer takes the whole group, and the later steps never reach the pool as free work.
+
+That last filter is the useful half. It's why pointing a step at a *different* pool works: the route doesn't match, the step is skipped, and it stays available for the pool you actually named.
+
+One trap on the way past. `gc.session_affinity = "require"` sits on those same steps and reads like the routing mechanism. It isn't, and no routing path reads it. It's checked alongside the continuation group elsewhere, where its job is keeping the holding session alive long enough to finish the group. When you're chasing where a step went, `gc.routed_to` is the field that answers.
 
 ## Deliverable
 
