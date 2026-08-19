@@ -75,7 +75,6 @@ Naming the layer is most of the thinking, and it comes straight from the tour in
 | **Formula** | What steps a job has and what they depend on | A `*.formula.toml`, often an `extends` of an existing one |
 | **Order** | When something happens with no human present | An `order.toml` with a `cron`, `cooldown`, `condition` or `event` trigger |
 
-A pack import reads from either of two places, and a pack-layer row is clearer for naming which. A directory on your own box is the shorter command and the one every option page shows. A repository URL is how you install a pack you never cloned, which is what you will be doing the first time you want something a colleague built. [L3 to L5](./L3-L5-feature-labs.md#2-build-it) carries both, with a worked example of the second you can run against your own rig.
 
 Two rules of thumb. If a row could be satisfied by installing one of the six options, say so in the row — that makes it a first-enhancement candidate and it will take you an hour rather than a day. And if you cannot name a layer, the row is still a symptom rather than a change; keep digging until you can.
 
