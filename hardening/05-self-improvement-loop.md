@@ -169,9 +169,7 @@ cd "$FACTORY_PATH"
 gc import add $SFI_PATH/sf-tutorial/artifacts/packs/self-improvement
 ```
 
-It ships a daily order, a six-step audit workflow, and two small scripts. Read [its README](../artifacts/packs/self-improvement/README.md) before installing, because it does cross the line the Ceiling section just drew, and the README says how it answers that: a hard cap of three proposals per pass, silence as the expected daily outcome, and anything needing a judgement call routed to you instead of minted as a fix.
-
-The part worth reading even if you never install it is the order file. It gates on an environment variable, dispatches its workflow directly instead of asking an agent to run it, and takes its cadence from the last completed pass rather than the last time the order fired. Those are three separate traps, and the comments explain each one.
+It ships a daily order, a six-step audit workflow, and two small scripts. Read [its README](../artifacts/packs/self-improvement/README.md) before installing, because it gates on an environment variable, dispatches its workflow directly instead of asking an agent to run it, and takes its cadence from the last completed pass rather than the last time the order fired.
 
 ## Troubleshooting
 
