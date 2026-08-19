@@ -61,7 +61,7 @@ Participant-led, no shared end state. The instructor circulates; say which layer
 
 ## Paths this page uses
 
-Every command below is written out from one variable:
+Every command below is written out from two variables:
 
 | Variable | Points at | Set by |
 | --- | --- | --- |
