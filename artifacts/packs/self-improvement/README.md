@@ -96,8 +96,3 @@ gc import remove self-improvement && gc reload            # take the pack back o
 
 The state bead the pass keeps is metadata rather than work, so it stays open across passes. Leaving it there costs nothing and makes turning the pass back on free.
 
-## What this leaves to you
-
-The lab's ceiling section tells you to automate the observation half and stop before the proposal half, because a factory that proposes on a schedule generates a queue nobody reads. This pack crosses that line, so it should say how it answers it. The three-per-pass cap means a pass cannot generate a queue. Silence is a real outcome rather than a fallback. And anything needing a judgement call is routed to you instead of becoming a fix that presupposes your answer.
-
-None of that touches the part the ceiling is really protecting. A proposal may become a pull request on its own; it may not become a merge on its own. Whatever review stands between a branch and your default branch is still what keeps this safe, and it is still yours.
