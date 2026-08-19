@@ -1,0 +1,74 @@
+# security-audit-matrix — rig-scoped pack that puts one question in front of
+# security work: which resources does this touch, and what covers each of them?
+#
+# The failure this is built against is specific. Someone asks for a change that
+# crosses a security boundary, a description gets written that reads as complete,
+# the code gets written against it, and the gaps surface in the review thread
+# afterwards — one round-trip per gap, each of them expensive because the code
+# already exists and each answer moves it. The rows were always going to be
+# needed. Writing them before the code is what makes them cheap.
+#
+# An audit matrix is a table in the bead's description, one row per resource the
+# change touches:
+#
+#   | Resource | Rule | Threat | Covered |
+#   | --- | --- | --- | --- |
+#   | reports | tenant_id policy | cross-tenant read | yes |
+#   | exports | none yet | cross-tenant read | no — follow-up bead |
+#
+# A row saying `no` is worth as much as one saying `yes`. It records that
+# somebody looked at the resource and decided, which is a different state from
+# nobody having thought about it, and the two are indistinguishable once the
+# resource is simply absent from the table.
+#
+# What this pack contributes:
+#   1. `assets/scripts/audit_matrix_check.py` — the whole mechanism. Asks
+#      whether a bead is security-shaped, and if so whether its description
+#      carries the table. Run it by hand on any bead; it needs nothing from the
+#      rest of the pack.
+#   2. `mol-audit-matrix-gate` — the formula, poured on a bead before anyone
+#      implements it. Passing routes the bead to the polecat pool. Failing
+#      blocks the bead and writes what is missing into it, for a human to fix.
+#   3. `orders/audit-matrix-scan.toml` — an order on the `bead.created` event
+#      that reports security-shaped beads arriving without a matrix, so the ones
+#      nobody thought to run the gate on are still visible.
+#
+# THE ORDER AND THE FORMULA ARE NOT THE SAME GATE, and installing both is the
+# point. The formula is the enforcing half: it changes a bead's status, and it
+# only ever runs on a bead somebody aimed it at. The order is the observing
+# half: it changes nothing and it sees everything. A gate you have to remember
+# to invoke is a gate that gets skipped on the busy day, which is the day you
+# most wanted it.
+#
+# Install (sits directly on the base factory):
+#   gc import add --rig <rig-name> $SFI_PATH/artifacts/packs/security-audit-matrix
+#
+# security-audit-matrix imports architect-rig, the base factory's top node, so
+# the architect that pours this formula and the polecat pool it routes to both
+# stay resolvable. It imports no other option, and no other option has to be
+# installed first.
+#
+# WHY THE ARCHITECT POURS IT. This pack ships a formula and a script and no
+# agent of its own, so an agent that already exists has to pour it. On the base
+# factory the architect is the one that reads a bead and writes a verdict back
+# onto it without touching code, which is exactly this gate's shape. The polecat
+# is the wrong choice for the same reason: it is the agent this gate exists to
+# hold back.
+#
+# WHAT THE SIMPLIFICATION COST. The factory this is carved from runs the same
+# check inside its planner and builder prompts, so the matrix is negotiated with
+# the operator during planning and the builder refuses to start without one.
+# Here it is one script and one formula you pour by hand. The detection is the
+# same question; the conversation that fills the table in is yours to have.
+
+[pack]
+name = "security-audit-matrix"
+schema = 1
+
+# ── IMPORTS ───────────────────────────────────────────────────────────
+# architect-rig is the base factory's top node, so this single import pulls the
+# whole base chain behind it and the pack composes on a base-factory install
+# with nothing else added.
+
+[imports.architect-rig]
+source = "../architect-rig"
