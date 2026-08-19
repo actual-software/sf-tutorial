@@ -7,7 +7,7 @@ Almost every agent you run is ephemeral: it spawns, does one thing, and exits wi
 ## Install
 
 ```bash
-cd "$FACTORY_PATH"
+cd "$SFI_PATH/factory1"
 gc import add --rig <rig-name> $SFI_PATH/sf-tutorial/artifacts/packs/internal-wiki
 gc reload
 ```
@@ -47,8 +47,8 @@ So every access goes through `assets/scripts/wiki.sh`, which appends one line to
 Two agents, one finding. Play both parts yourself and it's about a minute's work.
 
 ```bash
-cd "$FACTORY_PATH"
-../sf-tutorial/artifacts/packs/internal-wiki/assets/scripts/wiki.sh setup
+cd "$SFI_PATH/factory1"
+"$SFI_PATH/sf-tutorial/artifacts/packs/internal-wiki/assets/scripts/wiki.sh" setup
 
 # The first agent hits something surprising and writes it down.
 ./wiki.sh write operations/worktree-stale-lock.md <<'PAGE'
@@ -100,8 +100,8 @@ Set both in your shell for the commands you run by hand. The order needs its own
 The default wiki is a git repo with no remote, which is private note-taking with extra steps. The point is the shared read, so once the pack has earned its place, give it somewhere everyone can reach:
 
 ```bash
-git -C "$FACTORY_PATH/team-wiki" remote add origin <your-wiki-repo-url>
-git -C "$FACTORY_PATH/team-wiki" push -u origin main
+git -C "$SFI_PATH/factory1/team-wiki" remote add origin <your-wiki-repo-url>
+git -C "$SFI_PATH/factory1/team-wiki" push -u origin main
 ```
 
 `wiki.sh` commits and doesn't push, so pushing stays a thing a person decides to do. That's the same line the self-improvement option draws: the factory may write a proposal, and a human decides what leaves the machine.

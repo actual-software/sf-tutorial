@@ -203,12 +203,11 @@ gc reload
 
 Rig scope this time, because the pack patches the rig's own agents rather than adding one of its own. The wiki itself lives at `team-wiki` inside the city and is created on first use.
 
-Then play both agents yourself, one writing a finding down and the other checking before it researches. The helper locates your city through `GC_CITY_PATH`, so that gets set first. It's the one `export` on this page, and it isn't one of the derived paths the rest of the page writes out longhand: it's the variable gascity itself uses to name a city, and the pack's hourly order already reads it. Leave it unset and `setup` reports that it created nothing, then exits 0, so the first thing you'd actually notice is the line after it failing.
+Then play both agents yourself, one writing a finding down and the other checking before it researches. Nothing gets exported first. The helper works out which city to hang the wiki off from the directory you run it in, which is why the block changes directory before it calls the pack path.
 
 **Copy and paste**
 
 ```bash
-export GC_CITY_PATH="$SFI_PATH/factory1"
 cd "$SFI_PATH/factory1"
 "$SFI_PATH/sf-tutorial/artifacts/packs/internal-wiki/assets/scripts/wiki.sh" setup
 
@@ -354,7 +353,7 @@ findings: present
 ## Troubleshooting
 
 - **`gc order list` does not show a pack's order.** The import went to the wrong scope. `self-improvement` is city-scoped, so it takes no `--rig`; the other two are rig-scoped and need it. Check with `gc import list` and `gc import list --rig <your-rig-name>`, then re-run `gc reload`.
-- **`./wiki.sh` is not found, and `setup` said it created nothing.** Those are one failure, not two. The helper needs `GC_CITY_PATH` to know which city to hang the wiki off, and without it `setup` writes neither the wiki nor the symlink while still exiting 0. Set it as the block above does and re-run `setup`. Once the symlink exists, `ls -l wiki.sh` shows which pack directory it points into.
+- **`./wiki.sh` is not found, and `setup` said it created nothing.** Those are one failure, not two. `setup` reads the city off the directory you run it in, and run anywhere else it writes neither the wiki nor the symlink while still exiting 0. That is why the block above changes directory first. `cd` to your city and re-run it. Once the symlink exists, `ls -l wiki.sh` shows which pack directory it points into.
 - **`gc costs` prints nothing.** Not every build ships it, and a factory that has run for an hour may have nothing to report. Use one of the other three signals.
 - **No blocked beads at all.** Either your factory has no gate in front of the implementer yet, or nothing has failed. The first is a capability-map row; the second means reach for order history instead.
 - **You cannot think of a finding worth writing.** Look at what you had to ask the instructor. Every one of those is a page.
