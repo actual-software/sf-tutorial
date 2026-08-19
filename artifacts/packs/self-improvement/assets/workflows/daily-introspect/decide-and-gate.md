@@ -4,7 +4,7 @@ Every finding gets exactly one of three answers, and you pick the smallest one t
 
 **Propose a fix.** The finding names a change somebody could ship: a line in a prompt, a guard in a script, a gate on an order. Mint it as a bead that cites what you actually saw, with counts, so the next person can check your reasoning before building against it. "The same blocker reason appeared on four beads today, up from none yesterday" is a finding. "Blockers seem high" isn't. At most three of these per pass, and if you'd write a fourth, put the rest in front of a person instead.
 
-**Ask a person.** The finding needs somebody to choose between two reasonable directions, or to authorize something that can't be taken back. File it with `bd human` and stop there. Don't quietly propose a fix instead: a fix presupposes an answer to the question, and minting one is how a factory talks itself into a decision its operator never made.
+**Ask a person.** The finding needs somebody to choose between two reasonable directions, or to authorize something that can't be taken back. Mint it as a bead carrying the `human` label, which is what `bd human list` reads, and stop there. Don't quietly propose a fix instead: a fix presupposes an answer to the question, and minting one is how a factory talks itself into a decision its operator never made.
 
 **Say nothing.** Nothing's structurally wrong and nothing needs a person. This is the common outcome and the correct one. Post nothing at all.
 

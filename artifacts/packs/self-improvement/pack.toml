@@ -15,8 +15,9 @@
 #
 #   orders/daily-introspect.toml   A condition-trigger order whose action is a
 #                                  formula rather than an exec. base-factory's
-#                                  two orders are both exec on a clock, so this
-#                                  is the pair of primitives they do not show.
+#                                  two orders are both exec, one on a clock and
+#                                  one on an event, so this is the pair of
+#                                  primitives they do not show.
 #   formulas/daily-introspect.toml A three-step workflow: read one signal,
 #                                  decide what each finding deserves, stamp the
 #                                  pass and stop.
