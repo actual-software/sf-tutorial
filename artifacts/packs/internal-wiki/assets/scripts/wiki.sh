@@ -29,23 +29,28 @@ USAGE
 }
 
 # ── Paths ─────────────────────────────────────────────────────────────
-# Three contexts run this script and each one sets a different variable.
-# GC_STORE_ROOT comes from the controller for both rig- and city-scoped orders.
-# GC_CITY_PATH is what an agent session has. FACTORY_PATH is what a participant
-# has in their own shell. `setup` also accepts the root as an argument, which is
-# how the agents' pre_start passes {{.CityRoot}} before any of the three is
-# guaranteed to be there.
+# Three contexts run this script — an agent session, the order's exec, and the
+# participant's own shell — and all three have to resolve the same root, or the
+# order counts a wiki nobody is writing to. GC_CITY_PATH covers the first two,
+# because the controller sets it for a session and for an exec order alike, and
+# FACTORY_PATH covers the third.
 #
+# GC_STORE_ROOT is deliberately not in that chain. For a rig-scoped order it is
+# the RIG root rather than the city root, and this pack installs rig-scoped, so
+# reading it first is what splits the order off from everything else.
+#
+# `setup` also takes the root as an argument, which is how the agents' pre_start
+# passes {{.CityRoot}} before either variable is guaranteed to be there.
 # Resolving to empty is a real state rather than an error, because `setup` has
 # to survive it: a pre_start that exits non-zero is a pre_start that stops the
 # agent from starting.
-CITY="${GC_STORE_ROOT:-${FACTORY_PATH:-${GC_CITY_PATH:-}}}"
+CITY="${GC_CITY_PATH:-${FACTORY_PATH:-}}"
 WIKI="${TEAM_WIKI_PATH:-${CITY:+$CITY/team-wiki}}"
 LOG="${WIKI_ACCESS_LOG:-${CITY:+$CITY/wiki-access.jsonl}}"
 
 require_city() {
     [ -n "$WIKI" ] || {
-        echo "wiki.sh: set TEAM_WIKI_PATH, or run this where GC_STORE_ROOT, FACTORY_PATH or GC_CITY_PATH is set" >&2
+        echo "wiki.sh: set TEAM_WIKI_PATH, or run this where GC_CITY_PATH or FACTORY_PATH is set" >&2
         exit 2
     }
 }
@@ -100,8 +105,14 @@ cmd_setup() {
     # directory this script actually lives in. The symlink closes that gap, and
     # `ls -l` on it shows where the real script is.
     if [ -n "$root" ] && [ -d "$root" ]; then
-        ln -sfn "$(cd "$(dirname "$0")" && pwd)/$(basename "$0")" "$root/wiki.sh" \
-            || echo "wiki.sh: could not link $root/wiki.sh" >&2
+        local self
+        self="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+        # Run as `./wiki.sh setup` from the city root and $0 is the symlink, so
+        # re-linking would point it at itself and every later call dies on ELOOP.
+        if [ "$self" != "$root/wiki.sh" ]; then
+            ln -sfn "$self" "$root/wiki.sh" \
+                || echo "wiki.sh: could not link $root/wiki.sh" >&2
+        fi
     fi
     return 0
 }

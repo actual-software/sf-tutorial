@@ -9,8 +9,12 @@
 # stale, and the fix is at the end of a task rather than the start.
 set -euo pipefail
 
-CITY="${GC_STORE_ROOT:-${FACTORY_PATH:-${GC_CITY_PATH:-}}}"
-[ -n "$CITY" ] || { echo "wiki_balance.sh: no GC_STORE_ROOT, FACTORY_PATH or GC_CITY_PATH to resolve the city" >&2; exit 2; }
+# GC_CITY_PATH is set for an exec order and for an agent session alike, and
+# FACTORY_PATH is what a participant has by hand, so all three read the same
+# root. GC_STORE_ROOT is the rig root for a rig-scoped order, which is how this
+# script would end up counting a wiki nobody writes to; see wiki.sh.
+CITY="${GC_CITY_PATH:-${FACTORY_PATH:-}}"
+[ -n "$CITY" ] || { echo "wiki_balance.sh: no GC_CITY_PATH or FACTORY_PATH to resolve the city" >&2; exit 2; }
 
 WIKI="${TEAM_WIKI_PATH:-$CITY/team-wiki}"
 LOG="${WIKI_ACCESS_LOG:-$CITY/wiki-access.jsonl}"
