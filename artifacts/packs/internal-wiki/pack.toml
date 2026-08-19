@@ -1,0 +1,70 @@
+# internal-wiki — shared team memory, so the factory stops re-deriving what it
+# already learned.
+#
+# This is the packaged form of Wiki knowledge management in W6. That session
+# names two mechanics and this pack ships both, which is the whole design:
+#
+#   1. A FRAGMENT, `template-fragments/wiki-habits.template.md`, carrying the
+#      read-before-you-research and write-at-the-boundary habits. Reading is
+#      per-task, so it belongs in a prompt. This is the first fragment in the
+#      tutorial's packs, and W4 predicted it: "the moment you have two agents
+#      that must not contradict each other on some rule, that rule wants to be
+#      a fragment".
+#   2. An ORDER, `orders/wiki-balance.toml`, reporting the read-to-write
+#      balance hourly. Nothing asks for that number and no bead would ever
+#      carry it, which is what makes it an order rather than work.
+#
+# Plus one helper, `assets/scripts/wiki.sh`, which is the only way in. A wiki is
+# a directory and `grep` reads it perfectly well; what `grep` cannot do is tell
+# you afterwards whether anyone read it. Route access through one command and
+# that question becomes a file you can count, which is what the order counts.
+#
+# It contributes no agents. The two the base factory already runs get the
+# fragment appended to their prompts by the patches below.
+#
+# Install (rig scope — it patches the rig's agents):
+#   gc import add --rig <rig-name> ../sf-tutorial/artifacts/packs/internal-wiki
+#
+# WHERE THE WIKI LIVES. `team-wiki` inside the city by default, created on first
+# use, so the pack works on a factory with no shared repo behind it yet. Set
+# TEAM_WIKI_PATH to point it at a real shared repository; the README says where
+# to set it so that both the agents and the order see the same value.
+
+[pack]
+name = "internal-wiki"
+schema = 1
+
+# ── IMPORTS ───────────────────────────────────────────────────────────
+# The hardening options each import architect-rig directly rather than each
+# other, so any of them composes on top of the base factory alone and you can
+# take them in any order. This pack follows that convention. It also needs
+# `polecat` and `refinery` reachable for the patches below, and architect-rig
+# brings both along transitively through pr-gate-rig and the setup.
+
+[imports.architect-rig]
+source = "../architect-rig"
+
+# ── PATCHES ───────────────────────────────────────────────────────────
+# Append the fragment to the two agents that do the work, and point them at the
+# helper before they start.
+#
+# `inject_fragments_append` is the additive spelling, and the additive one is
+# the point: `append_fragments` REPLACES the agent's list, so two option packs
+# patching the same agent would leave only whichever composed last. Ours would
+# be the one to disappear about half the time.
+#
+# The pre_start line is what makes `{{ .CityRoot }}/wiki.sh` in the fragment
+# resolve to something real. A prompt template can reach the city root and
+# cannot reach the pack directory this pack's script lives in, so `wiki.sh
+# setup` creates the wiki and leaves a symlink at that path. It is written not
+# to fail: an agent that cannot get a wiki should still start.
+
+[[patches.agent]]
+name = "polecat"
+inject_fragments_append = ["wiki-habits"]
+pre_start_append = ["{{.ConfigDir}}/assets/scripts/wiki.sh setup {{.CityRoot}}"]
+
+[[patches.agent]]
+name = "refinery"
+inject_fragments_append = ["wiki-habits"]
+pre_start_append = ["{{.ConfigDir}}/assets/scripts/wiki.sh setup {{.CityRoot}}"]

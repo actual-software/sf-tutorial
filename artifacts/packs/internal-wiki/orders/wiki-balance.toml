@@ -1,0 +1,33 @@
+# wiki-balance — the periodic half of this pack.
+#
+# W6 draws the line this order sits on: reading the wiki is per-task and belongs
+# in a prompt, so this pack puts it in a fragment. Anything periodic has no bead
+# behind it, so it is an order. Nothing asks for the read-to-write balance, and
+# no bead would ever carry it, which is exactly the shape an order is for.
+#
+# `trigger = "cron"` and `schedule` are the same pair `factory-pulse` uses in
+# the base factory, and hourly is chosen for the same reason: a daily line fires
+# once, at an hour nobody is watching, and a participant finishes the day never
+# having seen the order do anything. Change it to `0 9 * * *` once the factory
+# is yours and the numbers matter more than the demonstration.
+#
+# The exec writes to WIKI_LOG.md in the city root and prints the same line, so
+# `gc order run wiki-balance` shows you the result without opening a file.
+#
+# [order.env] is the one channel that reaches an exec order's process from the
+# order file. An exec order does not load the city's `.env`, so if your wiki
+# lives outside the city, set the path here rather than there.
+#
+# WATCHING IT. `gc order check` says which orders are due and why the rest are
+# not. `gc order run wiki-balance` fires it now. `gc order history` shows what
+# has fired.
+
+[order]
+description = "Hourly read-to-write balance over the team wiki, appended to WIKI_LOG.md"
+trigger = "cron"
+schedule = "0 * * * *"
+exec = "$PACK_DIR/assets/scripts/wiki_balance.sh"
+timeout = "60s"
+
+# [order.env]
+# TEAM_WIKI_PATH = "/path/to/your/shared/wiki"
