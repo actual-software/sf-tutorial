@@ -1,0 +1,154 @@
+description = """
+Pre-implementation check that a security-shaped bead carries an audit matrix.
+
+Poured on a bead before anyone starts building it. Reads the bead's title and
+description, decides whether the work crosses a security boundary, and if it
+does, looks for a table naming the resources it touches and what covers each
+one. Passing routes the bead to the polecat pool. Failing blocks it and writes
+what is missing into the bead for a human to answer.
+
+This formula is read-only with respect to the rig: it does NOT touch the working
+tree, push, merge, or close the bead. It writes verdict metadata, and on a
+failure it flips the bead to `blocked` so the polecat pool leaves it alone until
+somebody adds the rows.
+
+## Decision matrix
+
+| check exit | meaning                          | metadata written                                     | bead status |
+|------------|----------------------------------|------------------------------------------------------|-------------|
+| 0          | not security-shaped, or matrix present | audit_matrix_checked=true, gc.routed_to=<rig>/polecat | open    |
+| 1          | security-shaped, matrix missing   | audit_matrix_checked=false, audit_matrix_feedback=<msg> | blocked  |
+| 2          | the check could not run           | nothing                                              | unchanged   |
+
+Exit 2 is the row worth reading twice. It means bd was unreachable or answered
+about a bead nobody asked about, and the honest response is to leave the bead
+exactly as it was found. Blocking on it would put a security question in front
+of somebody that nothing in their bead raised, and they would go looking for it.
+
+## Compatibility
+
+Nothing downstream gates on `audit_matrix_checked`. Beads reach the polecat pool
+because this formula routes them there, so the way to make the gate real is to
+make it the entry point: pour it on a bead first, and let it do the routing. A
+polecat slung straight at a bead skips this, which is worth knowing before you
+decide the gate is load-bearing.
+
+Install the bead gate option as well and the two compose in the obvious order —
+conformity first, then this — but neither needs the other, and this one runs
+fine on a plain base factory.
+"""
+
+formula = "mol-audit-matrix-gate"
+version = 1
+
+[vars]
+[vars.issue]
+description = "Bead to check for an audit matrix before implementation starts"
+required = true
+
+[[steps]]
+id = "run-the-check"
+title = "Read the bead and run the audit-matrix check on it"
+description = """
+Prime, then let the script answer the question. Skip the work entirely if this
+bead has already been through the gate.
+
+```bash
+gc prime
+bd prime
+gc bd show {{issue}}
+
+CHECKED=$(gc bd show {{issue}} --json | jq -r '.[0].metadata.audit_matrix_checked // empty')
+if [ \"$CHECKED\" = \"true\" ]; then
+  gc bd note {{issue}} \"audit-matrix: already checked and passed; no-op.\"
+  gc runtime drain-ack
+  exit 0
+fi
+
+# Claim the bead for observability — show this gate phase as in_progress.
+gc bd update {{issue}} --status=in_progress
+
+# The script lives in this pack. `gc import show security-audit-matrix` prints
+# where the pack landed if the path below does not resolve on your install.
+CHECK=\"$PACK_DIR/assets/scripts/audit_matrix_check.py\"
+
+# Capture the exit code rather than letting a non-zero end the step. All three
+# of its values are answers, and two of them are not failures.
+set +e
+VERDICT=$(\"$CHECK\" check {{issue}} --json)
+RC=$?
+set -e
+echo \"$VERDICT\"
+```
+
+Read `$VERDICT` before going on. It carries `state`, which is `skip`, `pass` or
+`needs`, plus the vocabulary entry that made the bead security-shaped and the
+line the matrix was found on.
+
+**Exit criterion:** you have `$RC` and `$VERDICT`, OR the early-exit fired and
+you have drained."""
+
+[[steps]]
+id = "record-the-verdict"
+title = "Route the bead, block it, or leave it alone"
+needs = ["run-the-check"]
+description = """
+Branch on `$RC` from the previous step. Exactly one of these three runs.
+
+**0 — the bead may proceed.** Either it is not security-shaped, or it is and the
+matrix is there. Both are passes and both route onward:
+
+```bash
+gc bd update {{issue}} \\
+  --status=open \\
+  --assignee=\"\" \\
+  --set-metadata audit_matrix_checked=true \\
+  --set-metadata gc.routed_to=\"${GC_RIG:+$GC_RIG/}{{binding_prefix}}polecat\"
+gc bd note {{issue}} \"audit-matrix: passed. <one line: not security-shaped, or matrix found>. Routing to polecat pool.\"
+```
+
+**1 — the bead is security-shaped and has no matrix.** Block it, and write the
+table's skeleton into the bead so the person who picks it up is filling rows in
+rather than working out the format:
+
+```bash
+FEEDBACK=\"This bead names security-shaped work but carries no audit matrix. Add a table to the description with the columns Resource, Rule, Threat, Covered, one row per resource the change touches. A row whose Covered value is 'no' still belongs in the table: it records a decision, and leaving the resource out records nothing.\"
+gc bd update {{issue}} \\
+  --status=blocked \\
+  --set-metadata audit_matrix_checked=false \\
+  --set-metadata audit_matrix_feedback=\"$FEEDBACK\" \\
+  --set-metadata gc.routed_to=\"\"
+gc bd note {{issue}} \"audit-matrix: blocked. $FEEDBACK\"
+
+gc mail send mayor/ -s \"Bead blocked at the audit-matrix gate: {{issue}}\" -m \"Bead: {{issue}}
+$FEEDBACK
+
+The bead is now status=blocked, so the polecat pool will leave it alone. Add the table to the description, set the bead back to open, and pour this formula again for a clean re-check.\"
+```
+
+Clearing `gc.routed_to` alongside the status is what keeps the pool from
+spawning sessions that wake up, find a blocked bead, and exit again.
+
+**2 — the check could not run.** Say so and change nothing. The bead keeps
+whatever status it had, and it stays in whatever pool it was in:
+
+```bash
+gc bd update {{issue}} --status=open --assignee=\"\"
+gc bd note {{issue}} \"audit-matrix: the check could not run, so no verdict. Nothing about this bead has changed. Re-pour once bd is answering.\"
+```
+
+**Exit criterion:** the bead is routed to the polecat pool, blocked with
+feedback on it, or explicitly untouched with a note saying why."""
+
+[[steps]]
+id = "drain"
+title = "Signal completion"
+needs = ["record-the-verdict"]
+description = """
+The verdict is written. Release this session:
+
+```bash
+gc runtime drain-ack
+```
+
+Run this command and nothing else."""
