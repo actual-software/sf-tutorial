@@ -36,7 +36,7 @@ Three ideas that only become interesting once a factory has been running for a w
 
 - A factory from [W3](./W3-run-your-factory.md): the base factory installed on a rig of your own. That is the whole prerequisite, and every command on this page runs against it. A slot already spent in [L3](./L3-L5-feature-labs.md) gives part 1 more history to read, which makes for a better demonstration.
 - Your capability map to hand.
-- `$SFI_PATH` set in your shell. [W2](./W2-cloud-box-and-preflight.md) and [W3](./W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
+- `$SFI_PATH` and `$MY_RIG_PATH` set in your shell. [W2](./W2-cloud-box-and-preflight.md) and [W3](./W3-run-your-factory.md) append the first to a shell rc, [L1 step 1](./L1-plan-your-factory.md#1-register-your-repo-as-a-rig) the second, so both survive a new terminal. Every other path on this page is written out from them.
 
 ## Part 1: Self-improvement loops
 
@@ -85,7 +85,7 @@ So the loop has four parts and the fourth is not optional: read a signal, find a
 **Copy and paste**
 
 ```bash
-cd "$SFI_PATH/<your-rig-name>"
+cd "$MY_RIG_PATH"
 bd list --status blocked --json | jq -r '.[] | "\(.id)  \(.metadata.blocker_reason // "")"'
 cd "$SFI_PATH/factory1"
 gc order history
@@ -175,14 +175,14 @@ You have been in contact with a factory for a day and a half. Something in that 
 **Copy and paste**
 
 ```bash
-mkdir -p "$SFI_PATH/<your-rig-name>/docs/current"
-nano "$SFI_PATH/<your-rig-name>/docs/current/findings.md"
+mkdir -p "$MY_RIG_PATH/docs/current"
+nano "$MY_RIG_PATH/docs/current/findings.md"
 ```
 
 Write one finding, in this shape: what you expected, what happened, what you would tell the next person. Three sentences is a complete entry. Then commit it:
 
 ```bash
-cd "$SFI_PATH/<your-rig-name>"
+cd "$MY_RIG_PATH"
 git add docs/current/findings.md
 git commit -m "Record first factory findings"
 ```
@@ -285,7 +285,7 @@ Rig scope, and it sits directly on the base factory. Now write a bead that descr
 **Copy and paste**
 
 ```bash
-cd "$SFI_PATH/<your-rig-name>"
+cd "$MY_RIG_PATH"
 bd create --title "Add row-level security to the reports table" --type task --priority 2 \
   -d "Scope every read of the reports table to the caller's tenant."
 cd "$SFI_PATH/factory1"
@@ -336,7 +336,7 @@ None of it is exotic machinery. Each one is an order, a fragment or a formula, a
 cd "$SFI_PATH/factory1"
 gc order list
 gc order history
-cd "$SFI_PATH/<your-rig-name>"
+cd "$MY_RIG_PATH"
 bd list --status blocked
 test -f docs/current/findings.md && echo "findings: present"
 ```

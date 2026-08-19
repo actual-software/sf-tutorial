@@ -28,7 +28,7 @@ Close the loop: your factory reads a signal it already produces, proposes a chan
 - [W3](../progression/W3-run-your-factory.md) complete, and a factory that has been running long enough to have produced some evidence about itself.
 - [W4](../progression/W4-tour-the-factory.md) complete, because the proposal will land in one of the layers and you need to be able to name which.
 - Your [capability map](../progression/L2-capability-map.md) open.
-- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
+- `$SFI_PATH` and `$MY_RIG_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) append the first to a shell rc, [L1 step 1](../progression/L1-plan-your-factory.md#1-register-your-repo-as-a-rig) the second, so both survive a new terminal. Every other path on this page is written out from them.
 
 **This option needs no other option.** It is a loop rather than a pack: nothing to install, and the signals it reads are ones your base factory already writes. Any other option you have installed gives it a richer signal, and none of them is required.
 
@@ -55,7 +55,7 @@ You do not need new instrumentation. Your factory has been writing evidence abou
 **Copy and paste**
 
 ```bash
-cd "$SFI_PATH/<your-rig-name>"
+cd "$MY_RIG_PATH"
 ls -la docs/reviews/ 2>/dev/null                 # per-principle scores, if you took that option
 bd list --status blocked --json | jq -r '.[] | "\(.id)  \(.metadata.bead_review_feedback // .metadata.blocker_reason // "")"'
 cd "$SFI_PATH/factory1"
@@ -93,7 +93,7 @@ Now ask for a proposal in a shape you can act on. A proposal that names a file a
 Ask the mayor to write its proposal as a bead, so it lands somewhere durable rather than in a tmux buffer:
 
 ```bash
-cd "$SFI_PATH/<your-rig-name>"
+cd "$MY_RIG_PATH"
 bd create --title "Proposal: <the change, in one line>" \
   --description "Signal: <what the factory observed about itself, with counts>.
 Layer: <agent | formula | order>.
@@ -145,7 +145,7 @@ Merging it is optional. Having a proposal that survived your own gate is the del
 ## Verification
 
 ```bash
-cd "$SFI_PATH/<your-rig-name>"
+cd "$MY_RIG_PATH"
 bd list --json | jq -r '.[] | select(.title | startswith("Proposal:")) | "\(.id)  \(.status)"'
 ```
 
