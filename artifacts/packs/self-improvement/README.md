@@ -33,7 +33,7 @@ You need a factory from [W3](../../../progression/W3-run-your-factory.md), which
 
 ```bash
 cd "$FACTORY_PATH"
-gc import add ../sf-tutorial/artifacts/packs/self-improvement
+gc import add $SFI_PATH/sf-tutorial/artifacts/packs/self-improvement
 gc reload
 ```
 

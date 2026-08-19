@@ -166,7 +166,7 @@ If you want the scheduled form rather than the hand-run one, `self-improvement` 
 
 ```bash
 cd "$FACTORY_PATH"
-gc import add ../sf-tutorial/artifacts/packs/self-improvement
+gc import add $SFI_PATH/sf-tutorial/artifacts/packs/self-improvement
 ```
 
 It ships a daily order, a six-step audit workflow, and two small scripts. Read [its README](../artifacts/packs/self-improvement/README.md) before installing, because it does cross the line the Ceiling section just drew, and the README says how it answers that: a hard cap of three proposals per pass, silence as the expected daily outcome, and anything needing a judgement call routed to you instead of minted as a fix.
