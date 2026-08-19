@@ -3,7 +3,7 @@
 An optional pack that holds security work at the door until somebody has written down which resources it touches and what covers each of them. Install it on top of a working base factory:
 
 ```bash
-gc import add --rig <rig-name> artifacts/packs/security-audit-matrix
+gc import add --rig <rig-name> $SFI_PATH/artifacts/packs/security-audit-matrix
 ```
 
 That is the whole install. The pack imports `architect-rig`, the base factory's top node, so it composes on a `base-factory` install with nothing else added and in any order relative to the other options.
