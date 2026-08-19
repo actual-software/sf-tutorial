@@ -70,10 +70,12 @@ Naming the layer is most of the thinking, and it comes straight from the tour in
 
 | Layer | You are changing | Shape of the change |
 | --- | --- | --- |
-| **Pack** | What capabilities exist at all | An import — often one of the six Day 2 options |
+| **Pack** | What capabilities exist at all | One `gc import add`, often of one of the six Day 2 options |
 | **Agent** | What an agent knows and how it judges | A prompt template, or an `agent.toml` |
 | **Formula** | What steps a job has and what they depend on | A `*.formula.toml`, often an `extends` of an existing one |
 | **Order** | When something happens with no human present | An `order.toml` with a `cron`, `cooldown`, `condition` or `event` trigger |
+
+A pack import reads from either of two places, and a pack-layer row is clearer for naming which. A directory on your own box is the shorter command and the one every option page shows. A repository URL is how you install a pack you never cloned, which is what you will be doing the first time you want something a colleague built. [L3 to L5](./L3-L5-feature-labs.md#2-build-it) carries both, with a worked example of the second you can run against your own rig.
 
 Two rules of thumb. If a row could be satisfied by installing one of the six options, say so in the row — that makes it a first-enhancement candidate and it will take you an hour rather than a day. And if you cannot name a layer, the row is still a symptom rather than a change; keep digging until you can.
 
@@ -93,7 +95,13 @@ git commit -m "Add capability map for factory changes"
 
 ### 4. Day 2: finish and review
 
-Come back to the map with a night's distance. Three things to do, in order:
+Come back to the map with a night's distance. A new shell has forgotten the variable [L1](./L1-plan-your-factory.md#1-register-your-repo-as-a-rig) exported, so set it again before the commands on this page or in the labs that follow:
+
+```bash
+export MY_RIG_PATH="$SFI_PATH/<your-rig-name>"
+```
+
+Then three things to do, in order:
 
 **Fill the gaps.** Rows you left as symptoms yesterday, layers you could not name, tests you left blank. The test column is the one people skip; a row with no test is a row you cannot tell you have finished.
 

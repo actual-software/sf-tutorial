@@ -9,6 +9,7 @@
 - [The three slots, and what each allows](#the-three-slots-and-what-each-allows)
 - [The six options](#the-six-options)
 - [How each lab runs](#how-each-lab-runs)
+- [Paths this page uses](#paths-this-page-uses)
 - [Try It](#try-it)
   - [1. Pick from the map](#1-pick-from-the-map)
   - [2. Build it](#2-build-it)
@@ -61,6 +62,37 @@ Participant-led, no shared end state. The instructor circulates; say which layer
 
 A slot is enough to build one change properly. It is not enough for two. The ranking you did in L2 is what makes that survivable.
 
+## Paths this page uses
+
+Every command below reads four path variables, and a fresh Day 2 shell usually holds only the first of them.
+
+| Variable | Points at | Set by |
+| --- | --- | --- |
+| `SFI_PATH` | your workspace directory | [W2](./W2-cloud-box-and-preflight.md) on your laptop, [W3 step 3](./W3-run-your-factory.md#3-open-a-shell-on-the-box) on the box. Both append it to a shell rc, so it survives |
+| `FACTORY_PATH` | the city, `factory1` | `bootstrap/bootstrap.sh`, which the taught path never runs |
+| `ARTIFACTS_PATH` | this repo's `artifacts/` directory | the same script, so it is missing for the same reason |
+| `MY_RIG_PATH` | your own rig | [L1 step 1](./L1-plan-your-factory.md#1-register-your-repo-as-a-rig), as a plain `export` that a new shell forgets |
+
+Set the other three now and the rest of the page runs. They are all derived from `SFI_PATH`, so nothing here depends on how you got to Day 2.
+
+**Copy and paste**
+
+```bash
+export FACTORY_PATH="$SFI_PATH/factory1"
+export ARTIFACTS_PATH="$SFI_PATH/sf-tutorial/artifacts"
+export MY_RIG_PATH="$SFI_PATH/<your-rig-name>"
+cd "$FACTORY_PATH" && gc rig list && ls "$MY_RIG_PATH"
+```
+
+**Expected output**
+
+```text
+your rig listed alongside ascii-art, with a path and a prefix
+your rig's own files
+```
+
+If `gc rig list` comes back without your rig, or the `ls` cannot find the directory, you are on a box where [L1](./L1-plan-your-factory.md) has not run yet, and that is where to fix it rather than here.
+
 ## Try It
 
 ### 1. Pick from the map
@@ -82,7 +114,7 @@ If you cannot fill that sentence in, the row is not ready and the next one proba
 
 ### 2. Build it
 
-**If you picked an option**, its page carries the install and the walkthrough. Every option is a single import onto the base factory:
+**If you picked an option**, its page carries the install and the walkthrough. Every option is a single import onto the base factory, from the copy of this repo already on your box:
 
 ```bash
 cd "$FACTORY_PATH"
@@ -90,6 +122,33 @@ gc import add --rig <your-rig-name> "$ARTIFACTS_PATH/packs/<the-option-pack>"
 gc reload
 gc import list --rig <your-rig-name>
 ```
+
+**Or install the same pack straight from its repository.** `gc import add` takes a GitHub URL wherever it takes a directory, so a pack you have not cloned installs in one command. This is the path you will use after the workshop, when the pack you want belongs to a colleague or to a project you only ever read. Every option on this page is published, so you can run this now against your own rig:
+
+**Copy and paste**
+
+```bash
+cd "$FACTORY_PATH"
+gc import add --rig <your-rig-name> https://github.com/actual-software/sf-tutorial/tree/main/artifacts/packs/domain-reviewers-rig
+gc import install
+gc reload
+gc import list --rig <your-rig-name>
+```
+
+**Expected output**
+
+```text
+Added import "domain-reviewers-rig" from https://github.com/actual-software/sf-tutorial/tree/main/artifacts/packs/domain-reviewers-rig
+a count of the remote imports fetched
+your new import, its URL, and the same commit sha twice
+```
+
+Swap the last path segment for whichever option you picked. Four things about that command are worth carrying home, because they are what make a URL install behave differently from a directory one:
+
+- **The URL is the one GitHub's address bar shows you.** Browse to the pack's directory in any repo and copy what you see: `https://github.com/<org>/<repo>/tree/<ref>/<path-to-the-pack>`. The `<ref>` is a branch, a tag or a commit.
+- **`gc import install` is the extra step.** A directory import is read where it sits; a remote one has to be fetched first, and the agents do not exist until it has been. Skipping it is the single most common way this path appears to do nothing.
+- **The import is pinned the moment you add it.** `gc import list` prints the resolved commit, and the pack stays on that commit until you move it, so a change upstream cannot rewrite your factory overnight. Pass `--version sha:<commit>` to pick a different one, or a constraint like `--version '^1.2.0'` on a repo that tags releases.
+- **The binding name comes from the last path segment.** That is `domain-reviewers-rig` above, and it is the name `gc import list` and `gc import remove` want. Use `--name <name>` when two packs would otherwise collide.
 
 Then follow that page's Try It against your own rig rather than `ascii-art`.
 
@@ -192,6 +251,8 @@ That is also most of the work for [W7](./W7-sharing-your-factory.md) already don
 
 - **The option's page refers to agents you do not have.** Each option page assumes the base factory plus that option. If it names an agent from a different option, you found a bug worth reporting; the options are meant to be independent.
 - **`gc import add` succeeds and the new agent never appears.** Check the scope. Options install at rig scope with `--rig`; installing at city scope puts the agent somewhere the rig cannot see.
+- **You installed from a URL and the agent never appears.** Run `gc import install`. A remote import is recorded by `gc import add` and fetched by `gc import install`, and until the fetch happens there is nothing on disk for `gc reload` to read.
+- **A command fails with an empty path, like `cd: : No such file or directory`.** One of the four variables in [Paths this page uses](#paths-this-page-uses) is unset in this shell. Re-run that block; a Day 2 shell almost never carries them from Day 1.
 - **Your change works on `ascii-art` and not on your rig.** Your rig needs the base factory imported too — L1 step 1. `gc import list --rig <your-rig-name>` settles it.
 - **The negative case passes when it should fail.** Either the input was better-formed than you thought, or the check is not on the path the bead took. Both are worth a map row.
 
