@@ -35,7 +35,9 @@
 #
 # WATCHING IT. `gc order run daily-introspect` fires it now, bypassing both
 # halves of the check, which is how you see it work without waiting a day.
-# `gc order check` prints whether it is due and why not.
+# `gc order check` prints whether it is due, but not which half said no: the
+# runtime discards whatever a check writes to its own output. Run the script
+# by hand when you want that.
 
 [order]
 description = "Once-a-day look at the factory's own signals (on by default; opt out with DAILY_INTROSPECT=false)"
