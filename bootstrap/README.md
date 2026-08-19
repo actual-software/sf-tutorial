@@ -3,10 +3,7 @@
 This folder contains the bootstrap scripts for the Software Factory Intensive tutorial.
 
 
-> **The step names below are the old page filenames**, and they still work. The taught path now installs the
-> `base-factory` pack in one command (see [W3](../progression/W3-run-your-factory.md)), while this script
-> assembles the same factory the long way, matching the [appendix pages](../appendix/README.md). Teaching the
-> script to install the base pack directly is tracked as follow-up work.
+> **Two tracks, two vocabularies.** `W3-run-your-factory` is the taught path, and it installs the `base-factory` pack in one import the way [W3](../progression/W3-run-your-factory.md) has you do it by hand. The `00.1` through `05.2` names are the [appendix pages](../appendix/README.md), which assemble the same factory one pack at a time. Pick the track you are working through; they are different sequences rather than two halves of one.
 
 ## Instructions
 
@@ -32,14 +29,35 @@ This folder contains the bootstrap scripts for the Software Factory Intensive tu
 	./bootstrap.sh <TUTORIAL_STEP>
 	```
 
+   The steps come in two tracks. `W3-run-your-factory` is the taught path, and the one to reach for when Day 1 ended somewhere you would rather not start Day 2 from. It leaves you at the end of [W3](../progression/W3-run-your-factory.md): the city running, the `ascii-art` rig pushed to GitHub, the `base-factory` pack installed at rig scope, `pr-gate-city` at city scope with the mayor handed over to it, and the beads queue seeded. The rest are the [appendix](../appendix/README.md) lessons, in order:
+
+   - `00.1-setup-foundation`
+   - `00.2-setup-foundation`
+   - `00.3-setup-foundation`
+   - `01-basic-flow`
+   - `02-first-review-loop`
+   - `03-branch-protection`
+   - `04-adr-reviewer`
+   - `05.1-bead-gate-checks`
+   - `05.2-bead-gate-checks`
+
+   Pass anything that is not on that list and the script prints the list and exits 1. It checks the argument before it deletes anything, so a typo costs you nothing.
+
 For example:
 
-	```bash
-    # This will set up your factory to be ready to use the examples in 01-basic-flow
-	./bootstrap.sh 01-basic-flow
-	```
+```bash
+# Nuke the factory and rebuild it to the state at the end of W3
+./bootstrap.sh W3-run-your-factory
+```
 
-Runs the work for 00.1 *and* 00.2, then stops. Your factory now looks like it would after you'd manually completed 00.2 — so you can inspect that state, or start 00.3 from a clean baseline.
+Tears the workspace down, recreates `factory1` and the `ascii-art` rig, installs the base factory, seeds the beads queue and starts the city. Day 2 begins from there, whatever Day 1 left behind.
+
+```bash
+# Rebuild to the state at the end of appendix lesson 01
+./bootstrap.sh 01-basic-flow
+```
+
+Runs the setup work for 00.1, 00.2 and 00.3 on the way past, then stops at the end of 01. Your factory now looks like it would after you had worked through 01 by hand, so you can inspect that state or start 02 from a clean baseline.
 
 **Mental model:** `./bootstrap.sh <step>` answers "make my factory look like I just finished `<step>`," not "make my factory ready for me to start `<step>`."
 
@@ -79,7 +97,8 @@ You must type a **capital `Y`** to continue — `y`, `yes`, or just pressing Ent
 
 - `factory*/` — every directory whose name starts with `factory` (e.g. `factory1`, `factory2`)
 - `ascii-art/`
-- `sf-tutorial/`
+
+`sf-tutorial/` stays. The script lives inside that repo, so you already have it, and a run that deleted it would be deleting itself.
 
 Anything outside `$SFI_PATH` is untouched. Anything inside it that doesn't match those names (e.g. `mp-skills/`, pulled by step 05.2) is also untouched.
 
@@ -96,5 +115,6 @@ The end state is determined entirely by the argument you pass, not by any prior 
 
 - Completed lesson 04 manually, then ran `./bootstrap.sh 02-first-review-loop`? The script blows everything away and brings you to the end-of-02 state.
 - Want to get back to end-of-04? Run `./bootstrap.sh 04-adr-reviewer` again — same teardown, rebuild stops at 04.
+- Day 1 left your factory somewhere you would rather not start Day 2 from? `./bootstrap.sh W3-run-your-factory` puts you back at the end of W3 with the base factory installed.
 
 There's no "incremental" mode — every run is a full reset followed by replaying setup up to the requested step.

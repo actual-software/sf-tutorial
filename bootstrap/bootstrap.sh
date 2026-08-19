@@ -122,9 +122,15 @@ export ARTIFACTS_PATH="$TUTORIAL_PATH/artifacts"
 
 TUTORIAL_STEP=$(echo "$TUTORIAL_STEP" | sed 's/\.md$//')
 
-if ! [[ "$TUTORIAL_STEP" =~ ^(00\.1-setup-foundation|00\.2-setup-foundation|00\.3-setup-foundation|01-basic-flow|02-first-review-loop|03-branch-protection|04-adr-reviewer|05\.1-bead-gate-checks|05\.2-bead-gate-checks)$ ]]; then
+if ! [[ "$TUTORIAL_STEP" =~ ^(W3-run-your-factory|00\.1-setup-foundation|00\.2-setup-foundation|00\.3-setup-foundation|01-basic-flow|02-first-review-loop|03-branch-protection|04-adr-reviewer|05\.1-bead-gate-checks|05\.2-bead-gate-checks)$ ]]; then
   echo "==> TUTORIAL_STEP argument is not valid"
   echo "==> Please pass one of the following values as the first argument:
+
+Progression, the taught path:
+
+W3-run-your-factory
+
+Appendix, which assembles the same factory one pack at a time:
 
 00.1-setup-foundation
 00.2-setup-foundation
@@ -356,6 +362,27 @@ print_reexport_block() {
   done
 }
 
+# Hand the always-on mayor session over to the pack's mayor. `gc init` gives the
+# city a mayor in agents/mayor and pack.toml's [[named_session]] runs it, and
+# pr-gate-city ships one too, so leaving both in place brings the city up with
+# two. Rewrite the block rather than delete it: pr-gate-city deliberately
+# declares no named_session of its own, so dropping this one leaves the city
+# with no mayor at all. The replacement template names its binding because a
+# bare `mayor` stops resolving once the city's own agent directory is gone, and
+# a named session whose template does not resolve is disabled quietly rather
+# than reported as an error.
+hand_mayor_to_pack() {
+  rm -rf "$FACTORY_PATH/agents/mayor"
+  sed '/^\[\[named_session\]\]/,/^[[:space:]]*mode = /d' "$FACTORY_PATH/pack.toml" > "$FACTORY_PATH/pack.toml.tmp"
+  cat >> "$FACTORY_PATH/pack.toml.tmp" <<'EOF'
+[[named_session]]
+name = "mayor"
+template = "pr-gate-city.mayor"
+mode = "always"
+EOF
+  mv "$FACTORY_PATH/pack.toml.tmp" "$FACTORY_PATH/pack.toml"
+}
+
 # Start the city, confirm it came up, then announce the finished step. This
 # exits either way, so it is the last thing a step block runs.
 #
@@ -447,17 +474,57 @@ else
 fi
 
 cd $FACTORY_PATH
-mkdir -p packs
-cp -r $ARTIFACTS_PATH/packs/setup/ packs/setup
-chmod +x packs/setup/assets/scripts/worktree-setup.sh
 # Defensive strip: cities from gc releases predating agent auto-discovery can
 # carry [[agent]] tables. A no-op on current gc, which is why 00.1 no longer teaches it.
+# Hoisted above the branch below because it is about the city gc init wrote,
+# not about whichever pack the requested step installs on top of it.
 sed "${SED_I[@]}" '/^\[\[agent\]\]$/,/^$/d' pack.toml
-if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
-  git add .
-  git commit -m "00.2-setup-foundation packs"
+
+# The rig, its docs, its GitHub remote and the seeded beads queue below are the
+# same on both tracks. What the packs look like is where they part company, so
+# that is where this branches.
+if [ "$TUTORIAL_STEP" == "W3-run-your-factory" ]; then
+  SETUP_STEP_LABEL="W3-run-your-factory"
+
+  # W3 installs the factory the way the page teaches it: one rig-scoped import,
+  # because packs import transitively and base-factory sits on top of the chain
+  # base-factory -> architect-rig -> pr-gate-rig -> setup. Imported straight
+  # from the tutorial's artifacts directory rather than copied under packs/,
+  # which is what the page tells participants to run, and which keeps the
+  # helper scripts on the exec bit they already carry in the repo.
+  if ! gc import add --rig ascii-art "$ARTIFACTS_PATH/packs/base-factory"; then
+    echo "==> 'gc import add --rig ascii-art $ARTIFACTS_PATH/packs/base-factory' failed." >&2
+    echo "==> The rig has no factory installed. Fix the error above, then re-run this script." >&2
+    exit 1
+  fi
+
+  # The mayor is city-scoped and a pack composes at one scope, so the mayor's
+  # half of the PR gate cannot ride in on the rig-scoped import above.
+  if ! gc import add "$ARTIFACTS_PATH/packs/pr-gate-city"; then
+    echo "==> 'gc import add $ARTIFACTS_PATH/packs/pr-gate-city' failed." >&2
+    echo "==> The city would come up without the mayor that knows the PR gate." >&2
+    echo "==> Fix the error above, then re-run this script." >&2
+    exit 1
+  fi
+
+  hand_mayor_to_pack
+
+  if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+    git add .
+    git commit -m "W3-run-your-factory packs"
+  fi
+else
+  SETUP_STEP_LABEL="00.2-setup-foundation"
+
+  mkdir -p packs
+  cp -r $ARTIFACTS_PATH/packs/setup/ packs/setup
+  chmod +x packs/setup/assets/scripts/worktree-setup.sh
+  if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
+    git add .
+    git commit -m "00.2-setup-foundation packs"
+  fi
+  gc import add --rig ascii-art packs/setup
 fi
-gc import add --rig ascii-art packs/setup
 cd $ASCII_ART_PATH
 cp "$ARTIFACTS_PATH/beads/seed-epics.sh" ./seed-epics.sh
 chmod +x ./seed-epics.sh
@@ -483,7 +550,14 @@ done
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   cd $FACTORY_PATH
   git add .
-  git commit -m "00.2-setup-foundation complete"
+  git commit -m "$SETUP_STEP_LABEL complete"
+fi
+
+# W3 ends here. Everything below this line is the appendix track assembling the
+# same factory one pack at a time, which is a different sequence rather than a
+# continuation of the one above.
+if [ "$TUTORIAL_STEP" == "W3-run-your-factory" ]; then
+  finish_step "W3-run-your-factory"
 fi
 
 if [ "$TUTORIAL_STEP" == "00.2-setup-foundation" ]; then
@@ -511,18 +585,7 @@ fi
 gc import add packs/pr-gate-city
 gc import add --rig ascii-art packs/pr-gate-rig
 gc import remove --rig ascii-art setup
-rm -rf "$FACTORY_PATH/agents/mayor"
-# Point the always-on mayor session at the pack's mayor. Deleting the block
-# outright would leave the city with no mayor at all, because pr-gate-city
-# deliberately declares no named_session of its own.
-sed '/^\[\[named_session\]\]/,/^[[:space:]]*mode = /d' "$FACTORY_PATH/pack.toml" > "$FACTORY_PATH/pack.toml.tmp"
-cat >> "$FACTORY_PATH/pack.toml.tmp" <<'EOF'
-[[named_session]]
-name = "mayor"
-template = "pr-gate-city.mayor"
-mode = "always"
-EOF
-mv "$FACTORY_PATH/pack.toml.tmp" "$FACTORY_PATH/pack.toml"
+hand_mayor_to_pack
 
 if [ "$FACTORY_VERSION_CONTROL" == "true" ]; then
   git add .
