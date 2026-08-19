@@ -8,7 +8,7 @@ Almost every agent you run is ephemeral: it spawns, does one thing, and exits wi
 
 ```bash
 cd "$FACTORY_PATH"
-gc import add --rig <rig-name> ../sf-tutorial/artifacts/packs/internal-wiki
+gc import add --rig <rig-name> $SFI_PATH/artifacts/packs/internal-wiki
 gc reload
 ```
 
