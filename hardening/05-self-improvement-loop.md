@@ -15,6 +15,7 @@
 - [Deliverable](#deliverable)
 - [Verification](#verification)
 - [Ceiling](#ceiling)
+- [The packaged version of this loop](#the-packaged-version-of-this-loop)
 - [Troubleshooting](#troubleshooting)
 - [What's next](#whats-next)
 
@@ -156,6 +157,19 @@ Automate the observation half and leave the decision half alone.
 Write an exec order on a `cooldown` trigger that runs your step-1 query and writes the result somewhere you will actually see it. That is a fifteen-minute change and it converts "I looked at the blocked beads once during a workshop" into a signal that arrives on its own.
 
 Stop before automating step 3. A factory that observes itself on a schedule is useful. A factory that proposes on a schedule generates a queue of proposals nobody reads, which is worse than none.
+
+## The packaged version of this loop
+
+If you want the scheduled form rather than the hand-run one, `self-improvement` is this lab as an installable pack:
+
+**Copy and paste**
+
+```bash
+cd "$FACTORY_PATH"
+gc import add $SFI_PATH/sf-tutorial/artifacts/packs/self-improvement
+```
+
+It ships a daily order, a six-step audit workflow, and two small scripts. Read [its README](../artifacts/packs/self-improvement/README.md) before installing, because it gates on an environment variable, dispatches its workflow directly instead of asking an agent to run it, and takes its cadence from the last completed pass rather than the last time the order fired.
 
 ## Troubleshooting
 

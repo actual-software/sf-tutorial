@@ -1,0 +1,49 @@
+# daily-introspect — the factory's once-a-day look at itself.
+#
+# Same two-part shape as the two orders in base-factory: a trigger, and an
+# action. Both halves differ from those, and each difference is the lesson.
+#
+# THE ACTION IS A FORMULA, NOT AN EXEC. An order runs either a formula or a
+# shell command, and validation treats the two as mutually exclusive. The base
+# factory's orders both use `exec`, because appending a line to a log is a shell
+# one-liner's worth of work. This one needs an agent's judgement, so it names a
+# `formula` and the runtime dispatches that workflow to `pool`.
+#
+# Reach for the exec form and the tempting thing to write is a nudge: fire on a
+# timer and send an agent a sentence asking it to run the audit. That only
+# produces a pass if some agent reads the sentence and chooses to act on it, and
+# the order's clock advances either way. The formula action removes the
+# interpretation step, so the trigger and the pass are the same event.
+#
+# THE TRIGGER IS A CONDITION, NOT CRON. Trigger evaluation is a switch on the
+# trigger type, so exactly one branch runs and the other fields are silently
+# ignored: a `cron` order never consults `check`, and a `condition` order never
+# consults `schedule`. This pass needs two things to be true at once, an
+# environment gate and a cadence, and no trigger offers both. A condition check
+# is a shell command though, so one script can answer both. `check` calls
+# assets/scripts/introspect_due.sh, and that file's comments explain each half.
+#
+# TUNING. The cadence is the second argument on the check line, in hours, since
+# a condition order has no `interval` field to set. Change it there and reload.
+#
+# TURNING IT OFF. Installing the pack is the opt-in. Set DAILY_INTROSPECT=false
+# in $FACTORY_ROOT/.env to opt back out, and the check exits non-zero before it
+# asks anything else. Any other value, including unset, leaves the pass running.
+#
+# THE POOL names the agent that runs the pass. The mayor is the default because
+# this is coordination work rather than a unit of work, and every city has one.
+#
+# WATCHING IT. `gc order run daily-introspect` fires it now, bypassing both
+# halves of the check, which is how you see it work without waiting a day.
+# `gc order check` prints whether it is due, but not which half said no: the
+# runtime discards whatever a check writes to its own output. Run the script
+# by hand when you want that.
+
+[order]
+description = "Once-a-day look at the factory's own signals (on by default; opt out with DAILY_INTROSPECT=false)"
+trigger = "condition"
+check = "$PACK_DIR/assets/scripts/introspect_due.sh DAILY_INTROSPECT 24"
+check_timeout = "30s"
+formula = "daily-introspect"
+pool = "mayor"
+timeout = "30s"
