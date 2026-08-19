@@ -29,7 +29,7 @@ By the end of this exercise you will have three letters from the `letters-a-m` e
 
 - Pages [W3 Run Your Factory](../progression/W3-run-your-factory.md), [W3 Run Your Factory](../progression/W3-run-your-factory.md),
   and [W3 Run Your Factory](../progression/W3-run-your-factory.md) complete: city stood up with setup
-  pack imported, rig registered with locked docs in place, 138 beads seeded, and
+  pack imported, rig registered with locked docs in place, 28 beads seeded, and
   `main` pushed to GitHub.
 - `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
 - You're inside the rig directory: `cd "$SFI_PATH/ascii-art"`.
