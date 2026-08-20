@@ -544,9 +544,9 @@ chmod +x ./seed-epics.sh
 
 ```text
 Seed complete.
-  epics opened: 12
+  epics opened: 2
   tasks opened: 26
-  total beads:  38
+  total beads:  28
 ```
 
 ## Try It
@@ -559,13 +559,13 @@ To start work by hand you *sling* a bead at an agent. Two equivalent forms:
 
 ```bash
 cd $SFI_PATH/ascii-art
-bd list --type=epic                 # find the epic for numbers 1-10
+bd list --type=epic                 # find the Letters a-m epic
 bd list --parent=<epic-id>          # find its child tasks
 
 cd $SFI_PATH/factory1
 
 # Name the rig and the agent. This form always works.
-gc sling --rig ascii-art polecat <id-for-1>
+gc sling --rig ascii-art polecat <id-for-a.md>
 ```
 
 There is a second, fully qualified form, `<rig>/<binding>.<agent>`. The binding is the name of the import the agent arrived through, and since the base factory brings the polecat in transitively rather than directly, do not guess it — read it:
@@ -574,7 +574,7 @@ There is a second, fully qualified form, `<rig>/<binding>.<agent>`. The binding 
 
 ```bash
 gc agent list --rig ascii-art
-gc sling ascii-art/base-factory.polecat <id-for-2>
+gc sling ascii-art/base-factory.polecat <id-for-b.md>
 ```
 
 Worth doing once. The qualified form is what disambiguates two agents of the same name arriving from different packs, which is exactly the situation a Day 2 option can create.
@@ -592,7 +592,7 @@ cd $SFI_PATH/factory1
 gc session attach mayor
 ```
 
-Ask it something: *What is the status of the factory?* or *Sling the bead for number 3 at the polecat.*
+Ask it something: *What is the status of the factory?* or *Sling the bead for c.md at the polecat.*
 
 > **Detach with `Ctrl+b` then `d`.** Do **not** use `Ctrl+c` — that interrupts the agent, and exiting that way kills the session inside Gas City. `Ctrl+b` `d` returns you to your shell with the mayor still running.
 
@@ -638,7 +638,7 @@ The tunnel is the design rather than an inconvenience. Your box opens port 22 an
 
 ### 5. Reflect
 
-You have a city, a rig on GitHub, a base factory carrying every primitive, 38 beads of real work, and at least one bead that moved through the pipeline while you watched. Nothing you build for the rest of the curriculum starts from scratch; it starts from here.
+You have a city, a rig on GitHub, a base factory carrying every primitive, 28 beads of real work, and at least one bead that moved through the pipeline while you watched. Nothing you build for the rest of the curriculum starts from scratch; it starts from here.
 
 ## Verification
 

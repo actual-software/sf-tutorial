@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 # seed-epics.sh
 # ----------------------------------------------------------------------------
-# Seeds the ASCII Factory rig with 12 epics and 126 child tasks (138 beads).
+# Seeds the ASCII Factory rig with 2 epics and 26 child tasks (28 beads).
 #
 # What this opens:
-#   - 12 epic beads (Letters a–m, Letters n–z, Numbers 1–10 ... Numbers 91–100)
+#   - 2 epic beads (Letters a–m, Letters n–z)
 #   - 26 letter tasks  (a.md ... z.md, split across the two letter epics)
-#   - 100 number tasks (1.md ... 100.md, split across the ten number epics)
 #
 # Each child task is parented to its epic (--parent <epic-id>) and stamped
-# with metadata.target_file = "ascii/<filename>" so downstream tools and
-# agents can locate the artifact path without parsing the title.
+# with metadata.target_file = "ascii/<filename>" plus a concrete description
+# so downstream tools and agents can locate and validate the artifact.
 #
 # Run this AFTER `bd init` in your rig root, BEFORE handing work to agents:
 #   chmod +x seed-epics.sh
@@ -68,6 +67,7 @@ create_child() {
     --parent="${parent}" \
     --priority=2 \
     --metadata "{\"target_file\":\"ascii/${fname}\"}" \
+    --description "Create ascii/${fname} for '${fname%.md}' with one printable-ASCII text block no larger than 8 lines by 20 columns and a two-line rhyme, following docs/decision-records/0001.ADR.ASCII.md." \
     --silent \
     "Implement ${fname}" \
   >/dev/null
@@ -89,41 +89,14 @@ seed_letter_epic() {
   TOTAL_TASKS=$((TOTAL_TASKS + count))
 }
 
-# seed_number_epic <title> <slug> <start-num> <end-num>
-seed_number_epic() {
-  local title="$1" slug="$2" start="$3" end="$4"
-  echo "==> creating epic: ${title}"
-  local epic_id; epic_id="$(create_epic "${title}" "${slug}")"
-  echo "    epic id: ${epic_id}"
-  local count=0
-  for n in $(seq "${start}" "${end}"); do
-    create_child "${epic_id}" "${n}.md"
-    count=$((count + 1))
-  done
-  echo "    opened ${count} child task(s)"
-  TOTAL_TASKS=$((TOTAL_TASKS + count))
-}
-
 # --- run ---------------------------------------------------------------------
 
-TOTAL_EPICS=12
+TOTAL_EPICS=2
 TOTAL_TASKS=0
 
 # Two letter epics (a–m = 13, n–z = 13).
 seed_letter_epic "Letters a–m" "letters-a-m" "a" "m"
 seed_letter_epic "Letters n–z" "letters-n-z" "n" "z"
-
-# Ten number epics, ten beads each.
-# seed_number_epic "Numbers 1–10"   "numbers-1-10"     1  10
-# seed_number_epic "Numbers 11–20"  "numbers-11-20"   11  20
-# seed_number_epic "Numbers 21–30"  "numbers-21-30"   21  30
-# seed_number_epic "Numbers 31–40"  "numbers-31-40"   31  40
-# seed_number_epic "Numbers 41–50"  "numbers-41-50"   41  50
-# seed_number_epic "Numbers 51–60"  "numbers-51-60"   51  60
-# seed_number_epic "Numbers 61–70"  "numbers-61-70"   61  70
-# seed_number_epic "Numbers 71–80"  "numbers-71-80"   71  80
-# seed_number_epic "Numbers 81–90"  "numbers-81-90"   81  90
-# seed_number_epic "Numbers 91–100" "numbers-91-100"  91 100
 
 # --- summary -----------------------------------------------------------------
 
@@ -134,6 +107,6 @@ echo "  tasks opened: ${TOTAL_TASKS}"
 echo "  total beads:  $((TOTAL_EPICS + TOTAL_TASKS))"
 echo
 echo "Next steps:"
-echo "  bd list --type=epic                     # see the 12 epics"
+echo "  bd list --type=epic                     # see the 2 epics"
 echo "  bd ready                                # find a task to start on"
 echo "  gc sling ascii-art/polecat <bead-id>    # hand a task to an agent"
