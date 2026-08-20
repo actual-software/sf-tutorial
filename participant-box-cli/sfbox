@@ -1045,12 +1045,79 @@ instructor_box_exists() { # boxId tag_key tag_value
 # Select the per-box Terraform workspace, creating it on first use. Without
 # this every box would share one state file and provisioning the second box
 # would destroy the first.
+#
+# Provision only. Remove goes through instructor_tf_workspace_existing, because
+# creating a workspace to destroy in is how a destroy comes back clean while the
+# box it named goes on running.
 instructor_tf_workspace() { # tf_root boxId
   local root="$1" box="$2"
   tf_cli -chdir="$root" workspace select "$box" >/dev/null 2>&1 && return 0
   tf_cli -chdir="$root" workspace new "$box" >/dev/null 2>&1 && return 0
   err "could not select or create the Terraform workspace '$box' in $root"
   return 1
+}
+
+# The remove-side counterpart. Selects the box's workspace when there is one and
+# otherwise leaves the root on the workspace it is already on, then prints
+# whichever it settled on so the caller's errors can name it. It never creates
+# one.
+#
+# Two root layouts are in use and remove has to be right in both. sfbox's own is
+# one root holding a workspace per box, which is what provision builds. The
+# cohort roots are the other: a directory per box, each with its own state key
+# and no workspace but default. A select misses there, and creating the
+# workspace it asked for would swap the box's real state for an empty one.
+#
+# Neither outcome is trusted on its own — the caller confirms the state it
+# landed on is non-empty and carries this box's name before destroying anything.
+instructor_tf_workspace_existing() { # tf_root boxId
+  local root="$1" box="$2"
+  if tf_cli -chdir="$root" workspace select "$box" >/dev/null 2>&1; then
+    printf '%s' "$box"
+    return 0
+  fi
+  tf_cli -chdir="$root" workspace show 2>/dev/null
+  return 0
+}
+
+# The managed resources Terraform holds for the selected workspace. Empty means
+# the workspace holds nothing to destroy, which is the difference between a
+# destroy with work to do and one that reports success for doing none.
+#
+# Data sources are filtered out because they are not destroyed and not evidence
+# of a box. A root that was initialised and refreshed but never applied lists its
+# data sources and nothing else, and counting those as state would let exactly
+# the no-op this guard exists to catch through.
+instructor_tf_state_addrs() { # tf_root
+  tf_cli -chdir="$1" state list 2>/dev/null | grep -vE '(^|\.)data\.'
+}
+
+# Which box this root's state belongs to, read back off the resources themselves.
+# factory_name reaches the instance's Name tag — the tag `instructor list` reads
+# ids back from — and the home volume's FactoryName tag, so either one names the
+# box. The volume is consulted as well as the instance so that a retry after a
+# destroy that failed part-way can still identify what is left.
+#
+# Empty means the state does not say, which is deliberately not the same answer
+# as a mismatch. Only a state that names a *different* box is evidence of being
+# pointed at the wrong one, and only that stops the caller. Demanding a positive
+# match instead would refuse against any root whose module does not tag this way,
+# turning a guard against a rare mistake into a command that no longer removes.
+instructor_state_box_name() { # tf_root addrs
+  local root="$1" addrs="$2" addr name=""
+  addr="$(printf '%s\n' "$addrs" | grep -E '(^|\.)aws_instance\.main$' | head -1)"
+  if [ -n "$addr" ]; then
+    name="$(tf_cli -chdir="$root" state show "$addr" 2>/dev/null \
+            | awk -F'"' '$2 == "Name" { print $4; exit }')"
+  fi
+  if [ -z "$name" ]; then
+    addr="$(printf '%s\n' "$addrs" | grep -E '(^|\.)aws_ebs_volume\.home$' | head -1)"
+    if [ -n "$addr" ]; then
+      name="$(tf_cli -chdir="$root" state show "$addr" 2>/dev/null \
+              | awk -F'"' '$2 == "FactoryName" { print $4; exit }')"
+    fi
+  fi
+  printf '%s' "$name"
 }
 
 # Read one output from the applied root. Returns empty when it is not declared,
@@ -1331,7 +1398,46 @@ cmd_instructor_remove() {
   say "Initialising Terraform ..."
   tf_cli -chdir="$tf_root" init -input=false >/dev/null || {
     err "terraform init failed in $tf_root"; return 1; }
-  instructor_tf_workspace "$tf_root" "$box" || return 1
+
+  # Resolve the workspace without creating one, then refuse to go on unless the
+  # state it landed on is both non-empty and this box's. Both guards fail closed
+  # on purpose: the step after them deletes a volume holding a participant's city
+  # and their credentials, so "I could not tell what I am pointed at" has to stop
+  # the command rather than let Terraform report success for doing nothing.
+  local ws state_addrs
+  ws="$(instructor_tf_workspace_existing "$tf_root" "$box")"
+  state_addrs="$(instructor_tf_state_addrs "$tf_root")"
+
+  if [ -z "$state_addrs" ]; then
+    err "the Terraform workspace '$ws' in $tf_root holds no state, so there is"
+    err "nothing here to destroy. Nothing was destroyed."
+    err ""
+    err "'$box' is very likely still running and still billing: a destroy against"
+    err "an empty workspace succeeds, and reports that it removed nothing, which"
+    err "reads at a glance exactly like a box that went away."
+    err ""
+    err "Find the root that does hold it. Each cohort box is its own directory"
+    err "with its own state, so the root is usually the one named after the box:"
+    err "  terraform -chdir=$tf_root workspace list"
+    err "  sfbox instructor list"
+    return 9
+  fi
+
+  local state_box
+  state_box="$(instructor_state_box_name "$tf_root" "$state_addrs")"
+  if [ -n "$state_box" ] && [ "$state_box" != "$box" ]; then
+    err "the Terraform workspace '$ws' in $tf_root holds '$state_box', not '$box'."
+    err ""
+    err "Destroying it would take '$state_box' instead, and delete the home volume"
+    err "carrying that participant's city and their credentials. Nothing was"
+    err "destroyed."
+    err ""
+    err "Either the boxId is mistyped or --tf-root points at a neighbouring box's"
+    err "directory. Check the two against each other:"
+    err "  terraform -chdir=$tf_root state list"
+    err "  sfbox instructor list"
+    return 9
+  fi
 
   # The home volume carries prevent_destroy = true. Terraform takes only a
   # literal there, so no variable can turn the guard off for a box that is meant
@@ -1355,7 +1461,7 @@ cmd_instructor_remove() {
       err "Dropping it from state without that id would strand a volume that neither"
       err "Terraform nor you can name afterwards, still billing. So this stops here"
       err "and nothing was destroyed. Read the id yourself with:"
-      err "  terraform -chdir=$tf_root workspace select $box"
+      err "  terraform -chdir=$tf_root workspace select $ws"
       err "  terraform -chdir=$tf_root state show $home_addr"
       return 9
     fi
@@ -1383,7 +1489,7 @@ cmd_instructor_remove() {
        -var "factory_name=$box" -var "participant_access=true"; then
     err "terraform destroy failed for '$box'."
     err "Some resources may still exist. Check with:"
-    err "  terraform -chdir=$tf_root workspace select $box && terraform -chdir=$tf_root state list"
+    err "  terraform -chdir=$tf_root workspace select $ws && terraform -chdir=$tf_root state list"
     err "Do not fall back to terminating the instance by hand, which leaves the"
     err "address behind, still billing, with state now wrong."
     if [ -n "$home_vol" ]; then
@@ -1414,7 +1520,7 @@ cmd_instructor_remove() {
     say "Home volume $home_vol deleted."
   fi
 
-  say "Destroyed '$box'. Its Terraform workspace is kept, holding empty state."
+  say "Destroyed '$box'. Workspace '$ws' is kept, now holding empty state."
   say "The participant can drop their local copy with: sfbox box forget $box"
   return 0
 }
