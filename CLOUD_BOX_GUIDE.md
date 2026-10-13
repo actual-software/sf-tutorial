@@ -1,6 +1,6 @@
 # Getting onto your cloud box
 
-Your cloud box is a Linux machine in Google Cloud that already carries `gc`, `bd`, `dolt`, `gh` and three coding agents: Claude Code, Codex and Gemini CLI. You reach it with `sfbox` and the Google account your instructor added to the cohort, so there are no key files, IP addresses or SSH settings to keep track of.
+Your cloud box is a Linux machine in Google Cloud that already carries `gc`, `bd`, `dolt`, `gh` and three coding agents: Claude Code, Codex and Gemini CLI. You reach it with `sfbox` and the Google account or email address your instructor added to the cohort, so there are no key files, IP addresses or SSH settings to keep track of.
 
 Running the two days on your own laptop instead? You don't need this page. Go straight to [W2 Cloud Box and Preflight](./progression/W2-cloud-box-and-preflight.md), whose appendix covers the local path.
 
@@ -22,7 +22,7 @@ Running the two days on your own laptop instead? You don't need this page. Go st
 ## Before you start
 
 - **A Mac or a Linux computer.** Windows works too, with its own install steps in the [sfbox README](https://github.com/actual-software/sfbox#windows).
-- **The Google account your instructor added.** Only accounts on the cohort's list can sign in.
+- **The Google account or email address your instructor added.** Only addresses on the cohort's list can sign in. An address with no Google account behind it, such as a work address on Microsoft mail, can sign in with a code sent to it instead.
 - **A browser on that same computer.** The sign-in hands back to `sfbox` on the computer that started it, so finishing it on your phone won't work.
 - **Your own account for at least one coding agent:** a Claude subscription (Pro, Max, Team or Enterprise) for Claude Code, a ChatGPT account for Codex, or a Google account for Gemini CLI. Sign in with the account itself rather than an API key, because `gc init` checks each agent's sign-in and refuses API keys.
 
@@ -30,7 +30,7 @@ Running the two days on your own laptop instead? You don't need this page. Go st
 
 ```mermaid
 flowchart TD
-    A[1 · Install sfbox] --> B[2 · Sign in with Google]
+    A[1 · Install sfbox] --> B[2 · Sign in]
     B --> C{Did your instructor<br/>make your box?}
     C -->|No| D[3 · Create your box]
     C -->|Yes| E[4 · Open the box's terminal]
@@ -86,7 +86,7 @@ sfbox version
 sfbox login
 ```
 
-Your browser opens on the sign-in page. Choose **Sign in with Google** and pick the account your instructor added. When the page says *You're signed in*, close the tab and go back to your terminal.
+Your browser opens on the sign-in page. Choose **Sign in with Google** and pick the account your instructor added. If your address has no Google account and the page offers **Email me a code**, choose that: enter the address, then type in the six-digit code from the email, which works once, for 10 minutes. When the page says *You're signed in*, close the tab and go back to your terminal.
 
 **Expected output**
 
@@ -230,6 +230,8 @@ The box has no factory on it yet, and that's deliberate: it brings the toolchain
 - **The installer says another `sfbox` comes first on your `PATH`.** That's usually the older bash `sfbox` from this repo's `participant-box-cli/`. Delete the line that adds `participant-box-cli` to your `PATH` from `~/.zshrc` or `~/.bashrc`, then open a new terminal.
 - **`you are not signed in`, or `your session expired`.** Run `sfbox login`.
 - **The sign-in page refuses your Google account.** That account isn't on the cohort's list. Tell your instructor which account you used.
+- **No code arrives by email.** Give it a minute and check your spam folder. Codes only go to addresses on the cohort's list, so if one still hasn't come, tell your instructor which address you typed. **Send a new code** works once a minute.
+- **The page says the code is wrong or has expired.** Check the digits, or send a new code. A code works once, for 10 minutes, and allows five tries.
 - **`no sign-in came back`.** The browser sign-in didn't finish in time, or it finished on another device. Run `sfbox login` again and finish it in a browser on this computer.
 - **`the name "…" is taken; pick another`.** Someone else has a box with that name, so choose another.
 - **`you already have … boxes, the most a person can own`.** Use a box you already have. `sfbox` can't delete boxes yet, so ask your instructor if one needs to go.
