@@ -7,7 +7,7 @@
 # first block starts.
 #
 #   ./preflight.sh            # local path (default)
-#   ./preflight.sh --cloud    # local path, plus the cloud-box checks
+#   ./preflight.sh --cloud    # local path, plus the sfbox check for a cloud box
 #   ./preflight.sh --install  # run deps.sh first, then check
 #
 # Safe to run repeatedly. Without --install it changes nothing on your machine.
@@ -36,6 +36,7 @@ WARNINGS=0
 ok()   { printf '  [ ok ] %s\n' "$*"; }
 fail() { printf '  [FAIL] %s\n' "$*"; FAILURES=$((FAILURES + 1)); }
 warn() { printf '  [warn] %s\n' "$*"; WARNINGS=$((WARNINGS + 1)); }
+note() { printf '  [note] %s\n' "$*"; }
 head2() { printf '\n%s\n' "$*"; }
 
 # The pinned versions live in deps.sh so there is exactly one place to change
@@ -203,52 +204,26 @@ if [ -w "$HOME" ]; then ok "home directory is writable"; else fail "home directo
 if [ "$MODE_CLOUD" -eq 1 ]; then
   head2 "Cloud path"
 
-  # sfbox ships in this repo. Prefer a copy on PATH, so a participant who put it
-  # somewhere of their own is not second-guessed, and fall back to the one that
-  # sits next to this script.
-  SFBOX=""
-  if command -v sfbox >/dev/null 2>&1; then
-    SFBOX="$(command -v sfbox)"
-  elif [ -x "${HERE}/../participant-box-cli/sfbox" ]; then
-    SFBOX="${HERE}/../participant-box-cli/sfbox"
-  fi
-
-  if [ -z "$SFBOX" ]; then
-    fail "sfbox: not found — expected it on PATH, or at participant-box-cli/sfbox in this repo"
+  # The boxes take sfbox v2, which its installer puts on PATH. The bash script
+  # in participant-box-cli/ is v1 and can't reach them, so it is no fallback,
+  # and finding it first on PATH is a failure.
+  if ! command -v sfbox >/dev/null 2>&1; then
+    fail "sfbox: not found on PATH — install it as CLOUD_BOX_GUIDE.md describes"
   else
-    ok "sfbox: $SFBOX"
-
-    # `sfbox box current` prints its human-facing lines with a '==> ' prefix and
-    # still exits 0 when nothing is selected, so the box id is whatever survives
-    # dropping those lines.
-    current_box="$("$SFBOX" box current 2>/dev/null | grep -v '^==>' | tr -d '[:space:]')"
-    if [ -z "$current_box" ]; then
-      fail "box credential: none saved — run 'sfbox save-credential' with the box id, host, key and fingerprint your instructor gave you"
+    SFBOX="$(command -v sfbox)"
+    sfbox_actual="$("$SFBOX" version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+    if [ -z "$sfbox_actual" ]; then
+      warn "sfbox: $SFBOX reported no version — the boxes need v2, installed as CLOUD_BOX_GUIDE.md describes"
+    elif version_at_least "$sfbox_actual" 2.0.0; then
+      ok "sfbox: $SFBOX (v$sfbox_actual)"
     else
-      ok "box credential: $current_box"
-
-      # sfbox preflight is the authority on whether the box answers: it checks
-      # ssh, then gc, then the service, and names the layer that broke. Mirror
-      # its verdict rather than deriving a second opinion here.
-      #
-      # It exits 0 when ssh and gc answer but the Gas City service is not
-      # active: that layer warns rather than failing. Reading only the exit
-      # code would call all three green while the service is down, so carry
-      # the warning through instead of dropping the captured output.
-      if box_out="$("$SFBOX" preflight 2>&1)"; then
-        case "$box_out" in
-          *WARNING*)
-            warn "box: ssh and gc answered, but sfbox flagged a layer:"
-            printf '%s\n' "$box_out" | sed 's/^/         /' ;;
-          *)
-            ok "box reachable: ssh, gc and the Gas City service all answered" ;;
-        esac
-      else
-        fail "box unreachable — sfbox preflight says which layer broke:"
-        printf '%s\n' "$box_out" | sed 's/^/         /'
-      fi
+      fail "sfbox: $SFBOX is the old $sfbox_actual script, which can't reach the boxes — install v2 as CLOUD_BOX_GUIDE.md describes, and take the old one off your PATH"
     fi
   fi
+
+  # sfbox v2 can't check a box without opening its terminal, so this script
+  # can't either. Say where that check runs instead.
+  note "box: checked on the box itself — run 'sfbox ssh <box>', then 'gas-city-boot-status', which prints nothing once the box is ready"
 fi
 
 # --------------------------------------------------------------------------
