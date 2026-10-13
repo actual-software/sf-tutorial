@@ -242,7 +242,7 @@ The box has no factory on it yet, and that's deliberate: it brings the toolchain
 
 ## Commands from the old box guide
 
-Some later pages were written for the previous `sfbox`, a bash script in this repo, and still use its commands. Until they're updated, here's what to run in their place:
+Anything written for the previous `sfbox`, a bash script in this repo, uses its commands, which v2 doesn't have. Here's what to run in their place:
 
 | Earlier pages say | Run instead |
 |---|---|

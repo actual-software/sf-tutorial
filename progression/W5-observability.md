@@ -57,7 +57,7 @@ gc dashboard
 
 That resolves the supervisor URL, opens your browser, and prints the URL as well.
 
-On a cloud box the dashboard isn't open to you yet. The supervisor serves it on the box, and the old `sfbox` tunnelled it to your laptop. That command, `sfbox dashboard`, is planned for a later sfbox v2 release, and `sfbox ssh` takes no ssh flags, so there's no `-L` port forward to stand in for it. Until it ships, work through this page in the box's terminal. Every step below has a CLI form, and those are enough for the [verification](#verification) at the end, so read the browser parts as what the dashboard adds once it reaches your laptop.
+On a cloud box the dashboard isn't open to you yet. The supervisor serves it on the box, and the old `sfbox` tunnelled it to your laptop. That command is planned for a later sfbox v2 release, and `sfbox ssh` takes no ssh flags, so there's no `-L` port forward to stand in for it. Until it ships, work through this page in the box's terminal. Every step below has a CLI form, and those are enough for the [verification](#verification) at the end, so read the browser parts as what the dashboard adds once it reaches your laptop.
 
 ### 2. The beads list, and what a bead carries
 
@@ -190,7 +190,7 @@ at least one order run
 - **The dashboard opens but the beads list is empty.** You are looking at a different city or a different rig than the one holding your work. Check the city selector, and remember `factory1` and `ascii-art` have separate beads stores with different prefixes.
 - **`gc session peek` reports no such session.** Ephemeral sessions exit when their work is done. Re-run `gc session list`; if nothing is live, sling a bead to spawn one.
 - **`gc events` returns nothing for a type you expected.** Check the spelling against a broader `gc events --since 2h`; event types are dotted names such as `bead.closed`, and a near-miss returns a silent empty rather than an error.
-- **On a cloud box the browser cannot reach the URL.** The dashboard is bound on the box, not on your laptop, and sfbox v2.0.0 has nothing that tunnels it there yet. `sfbox dashboard` is planned for a later release. In the meantime, use each step's CLI form in the box's terminal.
+- **On a cloud box the browser cannot reach the URL.** The dashboard is bound on the box, not on your laptop, and sfbox v2.0.0 has nothing that tunnels it there yet. A command for it is planned for a later release. In the meantime, use each step's CLI form in the box's terminal.
 
 ## What's next
 
