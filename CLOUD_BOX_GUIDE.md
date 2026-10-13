@@ -59,14 +59,15 @@ The script picks the build for your computer, checks it against the release's ch
 ```text
 ==> Downloading sfbox v2.0.0 for darwin/arm64
 ==> Installed sfbox v2.0.0 at /Users/you/.local/bin/sfbox
-==> Then sign in: sfbox login
+==> Next, sign in: sfbox login
 ```
 
-If `~/.local/bin` isn't on your `PATH` yet, the installer also prints the line that adds it, for your shell:
+If `~/.local/bin` isn't on your `PATH` yet, it ends this way instead, with the line that adds it for your shell:
 
 ```text
 ==> /Users/you/.local/bin isn't on your PATH. Add it with this line, then open a new terminal:
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+==> Then sign in: sfbox login
 ```
 
 Run that line, open a new terminal, and check that `sfbox` answers:
@@ -101,7 +102,7 @@ The last line says when your session ends. After that, any `sfbox` command tells
 
 If your instructor already made a box for you, skip to [step 4](#step-4-open-the-boxs-terminal) and use the name they gave you.
 
-Otherwise, pick a name for your box: 3 to 26 lowercase letters, digits and hyphens, starting with a letter. Everyone's boxes share one list of names, so make yours personal, such as your first name followed by `-sfi`.
+Otherwise, pick a name for your box: 3 to 26 lowercase letters, digits and single hyphens, starting with a letter and ending with a letter or digit. Everyone's boxes share one list of names, so make yours personal, such as your first name followed by `-sfi`.
 
 **Copy and paste**, with your name in place of `ada-sfi`
 
@@ -232,7 +233,7 @@ The box has no factory on it yet, and that's deliberate: it brings the toolchain
 - **`no sign-in came back`.** The browser sign-in didn't finish in time, or it finished on another device. Run `sfbox login` again and finish it in a browser on this computer.
 - **`the name "…" is taken; pick another`.** Someone else has a box with that name, so choose another.
 - **`you already have … boxes, the most a person can own`.** Use a box you already have. `sfbox` can't delete boxes yet, so ask your instructor if one needs to go.
-- **`box … is creating; wait until it is ready`.** The box is still being made. Run `sfbox create` with its name to watch it finish.
+- **`box … is provisioning; wait until it is ready`.** The box is still being made. Run `sfbox create` with its name to watch it finish. If that says the box is busy, the create making it is still running, so wait a minute and run it again.
 - **`Box …'s access grants haven't reached Google yet`.** Normal for a new box. Let `sfbox ssh` keep trying.
 - **`sfbox ssh` fails in a new box's first minute, ending `Run the same command again to resume.`** Wait a minute, then run `sfbox ssh` again.
 - **`box … is TERMINATED, so nothing on it can answer`.** Your box is stopped. Ask your instructor to start it, since `sfbox` can't start boxes yet.
