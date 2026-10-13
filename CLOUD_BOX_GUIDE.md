@@ -10,11 +10,12 @@ Running the two days on your own laptop instead? You don't need this page. Go st
 - [Setup at a glance](#setup-at-a-glance)
 - [Step 1: install sfbox](#step-1-install-sfbox)
 - [Step 2: sign in](#step-2-sign-in)
-- [Step 3: create your box](#step-3-create-your-box)
+- [Step 3: find or create your box](#step-3-find-or-create-your-box)
 - [Step 4: open the box's terminal](#step-4-open-the-boxs-terminal)
 - [Step 5: sign in to your coding agent](#step-5-sign-in-to-your-coding-agent)
 - [Step 6: sign in to GitHub on the box](#step-6-sign-in-to-github-on-the-box)
 - [Step 7: back to the tutorial](#step-7-back-to-the-tutorial)
+- [Everyday commands](#everyday-commands)
 - [Troubleshooting](#troubleshooting)
 - [Commands from the old box guide](#commands-from-the-old-box-guide)
 - [Coming later](#coming-later)
@@ -31,7 +32,7 @@ Running the two days on your own laptop instead? You don't need this page. Go st
 ```mermaid
 flowchart TD
     A[1 · Install sfbox] --> B[2 · Sign in]
-    B --> C{Did your instructor<br/>make your box?}
+    B --> C{Does sfbox list<br/>show a box?}
     C -->|No| D[3 · Create your box]
     C -->|Yes| E[4 · Open the box's terminal]
     D --> E
@@ -57,8 +58,8 @@ The script picks the build for your computer, checks it against the release's ch
 **Expected output**
 
 ```text
-==> Downloading sfbox v2.0.0 for darwin/arm64
-==> Installed sfbox v2.0.0 at /Users/you/.local/bin/sfbox
+==> Downloading sfbox v2.1.0 for darwin/arm64
+==> Installed sfbox v2.1.0 at /Users/you/.local/bin/sfbox
 ==> Next, sign in: sfbox login
 ```
 
@@ -98,11 +99,26 @@ Your browser opens on the sign-in page. Choose **Sign in with Google** and pick 
 
 The last line says when your session ends. After that, any `sfbox` command tells you to sign in again, and `sfbox login` is all it takes.
 
-## Step 3: create your box
+## Step 3: find or create your box
 
-If your instructor already made a box for you, skip to [step 4](#step-4-open-the-boxs-terminal) and use the name they gave you.
+Your instructor may have made your box already, so look first:
 
-Otherwise, pick a name for your box: 3 to 26 lowercase letters, digits and single hyphens, starting with a letter and ending with a letter or digit. Everyone's boxes share one list of names, so make yours personal, such as your first name followed by `-sfi`.
+**Copy and paste**
+
+```bash
+sfbox list
+```
+
+**Expected output** when there's a box for you
+
+```text
+NAME     STATE  VM       COHORT       EXPIRY
+ada-sfi  ready  RUNNING  sfi-2026-10  2026-11-14
+```
+
+If your box is there, skip to [step 4](#step-4-open-the-boxs-terminal) with its name. A `STATE` of `provisioning` means it's still being made, so wait a minute and run `sfbox list` again until it reads `ready`.
+
+If the list says `You have no boxes`, create one. Pick a name: 3 to 26 lowercase letters, digits and single hyphens, starting with a letter and ending with a letter or digit. Everyone's boxes share one list of names, so make yours personal, such as your first name followed by `-sfi`.
 
 **Copy and paste**, with your name in place of `ada-sfi`
 
@@ -224,6 +240,23 @@ That's the box ready. Head back to [W2's cloud box section](./progression/W2-clo
 
 The box has no factory on it yet, and that's deliberate: it brings the toolchain and the agents, and [W3](./progression/W3-run-your-factory.md) is where you build the factory.
 
+## Everyday commands
+
+These run on your laptop and work only on your own boxes. `sfbox help` lists them all.
+
+| Command | Purpose |
+|---|---|
+| `sfbox list` | Lists your boxes and whether each is running |
+| `sfbox status <box>` | Shows one box's state, size, boot progress and health |
+| `sfbox stop <box>` | Stops the box's VM. Your files stay, and a stopped box costs only its disks |
+| `sfbox start <box>` | Starts it again. Give it about a minute to boot before `sfbox ssh` |
+| `sfbox download <box> <folder>` | Copies a folder from the box to your laptop, leaving out sign-in files |
+| `sfbox delete <box>` | Deletes the box, once you've typed its name to confirm |
+
+- **`status`'s `Health` line looks only for a factory in `~/city`.** The one you build in W3 lives in `~/software-factory-intensive/factory1`, so that line keeps reading `service=inactive` and `city=no` while yours runs. Check yours from its own directory on the box with `gc session list`.
+- **`download` reads a folder name without a leading `/` from your home on the box, `/home/ubuntu`.** `sfbox download ada-sfi software-factory-intensive/factory1` copies that folder into `./factory1` on your laptop. `--to <folder>` picks another local name, and an existing local folder is replaced only with `--force`. The copy leaves out every `.ssh` folder, each coding agent's sign-in file, `gh`'s token and the city's `.env`.
+- **`delete` takes two or three minutes** and removes the box's VM, disk and accounts. A snapshot of its disk is kept for now, so an instructor can still recover files, but download anything you want to keep first.
+
 ## Troubleshooting
 
 - **`command not found: sfbox`.** The `PATH` line from step 1 hasn't reached this terminal. Run the line the installer printed, then open a new terminal.
@@ -234,11 +267,13 @@ The box has no factory on it yet, and that's deliberate: it brings the toolchain
 - **The page says the code is wrong or has expired.** Check the digits, or send a new code. A code works once, for 10 minutes, and allows five tries.
 - **`no sign-in came back`.** The browser sign-in didn't finish in time, or it finished on another device. Run `sfbox login` again and finish it in a browser on this computer.
 - **`the name "…" is taken; pick another`.** Someone else has a box with that name, so choose another.
-- **`you already have … boxes, the most a person can own`.** Use a box you already have. `sfbox` can't delete boxes yet, so ask your instructor if one needs to go.
+- **`you already have … boxes, the most a person can own`.** Use a box you already have, which `sfbox list` shows, or delete one you're done with using `sfbox delete <box>` after downloading anything you want from it.
+- **`no box named "…"`.** Check the spelling against `sfbox list`. Someone else's box gives the same answer, since you can only reach your own.
 - **`box … is provisioning; wait until it is ready`.** The box is still being made. Run `sfbox create` with its name to watch it finish. If that says the box is busy, the create making it is still running, so wait a minute and run it again.
 - **`Box …'s access grants haven't reached Google yet`.** Normal for a new box. Let `sfbox ssh` keep trying.
 - **`sfbox ssh` fails in a new box's first minute, ending `Run the same command again to resume.`** Wait a minute, then run `sfbox ssh` again.
-- **`box … is TERMINATED, so nothing on it can answer`.** Your box is stopped. Ask your instructor to start it, since `sfbox` can't start boxes yet.
+- **`box … is TERMINATED, so nothing on it can answer`.** Your box is stopped. Run `sfbox start <box>`, give it a minute to boot, then run `sfbox ssh` again.
+- **`… already exists; pass --force to replace it, or name another folder with --to`.** `sfbox download` found a folder where it would put the copy. Name another with `--to`, or pass `--force` to replace it.
 - **The terminal freezes after your laptop sleeps or changes Wi-Fi.** Close it and run `sfbox ssh` again. Your files on the box are where you left them.
 - **An agent rejects its code.** Codes are single-use and expire. Start that agent's sign-in again for a fresh one.
 
@@ -248,9 +283,11 @@ Anything written for the previous `sfbox`, a bash script in this repo, uses its 
 
 | Earlier pages say | Run instead |
 |---|---|
-| `sfbox save-credential`, `sfbox box use`, `sfbox box list`, `sfbox box current` | Nothing to save or select. Sign in once with `sfbox login`, then name your box in each command |
+| `sfbox box list` | `sfbox list` |
+| `sfbox save-credential`, `sfbox box use`, `sfbox box current` | Nothing to save or select. Sign in once with `sfbox login`, then name your box in each command |
 | `sfbox start-session` | `sfbox ssh <box>` |
-| `sfbox preflight`, `sfbox get-box` | `sfbox ssh <box>`, then on the box `gas-city-boot-status`, which prints nothing once the box is ready, and `systemctl is-active gas-city.service` |
+| `sfbox get-box` | `sfbox status <box>` |
+| `sfbox preflight` | `sfbox status <box>`, whose `Boot` line reads `ready` once the box is. On the box, `gas-city-boot-status` prints nothing once it's ready, and `systemctl is-active gas-city.service` checks the image's own factory service |
 | `sfbox exec <command>` | `sfbox ssh <box>`, then run the command there |
 | `sfbox gc <args>` | `sfbox ssh <box>`, then `gc <args>` from your city's directory |
 | `sfbox dashboard` | Nothing yet. On the box, `gc session list` and `bd list` from your city's directory show the agents and the work |
@@ -260,7 +297,6 @@ Anything written for the previous `sfbox`, a bash script in this repo, uses its 
 These parts of `sfbox` are designed and not released yet. Until they are, the steps above and your instructor cover them:
 
 - `sfbox setup`, which sets up and starts a factory on the box for you. During the intensive you build yours by hand in W3, so you won't miss it.
-- `sfbox status` and `sfbox list`, for your boxes and how each one's factory is doing.
 - `sfbox secrets set`, for values such as a Slack app's two tokens.
 - Signing in to `sfbox` with a GitHub account instead of Google.
-- `sfbox dashboard`, `exec`, `gc`, `stop` and `start`, among the rest.
+- `sfbox dashboard`, `code`, `exec` and `gc`, among the rest.
