@@ -247,7 +247,7 @@ Some later pages were written for the previous `sfbox`, a bash script in this re
 |---|---|
 | `sfbox save-credential`, `sfbox box use`, `sfbox box list`, `sfbox box current` | Nothing to save or select. Sign in once with `sfbox login`, then name your box in each command |
 | `sfbox start-session` | `sfbox ssh <box>` |
-| `sfbox preflight`, `sfbox get-box` | `sfbox ssh <box>`, then `systemctl is-active gas-city.service` on the box |
+| `sfbox preflight`, `sfbox get-box` | `sfbox ssh <box>`, then on the box `gas-city-boot-status`, which prints nothing once the box is ready, and `systemctl is-active gas-city.service` |
 | `sfbox exec <command>` | `sfbox ssh <box>`, then run the command there |
 | `sfbox gc <args>` | `sfbox ssh <box>`, then `gc <args>` from your city's directory |
 | `sfbox dashboard` | Nothing yet. On the box, `gc session list` and `bd list` from your city's directory show the agents and the work |
