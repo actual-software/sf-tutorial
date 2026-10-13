@@ -61,7 +61,7 @@ On a cloud box the dashboard isn't open to you yet. The supervisor serves it on 
 
 ### 2. The beads list, and what a bead carries
 
-Find the beads list in the dashboard, then pick the bead you watched move in W4. On a cloud box, `bd list` from inside `ascii-art` gives you the same list.
+Find the beads list in the dashboard, then pick the bead you watched move in W4. On a cloud box, `bd list --all` from inside `ascii-art` gives you the same list. Without `--all` it leaves out closed beads, and yours may be one.
 
 A bead is not just a title and a status. Every field on it is either something a human set or something an agent recorded, and the second kind is what makes a factory traceable.
 
