@@ -173,7 +173,7 @@ inactive
 
 ### How you will drive the box
 
-The factory you build in [W3](./W3-run-your-factory.md) lives on the box, and you drive it from the box's terminal, which `sfbox ssh <box>` opens from your laptop. `gc`, `bd` and the agents all run there. Some later pages still show commands from the previous `sfbox`, such as `sfbox exec`, `sfbox gc` and `sfbox dashboard`. The cloud box guide's [table of stand-ins](../CLOUD_BOX_GUIDE.md#commands-from-the-old-box-guide) says what to run instead.
+The factory you build in [W3](./W3-run-your-factory.md) lives on the box, and you drive it from the box's terminal, which `sfbox ssh <box>` opens from your laptop. `gc`, `bd` and the agents all run there. Anything written for the previous `sfbox`, a bash script, uses commands that sfbox v2 doesn't have, and the cloud box guide's [table of stand-ins](../CLOUD_BOX_GUIDE.md#commands-from-the-old-box-guide) says what to run instead.
 
 ## Running on your own machine (alternative)
 

@@ -29,6 +29,7 @@ You installed a factory an hour ago with one command. This session opens it up. 
 ## Prereqs
 
 - [W3](./W3-run-your-factory.md) complete: `factory1` running, `ascii-art` rig registered and pushed, base factory installed, beads seeded.
+- On a cloud box, every command on this page runs in the box's terminal. If the one W3 left you in has closed, `sfbox ssh <box>` opens a new one.
 
 ## Context
 
@@ -224,7 +225,7 @@ gc session attach mayor
 
 Ask it three things in your own words: what the factory's state is, which agents are available, and what it would work on next if you left it alone. Then detach with `Ctrl-b` then `d`.
 
-> **Detach with `Ctrl-b` then `d`.** `Ctrl-c` kills the mayor's session. If that happens, wait for the supervisor to start a new one, or restart the factory yourself from your laptop with `sfbox exec sudo systemctl restart gas-city.service`.
+> **Detach with `Ctrl-b` then `d`.** `Ctrl-c` kills the mayor's session. If that happens, wait for the supervisor to start a new one, or restart the factory yourself with `gc restart` from inside `factory1`.
 
 **What to notice.** You asked in sentences and got answers about a system rather than about a bead. Nothing you said created work.
 
@@ -310,7 +311,7 @@ channel doc: present
 - **`gc order run` reports the order is not found.** Order names are scoped and two rigs can carry the same name. Pass `--rig <rig>`, or copy the exact name out of `gc order list`.
 - **`gc mail inbox` is empty right after you sent something.** You are reading your own inbox rather than the recipient's. Pass the alias explicitly, as in `gc mail inbox mayor`.
 - **`gc session nudge` says the session is not running.** The pool session exited between your `gc session list` and your nudge, which is normal for ephemeral agents. Re-list and pick a live one, or sling a bead to spawn one.
-- **`gc session attach mayor` says there is no such session.** The mayor is declared by a `[[named_session]]`. Confirm `pr-gate-city` is imported at city scope with `gc import list`, then `gc reload`. From your laptop those are `sfbox gc import list` and `sfbox gc reload`.
+- **`gc session attach mayor` says there is no such session.** The mayor is declared by a `[[named_session]]`. Confirm `pr-gate-city` is imported at city scope with `gc import list`, then `gc reload`.
 - **Attaching leaves you stuck in tmux.** `Ctrl-b` then `d` detaches. `Ctrl-c` interrupts the agent's turn, which is not what you want.
 
 ## What's next
