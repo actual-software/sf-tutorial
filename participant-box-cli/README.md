@@ -1,5 +1,7 @@
 # sfbox — drive your workshop boxes from your laptop
 
+> This page covers the previous `sfbox`, the bash script for the AWS boxes. The cloud boxes now run in Google Cloud with the new `sfbox` from [actual-software/sfbox](https://github.com/actual-software/sfbox), and [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) covers it.
+
 You'll get two cloud boxes for the intensive, Prod and Test. That's so you can try a change on one and compare it against the other, rather than mutating a single environment and hoping for the best. Your instructor owns the AWS account and hands you an SSH key. Everything after that, you do from here.
 
 `sfbox` is one bash script. It saves your box credentials, deploys a factory pack, restarts the service, tunnels the dashboard to your browser, and tells you what the box is up to.
@@ -37,7 +39,7 @@ sfbox box list
 
 ## Everyday commands
 
-The participant command list, with a line each on what it does and when you'd reach for it, is at the bottom of the [box guide](../CLOUD_BOX_GUIDE.md#the-commands-you-will-use). The rest of this page goes deeper on the few that have something worth explaining.
+The box guide lists each of these commands next to what to run with the new `sfbox` in its [table of stand-ins](../CLOUD_BOX_GUIDE.md#commands-from-the-old-box-guide). The rest of this page goes deeper on the few that have something worth explaining.
 
 When something's wrong, start with `sfbox preflight`. It'll tell "my factory is broken" apart from "my ssh is broken", and honestly those two get mistaken for each other constantly.
 

@@ -1,191 +1,264 @@
 # Getting onto your cloud box
 
-A step-by-step for a participant with an SSH key and no AWS account. Your instructor gives you a single command for your box, you paste it in once, and everything after that is copy-paste.
+Your cloud box is a Linux machine in Google Cloud that already carries `gc`, `bd`, `dolt`, `gh` and three coding agents: Claude Code, Codex and Gemini CLI. You reach it with `sfbox` and the Google account your instructor added to the cohort, so there are no key files, IP addresses or SSH settings to keep track of.
 
 Running the two days on your own laptop instead? You don't need this page. Go straight to [W2 Cloud Box and Preflight](./progression/W2-cloud-box-and-preflight.md), whose appendix covers the local path.
 
 ## Contents
 
-- [How the setup runs](#how-the-setup-runs)
-- [Step 1: download the key.pem](#step-1-download-the-key-pem)
-- [Step 2: put sfbox on your PATH](#step-2-put-sfbox-on-your-path)
-- [Step 3: save your box](#step-3-save-your-box)
-- [Step 4: one line in your SSH config](#step-4-one-line-in-your-ssh-config)
-- [Step 5: the first-run login](#step-5-the-first-run-login)
-- [Step 6: check it worked](#step-6-check-it-worked)
-- [When something looks wrong](#when-something-looks-wrong)
-- [The commands you will use](#the-commands-you-will-use)
+- [Before you start](#before-you-start)
+- [Setup at a glance](#setup-at-a-glance)
+- [Step 1: install sfbox](#step-1-install-sfbox)
+- [Step 2: sign in](#step-2-sign-in)
+- [Step 3: create your box](#step-3-create-your-box)
+- [Step 4: open the box's terminal](#step-4-open-the-boxs-terminal)
+- [Step 5: sign in to your coding agent](#step-5-sign-in-to-your-coding-agent)
+- [Step 6: sign in to GitHub on the box](#step-6-sign-in-to-github-on-the-box)
+- [Step 7: back to the tutorial](#step-7-back-to-the-tutorial)
+- [Troubleshooting](#troubleshooting)
+- [Commands from the old box guide](#commands-from-the-old-box-guide)
+- [Coming later](#coming-later)
 
-## How the setup runs
+## Before you start
+
+- **A Mac or a Linux computer.** Windows works too, with its own install steps in the [sfbox README](https://github.com/actual-software/sfbox#windows).
+- **The Google account your instructor added.** Only accounts on the cohort's list can sign in.
+- **A browser on that same computer.** The sign-in hands back to `sfbox` on the computer that started it, so finishing it on your phone won't work.
+- **Your own account for at least one coding agent:** a Claude subscription (Pro, Max, Team or Enterprise) for Claude Code, a ChatGPT account for Codex, or a Google account for Gemini CLI. Sign in with the account itself rather than an API key, because `gc init` checks each agent's sign-in and refuses API keys.
+
+## Setup at a glance
 
 ```mermaid
 flowchart TD
-    A[Instructor sends a single command and a *.pem] --> B[1 · Download the key.pem]
-    B --> C[2 · Put sfbox on your PATH]
-    C --> D[3 · Save the credential]
-    D --> E[4 · Include the SSH config]
-    E --> F[5 · First-run login<br/>needs a real terminal]
-    F --> G[6 · Check it worked]
-    G --> H[Start the tutorial]
+    A[1 · Install sfbox] --> B[2 · Sign in with Google]
+    B --> C{Did your instructor<br/>make your box?}
+    C -->|No| D[3 · Create your box]
+    C -->|Yes| E[4 · Open the box's terminal]
+    D --> E
+    E --> F[5 · Sign in to your coding agent]
+    F --> G[6 · Sign in to GitHub]
+    G --> H[7 · Back to W2]
 ```
 
-Five of those six steps are copy-paste. Step 5 isn't, and it's where the time goes, so read it before you get there rather than when you're already in it.
+Steps 1 to 4 run on your laptop and take a few minutes, most of it waiting for a new box. Steps 5 and 6 run in the box's terminal. The box has no browser, so each sign-in there gives you a link to open on your laptop and a code to carry between the two.
 
-## Step 1: download the key.pem
+## Step 1: install sfbox
 
-Download the `key.pem` file the instructor gave you. Store it in `$HOME/Downloads` or somewhere else you can access it quickly. Export this as `$SFI_KEY`:
-
-```bash
-export SFI_KEY=$HOME/Downloads/key.pem
-```
-
-NOw lock the key down, since SSH won't touch a key other people could read.
-
-```bash
-chmod 600 "$SFI_KEY"
-```
-
-## Step 2: put sfbox on your PATH
-
-`sfbox` is one bash script, and it ships in this repo under `participant-box-cli/`. There's nothing to build, and nothing to install past what you've already got: bash, ssh, and curl.
-
-Put `sfbox` on your `PATH`, from the directory holding your clone.
+On your laptop:
 
 **Copy and paste**
 
 ```bash
-cd $HOME && mkdir software-factory-intensive
-cd software-factory-intensive
-export SFI_PATH="$(pwd)"
-git clone https://github.com/actual-software/sf-tutorial.git
-
-export PATH="$SFI_PATH/sf-tutorial/participant-box-cli:$PATH"
-sfbox --help
+curl -fsSL https://github.com/actual-software/sfbox/releases/latest/download/install.sh | sh
 ```
 
-Add both of these environment variables to your shell for future use:
-
-**Copy and paste** (macOS / zsh)
-
-```bash
-cat <<EOF >> ~/.zshrc
-export SFI_KEY=$HOME/Downloads/key.pem
-export SFI_PATH="$(pwd)"
-export PATH="$PWD/sf-tutorial/participant-box-cli:$PATH"
-EOF
-```
-
-**Copy and paste** (Linux / bash)
-
-```bash
-cat <<EOF >> ~/.bashrc
-export SFI_KEY=$HOME/Downloads/key.pem
-export SFI_PATH="$(pwd)"
-export PATH="$PWD/sf-tutorial/participant-box-cli:$PATH"
-EOF
-```
-
-If `sfbox --help` prints usage, you're set. If you get `command not found`, that export didn't take in this terminal. Run it again in the terminal you're actually working in, and add it to your shell profile so a restart doesn't undo it.
-
-## Step 3: save your box
-
-You will be given a command that looks like the following. Run it to save the credential to your box for future use:
-
-**Copy and paste**
-
-```bash
-sfbox save-credential --box <box id> --host <host ip> --key "$SFI_KEY" --fingerprint <fingerprint sha> --label test
-```
-
-Two things get checked here. It fetches the key your box is actually offering and refuses to save anything that doesn't match your fingerprint, so your very first connection is authenticated rather than trusted blindly. It then makes one test connection to confirm the `.pem` you passed is the one that opens that box. If you were sent keys for more than one box, this is where you find out you're holding the wrong one, rather than three steps further on.
-
-If it reports a fingerprint mismatch, stop and tell your instructor. Don't work around it. If it reports a wrong key, check which `.pem` belongs to the right box ID and re-run with that file.
-
-Saving a credential also makes that box current, so if you've only got the one box then that's box selection dealt with for the rest of the two days and you can forget the flag exists.
-
-## Step 4: one line in your SSH config
-
-`sfbox` writes its own SSH config and never edits yours. Add this at the **top** of `~/.ssh/config`:
-
-```
-Include ~/.gascity/ssh_config
-```
-
-`sfbox` works without it, but the Include helps with a few quality-of-life operations: plain `ssh`, `scp`, `rsync` and port-forwards addressed to your box by its ID.
-
-## Step 5: the first-run login
-
-**Copy and paste**
-
-```bash
-sfbox start-session
-sudo gas-city-login
-```
-
-You'll be walked through GitHub sign-in, which asks which credential you want to give the box: a browser grant against your whole account, or a token you mint yourself and paste. A bare Enter takes the browser grant. If you'd rather not grant the CLI that much, mint the token before you start this step, and see [the preflight page](./progression/W2-cloud-box-and-preflight.md#signing-the-box-in-with-a-token) for what to scope it for.
-
-Then, you may choose to configure Claude Code (`claude`), Codex (`codex`), or Gemini CLI (`gemini`) by running the respective command. Note that the curriculum assumes Claude Code, so you will need to replace a provider string `claude` to your alternative choice when configuring the software factory. See an instructor for help if needed.
-
-**Your box has no custom factory on it when this finishes, and that is deliberate.** It arrives with the environment and nothing more: the `gc`, `bd` and `dolt` toolchain, your GitHub credential, and the Claude, Codex and Gemini CLIs. There is a `factory-packs` directory that clones this `sf-tutorial` repository but we will use your custom `sf-tutorial` branches instead.
-
-## Step 6: check it worked
-
-**Copy and paste**
-
-```bash
-exit # exit out of the cloud session
-sfbox preflight
-```
+The script picks the build for your computer, checks it against the release's checksums and puts `sfbox` in `~/.local/bin`.
 
 **Expected output**
 
 ```text
-==> Checking 'alice-test' (ubuntu@203.0.113.10) ...
-==>   ssh            reachable
-==>   gc             installed
-==>   gas-city.service  inactive — no city on this box yet
-==>   Nothing is broken. This box supplies the environment and you build the
-==>   city yourself, so the service stays down until there is one to run.
+==> Downloading sfbox v2.0.0 for darwin/arm64
+==> Installed sfbox v2.0.0 at /Users/you/.local/bin/sfbox
+==> Next, sign in: sfbox login
 ```
 
-Head back to the tutorial from [W2 Cloud Box and Preflight](./progression/W2-cloud-box-and-preflight.md) once this is complete.
+If `~/.local/bin` isn't on your `PATH` yet, it ends this way instead, with the line that adds it for your shell:
 
-## When something looks wrong
+```text
+==> /Users/you/.local/bin isn't on your PATH. Add it with this line, then open a new terminal:
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+==> Then sign in: sfbox login
+```
 
-- **`command not found: sfbox`.** The `PATH` export from step 2 didn't take in this terminal. Run it again here, then add it to your shell profile.
-- **`Host key verification failed`.** You're bypassing the config `sfbox` wrote. Use `-F ~/.gascity/ssh_config` as shown, or add the `Include` line from step 4. Don't pass the `.pem` directly with `-i`.
-- **`save-credential` reports a fingerprint mismatch.** Stop and tell your instructor. If your box was genuinely rebuilt, they'll give you the new fingerprint to pass with `--rotate`.
-- **`Permission denied (publickey)`.** Your box is right and reachable, and it's refusing the key you're offering. That almost always means you're holding a `.pem` for a different box. Re-run `sfbox save-credential` with the key you believe belongs to `$SFI_BOX`; it makes a test connection before saving and will say plainly whether that key opens the box. To settle it against the instructor's copy, run `ssh-keygen -lf "$SFI_KEY"` and send them the `SHA256:` line, which they can compare against the box's key pair. Don't ask for the box to be rebuilt over this — the box is fine, and rebuilding would destroy a working one.
-- **`gas-city-login needs an interactive terminal`.** You're running it somewhere without a real terminal.
-- **The service says it's waiting on first-run login.** Expected if you haven't finished step 5. `sfbox preflight` says so in as many words and names `sudo gas-city-login`.
-- **The service says there's no city on the box yet.** Also expected, and not something to fix. Your box ships the environment and leaves the factory to you; the service starts once you have built one for it to supervise.
-- **Anything else.** Run `sfbox preflight --box "$SFI_BOX"`. It checks SSH, then `gc`, then the service, stopping at the first thing that fails, so it tells you which layer to look at instead of leaving you guessing.
+Run that line, open a new terminal, and check that `sfbox` answers:
 
-## The commands you will use
-
-Every command acts on your current box. Switch which one that is with `sfbox box use <boxId>`, or override a single command with `--box <boxId>`.
-
-| Command | What it does | When you reach for it |
-|---|---|---|
-| `sfbox save-credential` | Saves a box's key and pins its host key | Once per box, at setup |
-| `sfbox box list` | Shows your boxes and marks the current one with `*` | You've got more than one and forgot which is active |
-| `sfbox box use <boxId>` | Makes a box the default for later commands | Switching between your boxes |
-| `sfbox box current` | Prints the current box | A one-line check before you change something |
-| `sfbox box forget <boxId>` | Drops a box locally, leaving the box itself untouched | After the event, or when a box is reassigned |
-| `sfbox preflight` | Checks ssh, then `gc`, then the service, stopping at the first failure | First thing to run whenever anything looks wrong |
-| `sfbox get-box` | Service state, running sessions, and recent log (this will take a minute to run) | Seeing what the box is actually doing |
-| `sfbox start-session` | Opens a shell on the box | Running something on the box by hand |
-| `sfbox dashboard` | Tunnels the dashboard to `http://127.0.0.1:8372` | Watching your factory work in a browser |
-| `sfbox exec <command>` | Runs one command on the box and hands back its exit status | Restarting the service, or anything without a command of its own |
-| `sfbox gc <args>` | Runs a `gc` command inside the box's city | Importing a pack, listing sessions, reloading config |
-
-The last two are the ones you reach for most after setup, because between them they cover everything the list above doesn't:
+**Copy and paste**
 
 ```bash
-sfbox exec sudo systemctl restart gas-city.service
-sfbox gc import add https://github.com/<org>/<repo>/tree/<ref>/<subdir> --rig <rig>
+sfbox version
 ```
 
-Your arguments arrive the way you typed them, so quotes and spaces survive. To pipe or redirect, ask for a shell: `sfbox exec bash -lc 'gc session list | wc -l'`. Nothing is checked on your behalf, and nothing is rolled back if it goes wrong: what you type is what runs.
+## Step 2: sign in
 
-For more details about the `sfbox` CLI tool, see [`participant-box-cli/README.md`](./participant-box-cli/README.md).
+**Copy and paste**
+
+```bash
+sfbox login
+```
+
+Your browser opens on the sign-in page. Choose **Sign in with Google** and pick the account your instructor added. When the page says *You're signed in*, close the tab and go back to your terminal.
+
+**Expected output**
+
+```text
+==> Opening your browser to sign in. If nothing opens, visit:
+    https://control-plane-….run.app/login/cli?…
+==> Signed in as you@example.com until Wed 19:42.
+```
+
+The last line says when your session ends. After that, any `sfbox` command tells you to sign in again, and `sfbox login` is all it takes.
+
+## Step 3: create your box
+
+If your instructor already made a box for you, skip to [step 4](#step-4-open-the-boxs-terminal) and use the name they gave you.
+
+Otherwise, pick a name for your box: 3 to 26 lowercase letters, digits and single hyphens, starting with a letter and ending with a letter or digit. Everyone's boxes share one list of names, so make yours personal, such as your first name followed by `-sfi`.
+
+**Copy and paste**, with your name in place of `ada-sfi`
+
+```bash
+sfbox create ada-sfi
+```
+
+**Expected output** (trimmed)
+
+```text
+==> Creating box ada-sfi. Setting up its accounts, disk and VM takes a minute or two.
+==>   service accounts
+==>   data disk
+==>   vm
+...
+==>   [4/4] Writing /etc/gas-city.env
+==> Box ada-sfi is ready. Open its terminal with: sfbox ssh ada-sfi
+```
+
+If the command is interrupted before the box is ready, run the same `sfbox create` again. It picks the box back up and keeps watching.
+
+## Step 4: open the box's terminal
+
+**Copy and paste**
+
+```bash
+sfbox ssh ada-sfi
+```
+
+You land in a shell on the box as the `ubuntu` user, in `/home/ubuntu`:
+
+```text
+ubuntu@box-ada-sfi:~$
+```
+
+A brand-new box takes a minute or two before it lets you in. `sfbox ssh` says so and keeps trying for a few minutes, so let it run:
+
+```text
+==> Box ada-sfi's access grants haven't reached Google yet, which takes a new box a minute or two. Trying again until 9:42AM.
+```
+
+In a new box's first minute, `sfbox ssh` can also stop with an error ending in `Run the same command again to resume.` Wait a minute, then run `sfbox ssh` again. The second try works.
+
+Type `exit` to leave. The box keeps running, and everything under `/home/ubuntu` is still there the next time you connect.
+
+## Step 5: sign in to your coding agent
+
+Do this in the box's terminal, for the agent you'll use. You can sign in to more than one. The curriculum's examples use Claude Code, so if you use Codex or Gemini CLI, put `codex` or `gemini` where a page sets the provider to `claude`, and ask an instructor if you're not sure where.
+
+The steps below were checked on the agent versions the box ships.
+
+### Claude Code
+
+1. Run `claude`.
+2. Pick a text style and press Enter.
+3. At **Select login method**, choose **1. Claude account with subscription**.
+4. Copy the link under *Browser didn't open? Use the url below to sign in* and open it in your laptop's browser. It wraps over several lines, so copy all of them.
+5. Sign in. The page then shows a code: copy it, paste it at **Paste code here if prompted**, and press Enter.
+6. Answer the questions that follow, such as whether you trust this folder, then type `/exit`.
+
+### Codex
+
+1. Run `codex login --device-auth`.
+2. Open https://auth.openai.com/codex/device in your laptop's browser and sign in with your ChatGPT account.
+3. Enter the one-time code from the terminal. It expires after 15 minutes.
+
+Use `--device-auth` on the box. Plain `codex login` hands its sign-in back to an address on the box itself, which your laptop's browser can't reach, and Codex says as much when you run it there.
+
+### Gemini CLI
+
+1. Run `gemini`.
+2. When it asks whether you trust the files in this folder, choose **1. Trust folder (ubuntu)**. Gemini CLI restarts, which is expected.
+3. At **How would you like to authenticate for this project?**, choose **1. Sign in with Google**.
+4. Copy the link after *Please visit the following URL to authorize the application*, open it in your laptop's browser and sign in.
+5. Copy the authorization code Google shows, paste it at **Enter the authorization code**, and press Enter.
+6. Type `/quit` when you're done.
+
+### Check the sign-in
+
+Run the line for each agent you signed in to:
+
+**Copy and paste**
+
+```bash
+claude -p 'Reply with exactly: FACTORY_OK'
+codex login status
+gemini -p 'Reply with exactly: FACTORY_OK'
+```
+
+Claude and Gemini each answer `FACTORY_OK`, the same check the box's own setup runs. Codex prints `Logged in using ChatGPT`.
+
+## Step 6: sign in to GitHub on the box
+
+Your factory pushes to GitHub from the box, so `gh` needs your account there as well.
+
+**Copy and paste**
+
+```bash
+gh auth login
+```
+
+Press Enter at each question to take the defaults: **GitHub.com**, **HTTPS**, **Yes** to authenticating Git, and **Login with a web browser**. It then prints a one-time code. Open https://github.com/login/device in your laptop's browser, enter that code and approve the request. Along the way you'll see two warnings, one saying `gh` couldn't copy the code to a clipboard and one saying it couldn't open a browser, and both are expected on a box that has neither.
+
+Rather not grant the CLI your whole account? Paste a token instead, as [W2's GitHub sign-in section](./progression/W2-cloud-box-and-preflight.md#1-sign-in-to-github) describes, since those steps work the same on the box.
+
+Check it:
+
+**Copy and paste**
+
+```bash
+gh auth status
+```
+
+It should name your GitHub account.
+
+## Step 7: back to the tutorial
+
+That's the box ready. Head back to [W2's cloud box section](./progression/W2-cloud-box-and-preflight.md#the-cloud-box-recommended) and run its check.
+
+The box has no factory on it yet, and that's deliberate: it brings the toolchain and the agents, and [W3](./progression/W3-run-your-factory.md) is where you build the factory.
+
+## Troubleshooting
+
+- **`command not found: sfbox`.** The `PATH` line from step 1 hasn't reached this terminal. Run the line the installer printed, then open a new terminal.
+- **The installer says another `sfbox` comes first on your `PATH`.** That's usually the older bash `sfbox` from this repo's `participant-box-cli/`. Delete the line that adds `participant-box-cli` to your `PATH` from `~/.zshrc` or `~/.bashrc`, then open a new terminal.
+- **`you are not signed in`, or `your session expired`.** Run `sfbox login`.
+- **The sign-in page refuses your Google account.** That account isn't on the cohort's list. Tell your instructor which account you used.
+- **`no sign-in came back`.** The browser sign-in didn't finish in time, or it finished on another device. Run `sfbox login` again and finish it in a browser on this computer.
+- **`the name "…" is taken; pick another`.** Someone else has a box with that name, so choose another.
+- **`you already have … boxes, the most a person can own`.** Use a box you already have. `sfbox` can't delete boxes yet, so ask your instructor if one needs to go.
+- **`box … is provisioning; wait until it is ready`.** The box is still being made. Run `sfbox create` with its name to watch it finish. If that says the box is busy, the create making it is still running, so wait a minute and run it again.
+- **`Box …'s access grants haven't reached Google yet`.** Normal for a new box. Let `sfbox ssh` keep trying.
+- **`sfbox ssh` fails in a new box's first minute, ending `Run the same command again to resume.`** Wait a minute, then run `sfbox ssh` again.
+- **`box … is TERMINATED, so nothing on it can answer`.** Your box is stopped. Ask your instructor to start it, since `sfbox` can't start boxes yet.
+- **The terminal freezes after your laptop sleeps or changes Wi-Fi.** Close it and run `sfbox ssh` again. Your files on the box are where you left them.
+- **An agent rejects its code.** Codes are single-use and expire. Start that agent's sign-in again for a fresh one.
+
+## Commands from the old box guide
+
+Some later pages were written for the previous `sfbox`, a bash script in this repo, and still use its commands. Until they're updated, here's what to run in their place:
+
+| Earlier pages say | Run instead |
+|---|---|
+| `sfbox save-credential`, `sfbox box use`, `sfbox box list`, `sfbox box current` | Nothing to save or select. Sign in once with `sfbox login`, then name your box in each command |
+| `sfbox start-session` | `sfbox ssh <box>` |
+| `sfbox preflight`, `sfbox get-box` | `sfbox ssh <box>`, then on the box `gas-city-boot-status`, which prints nothing once the box is ready, and `systemctl is-active gas-city.service` |
+| `sfbox exec <command>` | `sfbox ssh <box>`, then run the command there |
+| `sfbox gc <args>` | `sfbox ssh <box>`, then `gc <args>` from your city's directory |
+| `sfbox dashboard` | Nothing yet. On the box, `gc session list` and `bd list` from your city's directory show the agents and the work |
+
+## Coming later
+
+These parts of `sfbox` are designed and not released yet. Until they are, the steps above and your instructor cover them:
+
+- `sfbox setup`, which sets up and starts a factory on the box for you. During the intensive you build yours by hand in W3, so you won't miss it.
+- `sfbox status` and `sfbox list`, for your boxes and how each one's factory is doing.
+- `sfbox secrets set`, for values such as a Slack app's two tokens.
+- Signing in to `sfbox` with a GitHub account instead of Google.
+- `sfbox dashboard`, `exec`, `gc`, `stop` and `start`, among the rest.

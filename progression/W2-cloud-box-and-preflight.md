@@ -12,10 +12,10 @@
   - [2. Install the pinned dependencies](#2-install-the-pinned-dependencies)
   - [3. Run preflight](#3-run-preflight)
 - [The cloud box (recommended)](#the-cloud-box-recommended)
-  - [Run preflight locally once complete](#run-preflight-locally-once-complete)
+  - [Check the box once complete](#check-the-box-once-complete)
   - [How you will drive the box](#how-you-will-drive-the-box)
 - [Running on your own machine (alternative)](#running-on-your-own-machine-alternative)
-  - [1. Sign in to GitHub](#4-sign-in-to-github)
+  - [1. Sign in to GitHub](#1-sign-in-to-github)
 - [Troubleshooting](#troubleshooting)
 - [What's next](#whats-next)
 
@@ -141,44 +141,39 @@ PREFLIGHT: PASS
 
 ## The cloud box (recommended)
 
-Follow [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) from here once you have cloud box credentials from the instructor.
+Follow [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) from here. All it needs from your instructor is your Google account on the cohort's list, plus your box's name if they made the box for you.
 
-### Run preflight locally once complete
+### Check the box once complete
 
-**Copy and paste**
-
-```bash
-sfbox preflight
-```
-
-**Expected output**
-
-```text
-==> Checking 'factory-cloud-aborn-2' (ubuntu@34.200.237.69) ...
-==>   ssh            reachable
-==>   gc             installed
-==>   gas-city.service  inactive — no city on this box yet
-==>   Nothing is broken. This box supplies the environment and you build the
-==>   city yourself, so the service stays down until there is one to run.
-```
-
-### How you will drive the box
-
-The factory you build in [W3](./W3-run-your-factory.md) lives on the box, and you drive it from your laptop. `sfbox exec <command>` runs any command there. `sfbox gc <args>` runs a `gc` command inside the box's city once there is one, so you never have to remember where the city lives. When you would rather work on the box directly, `sfbox start-session` opens a full shell.
+Open the box's terminal from your laptop, with your box's name in place of `<box>`:
 
 **Copy and paste**
 
 ```bash
-sfbox exec systemctl is-active gas-city.service
+sfbox ssh <box>
 ```
 
-**Expected output**
+Then, on the box:
+
+**Copy and paste**
+
+```bash
+gc version
+gh auth status
+systemctl is-active gas-city.service
+```
+
+`gc version` prints the version the box ships with, and `gh auth status` names the GitHub account you signed in with in the guide. The last command answers:
 
 ```text
 inactive
 ```
 
-`inactive` is the right answer today, and the same thing preflight just told you in more words: there is no city on the box yet, so the service has nothing to supervise. W3 is where you build it one.
+`inactive` is the right answer today. There is no city on the box yet, so the factory service has nothing to supervise. W3 is where you build it one.
+
+### How you will drive the box
+
+The factory you build in [W3](./W3-run-your-factory.md) lives on the box, and you drive it from the box's terminal, which `sfbox ssh <box>` opens from your laptop. `gc`, `bd` and the agents all run there. Some later pages still show commands from the previous `sfbox`, such as `sfbox exec`, `sfbox gc` and `sfbox dashboard`. The cloud box guide's [table of stand-ins](../CLOUD_BOX_GUIDE.md#commands-from-the-old-box-guide) says what to run instead.
 
 ## Running on your own machine (alternative)
 
@@ -205,7 +200,7 @@ gh auth setup-git
 ## Troubleshooting
 
 - **`PATH is missing ~/.local/bin`.** Run `export PATH="$HOME/.local/bin:$PATH"`, then add the same line to your shell rc so a new terminal keeps it.
-- **`gh auth: not authenticated`.** Run `gh auth login` and pick HTTPS, or paste a personal access token — [Sign in to GitHub](#4-sign-in-to-github) covers both token types and the `gh auth setup-git` step they need. You need this before the rig gets pushed, which happens in the first hands-on block.
+- **`gh auth: not authenticated`.** Run `gh auth login` and pick HTTPS, or paste a personal access token — [Sign in to GitHub](#1-sign-in-to-github) covers both token types and the `gh auth setup-git` step they need. You need this before the rig gets pushed, which happens in the first hands-on block.
 - **`bd: not found` right after `deps.sh` said it installed.** Almost always the `PATH` problem above. Confirm with `ls ~/.local/bin`.
 - **A checksum mismatch during `deps.sh`.** A partial download. Re-run it; the script fetches to a temporary directory and cleans up after itself.
 - **`gc: not found`, or a `gc` older than the pin.** Run `./deps.sh`, which builds `gc` at the pinned commit. The build needs Go on your `PATH` — install it from [go.dev/dl](https://go.dev/dl/) first if the script says so. A `gc` *newer* than the pin passes: the check is a floor, not an exact match.
