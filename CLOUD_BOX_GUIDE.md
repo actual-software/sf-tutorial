@@ -16,6 +16,7 @@ Running the two days on your own laptop instead? You don't need this page. Go st
 - [Step 6: sign in to GitHub on the box](#step-6-sign-in-to-github-on-the-box)
 - [Step 7: back to the tutorial](#step-7-back-to-the-tutorial)
 - [Everyday commands](#everyday-commands)
+- [Your boxes in a browser](#your-boxes-in-a-browser)
 - [Troubleshooting](#troubleshooting)
 - [Commands from the old box guide](#commands-from-the-old-box-guide)
 - [Coming later](#coming-later)
@@ -53,13 +54,13 @@ On your laptop:
 curl -fsSL https://github.com/actual-software/sfbox/releases/latest/download/install.sh | sh
 ```
 
-The script picks the build for your computer, checks it against the release's checksums and puts `sfbox` in `~/.local/bin`.
+The script picks the build for your computer, checks it against the release's checksums and puts `sfbox` in `~/.local/bin`. Already installed an earlier `sfbox`? Run the same line again, and it replaces it with the latest release.
 
 **Expected output**
 
 ```text
-==> Downloading sfbox v2.1.0 for darwin/arm64
-==> Installed sfbox v2.1.0 at /Users/you/.local/bin/sfbox
+==> Downloading sfbox v2.2.0 for darwin/arm64
+==> Installed sfbox v2.2.0 at /Users/you/.local/bin/sfbox
 ==> Next, sign in: sfbox login
 ```
 
@@ -252,10 +253,27 @@ These run on your laptop and work only on your own boxes. `sfbox help` lists the
 | `sfbox start <box>` | Starts it again. Give it about a minute to boot before `sfbox ssh` |
 | `sfbox download <box> <folder>` | Copies a folder from the box to your laptop, leaving out sign-in files |
 | `sfbox delete <box>` | Deletes the box, once you've typed its name to confirm |
+| `sfbox ui` | Opens your boxes in a browser on your laptop, with the same status, stop, start, download and delete |
 
 - **`status`'s `Health` line looks only for a factory in `~/city`.** The one you build in W3 lives in `~/software-factory-intensive/factory1`, so that line keeps reading `service=inactive` and `city=no` while yours runs. Check yours from its own directory on the box with `gc session list`.
 - **`download` reads a folder name without a leading `/` from your home on the box, `/home/ubuntu`.** `sfbox download ada-sfi software-factory-intensive/factory1` copies that folder into `./factory1` on your laptop. `--to <folder>` picks another local name, and an existing local folder is replaced only with `--force`. The copy leaves out every `.ssh` folder, each coding agent's sign-in file, `gh`'s token and `~/city/.env`. A `.env` in your W3 factory's folder is copied like any other file.
 - **`delete` takes two or three minutes** and removes the box's VM, disk and accounts. A snapshot of its disk is kept for now, so an instructor can still recover files, but download anything you want to keep first.
+
+## Your boxes in a browser
+
+`sfbox ui` shows your boxes on a web page instead of in the terminal. It runs on your laptop and needs `sfbox` v2.2.0 or later, so update with the step 1 line if `sfbox version` shows an older one.
+
+**Copy and paste**
+
+```bash
+sfbox ui
+```
+
+It opens your browser on a page that lists each box with its status and health, and has buttons for stop, start, downloading a folder and delete. Delete asks you to type the box's name first, the same as `sfbox delete`. The page has no terminal, so each box shows its `sfbox ssh <box>` line with a **Copy** button to paste into yours.
+
+- **The page lives on your laptop.** Its address works only on this computer and only while `sfbox ui` runs, so leave that terminal open and press Ctrl-C there when you're done.
+- **It uses your `sfbox login`.** If you aren't signed in, or your session runs out, it signs you in the same way.
+- **Downloads land in your `Downloads` folder** by default, as `<box>-<folder>`. Type another folder in **Save to** to change that, and tick the box to replace one that already exists. The folder on the box is read from `/home/ubuntu`, as `sfbox download` reads it, and the same sign-in files are left out.
 
 ## Troubleshooting
 
@@ -276,6 +294,8 @@ These run on your laptop and work only on your own boxes. `sfbox help` lists the
 - **`… already exists; pass --force to replace it, or name another folder with --to`.** `sfbox download` found a folder where it would put the copy. Name another with `--to`, or pass `--force` to replace it.
 - **The terminal freezes after your laptop sleeps or changes Wi-Fi.** Close it and run `sfbox ssh` again. Your files on the box are where you left them.
 - **An agent rejects its code.** Codes are single-use and expire. Start that agent's sign-in again for a fresh one.
+- **`IAP reached box … but nothing answered on port 22`.** The box was started moments ago and is still booting. Give it a minute, then try again.
+- **The `sfbox ui` page says to open the address `sfbox ui` printed.** That address belongs to an `sfbox ui` that has stopped, or the page was opened some other way. Run `sfbox ui` again, or open the address it printed in your terminal.
 
 ## Commands from the old box guide
 
