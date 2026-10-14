@@ -76,9 +76,9 @@ match against.
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 mkdir -p .github
-cp $SFI_PATH/sf-tutorial/artifacts/github/CODEOWNERS \
+cp "$SFI_PATH/sf-tutorial/artifacts/github/CODEOWNERS" \
   .github/CODEOWNERS
 ```
 
@@ -128,7 +128,7 @@ Read the script before running it.
 **Copy and paste**
 
 ```bash
-cat $SFI_PATH/sf-tutorial/artifacts/github/branch-protection.sh
+cat "$SFI_PATH/sf-tutorial/artifacts/github/branch-protection.sh"
 ```
 
 What to notice:
@@ -164,7 +164,7 @@ A dry run prints what would happen without making any API calls. Sanity-check
 ```bash
 export OWNER=$GITHUB_USERNAME
 export REPO=ascii-art
-DRY_RUN=1 $SFI_PATH/sf-tutorial/artifacts/github/branch-protection.sh
+DRY_RUN=1 "$SFI_PATH/sf-tutorial/artifacts/github/branch-protection.sh"
 ```
 
 You should see two `[DRY_RUN] gh api ...` lines on stderr (one for `main`,
@@ -178,7 +178,7 @@ Drop `DRY_RUN`:
 **Copy and paste**
 
 ```bash
-$SFI_PATH/sf-tutorial/artifacts/github/branch-protection.sh
+"$SFI_PATH/sf-tutorial/artifacts/github/branch-protection.sh"
 ```
 
 Confirm in the GitHub UI:
@@ -215,7 +215,7 @@ Sling the next letter — `f.md`:
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement f.md$" | awk '{print $2}')
 bd show $BEAD_ID
 
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/review-loop-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -226,7 +226,7 @@ when `pr_number` is set, attempt to merge **without a review**:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr merge "$PR" --merge
 ```

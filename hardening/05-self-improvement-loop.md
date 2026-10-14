@@ -167,7 +167,7 @@ If you want the scheduled form rather than the hand-run one, `self-improvement` 
 
 ```bash
 cd "$SFI_PATH/factory1"
-gc import add $SFI_PATH/sf-tutorial/artifacts/packs/self-improvement
+gc import add "$SFI_PATH/sf-tutorial/artifacts/packs/self-improvement"
 ```
 
 It ships a daily order, a three-step audit workflow, and one small script. Read [its README](../artifacts/packs/self-improvement/README.md) before installing, because it gates on an environment variable, dispatches its workflow directly instead of asking an agent to run it, and takes its cadence from the last completed pass rather than the last time the order fired.

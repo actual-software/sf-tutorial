@@ -300,7 +300,7 @@ pr-gate formula:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/pr-gate-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -345,7 +345,7 @@ gc session attach <polecat-session>
 ```
 
 WARNING: a `tmux` session will open, but if you give it a prompt this will interrupt
-its session. When you are done, detach from the session by pressing `Ctrl+b` and then `d`.
+its session. When you are done, detach from the session by pressing `Ctrl-b` and then `d`.
 
 If you haven't noticed progress after a minute or two, you can also nudge the agent to prompt
 it without attaching to the session. This is the same as attaching to the session,
@@ -463,7 +463,7 @@ Open the PR and look at the diff:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view $PR
 gh pr view $PR --web   # open in browser
@@ -479,16 +479,16 @@ gate clear, manually merge the PR:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement b\.md$" | awk '{print $2}')
 
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/pr-gate-rig.polecat $BEAD_ID --on mol-polecat-pr
 
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement c\.md$" | awk '{print $2}')
 
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/pr-gate-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -535,7 +535,7 @@ Three new commits on `origin/main` from the polecat/refinery → PR cycle:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 git fetch origin && git pull
 git log --oneline origin/main -3
 ```
@@ -552,7 +552,7 @@ Three pull requests exist on the rig's GitHub repo:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 gh pr list --state=merged --limit 5
 ```
 

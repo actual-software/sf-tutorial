@@ -3,7 +3,7 @@
 An optional pack that holds security work at the door until somebody has written down which resources it touches and what covers each of them. Install it on top of a working base factory:
 
 ```bash
-gc import add --rig <rig-name> $SFI_PATH/sf-tutorial/artifacts/packs/security-audit-matrix
+gc import add --rig <rig-name> "$SFI_PATH/sf-tutorial/artifacts/packs/security-audit-matrix"
 ```
 
 That is the whole install. The pack imports `architect-rig`, the base factory's top node, so it composes on a `base-factory` install with nothing else added and in any order relative to the other options.
@@ -48,7 +48,7 @@ bd create "Add row-level security to the reports table" \
 Pour the gate on it. The architect is the agent that pours it, because this pack ships no agent of its own and the architect is the base factory's reader-and-judge:
 
 ```bash
-gc sling <rig-name>/architect-rig.architect <bead-id> --on mol-audit-matrix-gate
+gc sling <rig-name>/base-factory.architect <bead-id> --on mol-audit-matrix-gate
 ```
 
 The bead comes back `blocked`, carrying `audit_matrix_feedback` that names the four columns. Now add the table to the description, set the bead back to `open`, and pour the formula again. It routes to the polecat pool, and the polecat picks the work up as usual.

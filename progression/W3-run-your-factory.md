@@ -67,7 +67,7 @@ flowchart TD
 
 ## Setup
 
-Every step on this page runs in the terminal W2 left you in: the box's terminal that `sfbox ssh <box>` opens, or a terminal on your own machine. The commands are the same in both. The expected output comes from a cloud box, and wherever the older `gc` that W2 installs on your own machine prints something different that matters, the step says so. If that terminal has closed, open a new one the same way. `echo "$SFI_PATH"` should print your workspace, `/home/ubuntu/software-factory-intensive` on a box.
+Every step on this page runs in the terminal W2 left you in: the box's terminal that `sfbox ssh <box>` opens, or a terminal on your own machine. The commands are the same in both, apart from opening the dashboard in [Try It step 4](#4-watch-it-work). The expected output comes from a cloud box, and wherever the older `gc` that W2 installs on your own machine prints something different that matters, the step says so. If that terminal has closed, open a new one the same way. `echo "$SFI_PATH"` should print your workspace, `/home/ubuntu/software-factory-intensive` on a box.
 
 ### 1. Set your identity and beads role
 
@@ -241,7 +241,7 @@ Register the rig as a **sibling** of the city rather than a child. This is the p
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 
 mkdir ../ascii-art
 gc rig add ../ascii-art ascii-art
@@ -471,13 +471,13 @@ This is also the moment to see that the factory carries all five Gas City primit
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 bd status
 ```
 
-If that errors with `no beads database found`, run `bd init --prefix ascii-art` yourself. It should look like this:
+If that errors with `no beads database found`, run `bd init --prefix aa` yourself, so the rig keeps the `aa` prefix `gc rig add` gave it. It should look like this:
 
-```bash
+```text
 📊 Issue Database Status
 
 Summary:
@@ -487,6 +487,8 @@ Summary:
   Blocked:                0
   Closed:                 0
   Ready to Work:          0
+
+For more details, use 'bd list' to see individual issues.
 ```
 
 **Copy and paste**
@@ -520,11 +522,11 @@ To start work by hand you *sling* a bead at an agent. Two equivalent forms:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 bd list --type=epic                 # find the Letters a-m epic
 bd list --parent=<epic-id>          # find its child tasks
 
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 
 # Name the rig and the agent. This form always works.
 gc sling --rig ascii-art polecat <id-for-a.md>
@@ -560,13 +562,13 @@ The mayor is your factory's always-on assistant, running in a `tmux` session you
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc session attach mayor
 ```
 
 Ask it something: *What is the status of the factory?* or *Sling the bead for c.md at the polecat.*
 
-> **Detach with `Ctrl+b` then `d`.** Do **not** use `Ctrl+c` — that interrupts the agent, and exiting that way kills the session inside Gas City. `Ctrl+b` `d` returns you to your shell with the mayor still running.
+> **Detach with `Ctrl-b` then `d`.** Do **not** use `Ctrl-c` — that interrupts the agent, and exiting that way kills the session inside Gas City. `Ctrl-b` `d` returns you to your shell with the mayor still running.
 
 To watch the ephemeral agents rather than the mayor, list what is live and attach to one:
 
@@ -643,7 +645,7 @@ You have a city, a rig on GitHub, a base factory carrying every primitive, 28 be
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc cities
 gc rig list
 gc import list --rig ascii-art
@@ -662,7 +664,7 @@ factory-pulse and bead-closed-log among the orders
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 bd list --type=epic
 git ls-remote --heads origin
 ```

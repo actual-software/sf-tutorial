@@ -183,7 +183,7 @@ Both orders write to that one file on purpose. By the end of the day it carries 
 
 ```bash
 cd "$SFI_PATH/factory1"
-gc mail send mayor -s "Priority note" -m "Prefer beads from the letters-a-m epic for the rest of the session."
+gc mail send mayor -s "Priority note" -m "Prefer beads from the Letters a-m epic for the rest of the session."
 gc mail inbox mayor
 ```
 
@@ -286,8 +286,9 @@ Write one sentence somewhere you will find it tomorrow: the thing your factory s
 **Copy and paste**
 
 ```bash
+cd "$SFI_PATH/factory1"
 gc import list --rig ascii-art
-gc formula show mol-polecat-pr | head -5
+gc formula show mol-polecat-pr --rig ascii-art | head -5
 gc order check
 gc order history
 gc mail inbox mayor

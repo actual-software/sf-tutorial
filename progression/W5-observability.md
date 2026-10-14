@@ -71,15 +71,15 @@ It opens the dashboard in your browser, and the `Dashboard:` links `gc` prints o
 
 ### 2. The beads list, and what a bead carries
 
-Find the beads list in the dashboard, then pick the bead you watched move in W4. From the command line, `bd list --all` from inside `ascii-art` gives you the same list. Without `--all` it leaves out closed beads, and yours may be one.
+Find the beads list in the dashboard, then pick the bead you watched move in W3. From the command line, `bd list --all` from inside `ascii-art` gives you the same list. Without `--all` it leaves out closed beads, and yours may be one.
 
 A bead is not just a title and a status. Every field on it is either something a human set or something an agent recorded, and the second kind is what makes a factory traceable.
 
-**Copy and paste**
+**Copy and paste**, with that bead's id in place of `<bead-id>`. It's the id `gc sling` printed after `Slung` in W3, such as `aa-gf8.1`.
 
 ```bash
 cd "$SFI_PATH/ascii-art"
-BEAD=$(bd list --status open --limit 1 --json | jq -r '.[0].id')
+BEAD=<bead-id>
 bd show "$BEAD" --json | jq '.[0]'
 ```
 
@@ -179,10 +179,11 @@ When something goes wrong, go in that order. State first, because it is cheapest
 **Copy and paste**
 
 ```bash
+cd "$SFI_PATH/factory1"
 gc dashboard --no-open
-bd list --status closed --limit 3
 gc events --since 30m
 gc order history
+cd "$SFI_PATH/ascii-art" && bd list --status closed --limit 3
 ```
 
 **Expected output**
@@ -190,9 +191,9 @@ gc order history
 ```text
 The dashboard is served by the gc supervisor at http://127.0.0.1:8372
   (on a cloud box that address is the box's own, and sfbox dashboard <box> brings it to your laptop)
-at least one closed bead
 a handful of recent events
 at least one order run
+at least one closed bead from ascii-art
 ```
 
 ## Troubleshooting
@@ -207,4 +208,4 @@ at least one order run
 
 You have built a factory and learned to read it. [L1](./L1-plan-your-factory.md) turns the attention to your own project: what it is, and what a factory for it would need to do.
 
-« [previous: W4 Tour the Factory](./W4-tour-the-factory.md) | [next: L1 Plan Your Factory](./L1-plan-your-factory.md) »
+« [previous: W4 Tour the Factory](./W4-tour-the-factory.md) | [next: L1 Point the Factory at Your Own Project](./L1-plan-your-factory.md) »

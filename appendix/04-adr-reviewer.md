@@ -376,7 +376,7 @@ reassignment from the refinery, not by a new dispatch verb:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/architect-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -539,7 +539,7 @@ merge:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view "$PR" --web
 ```
@@ -577,9 +577,9 @@ Commit and push to `main`. Then sling `h.md`:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement h\.md$" | awk '{print $2}')
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/architect-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -672,7 +672,7 @@ Confirm the new letter on `origin/main`:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 git fetch origin && git pull
 git log --oneline origin/main -1
 ls ascii/g.md

@@ -211,7 +211,7 @@ The Leads are independent and can be slung in any order. Run them sequentially f
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-builders-rig.design-lead $BEAD_ID --on mol-design-spec
 gc sling ascii-art/bead-builders-rig.test-lead   $BEAD_ID --on mol-test-spec
 gc sling ascii-art/bead-builders-rig.doc-lead    $BEAD_ID --on mol-doc-spec
@@ -238,7 +238,7 @@ A file named `$BEAD_ID.md` should be present in each directory.
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 ls docs/design/ docs/testing/ docs/outlines/
 ```
 
@@ -283,7 +283,7 @@ A metadata stamp records a path; it does not publish the file. Anything that ope
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 git add docs/design docs/testing docs/outlines
 git commit -m "docs(specs): add design/test/docs specs for $BEAD_ID"
 git push origin main
@@ -298,7 +298,7 @@ The bead now carries `design_doc`, `test_plan` and `docs_outline`, each pointing
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-builders-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -337,7 +337,7 @@ From here, the polecat / refinery / architect chain runs as in the base factory.
 ```bash
 watch -n 5 'gc bd show $BEAD_ID'
 
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view "$PR" --web
 gh pr merge "$PR" --merge
@@ -350,10 +350,10 @@ To feel what the specs buy you, run only two of the three Leads on the next lett
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export PARTIAL_BEAD=$(bd list --type=task --status=open --limit 0 | grep -E "Implement k\.md$" | awk '{print $2}')
 
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-builders-rig.design-lead $PARTIAL_BEAD --on mol-design-spec
 gc sling ascii-art/bead-builders-rig.test-lead   $PARTIAL_BEAD --on mol-test-spec
 # Skip doc-lead deliberately.
@@ -381,9 +381,9 @@ Nothing blocks. The bead moves with two specs instead of three, and the missing 
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-builders-rig.doc-lead $PARTIAL_BEAD --on mol-doc-spec
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 git add docs/outlines && git commit -m "docs(specs): outline for $PARTIAL_BEAD" && git push
 ```
 
@@ -394,7 +394,7 @@ Turning "better" into "required" needs a gate in front of the polecat, and that 
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-gate-rig.project-manager $BEAD_ID --on mol-bead-review
 ```
 

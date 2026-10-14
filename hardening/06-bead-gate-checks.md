@@ -300,7 +300,7 @@ directory.
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-gate-rig.project-manager $BEAD_ID --on mol-bead-review
 ```
 
@@ -387,7 +387,7 @@ refinery publishes a PR. Wait for the PR and merge as before.
 watch -n 5 'gc bd show $BEAD_ID'
 
 # When ready:
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view "$PR" --web
 gh pr merge "$PR" --merge
@@ -401,7 +401,7 @@ To see the project-manager block a bead, deliberately strip
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export BAD_BEAD=$(bd list --type=task --status=open --limit 0 | grep -E "Implement i\.md$" | awk '{print $2}')
 
 # Wipe target_file so the bead fails the task-checklist's
@@ -417,7 +417,7 @@ Sling the project-manager at the broken bead.
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-gate-rig.project-manager $BAD_BEAD --on mol-bead-review
 ```
 
@@ -470,11 +470,11 @@ clean re-review.
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 bd update $BAD_BEAD --set-metadata target_file=ascii/i.md
 bd update $BAD_BEAD --status=open
 
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-gate-rig.project-manager $BAD_BEAD --on mol-bead-review
 ```
 
@@ -499,7 +499,7 @@ blocked anyway.
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export VAGUE_BEAD=$(bd create --title "Improve the rendering of j.md" \
   --description "Make the output for j.md nicer and more consistent with the others." \
   --type task --priority 2 --json | jq -r '.id')
@@ -515,7 +515,7 @@ test-generation check has anything to object to.
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-gate-rig.project-manager $VAGUE_BEAD --on mol-bead-review
 ```
 
@@ -538,11 +538,11 @@ Now answer the question the feedback asked, and re-sling:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 bd update $VAGUE_BEAD --description "Create ascii/j.md containing a 5-line ASCII block for the letter J and a two-line rhyme, matching the line count and front-matter of ascii/i.md."
 bd update $VAGUE_BEAD --status=open --unset-metadata bead_review_passed
 
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-gate-rig.project-manager $VAGUE_BEAD --on mol-bead-review
 ```
 
@@ -694,7 +694,7 @@ Confirm the new letter on `origin/main`.
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 git fetch origin && git pull
 git log --oneline origin/main -1
 ls ascii/h.md
