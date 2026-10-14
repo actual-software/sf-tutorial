@@ -28,8 +28,8 @@ between `reviewer-` and end:
 
 Compute it once at session start from `$GC_TEMPLATE`, which names the
 agent you run as, rig and pack included (for example
-`ascii-art/multi-vendor-rig.reviewer-claude`). Don't use `$GC_AGENT`,
-which current gc sets to this session's own id:
+`ascii-art/multi-vendor-rig.reviewer-claude`). Don't derive it from
+`$GC_AGENT`, which current gc sets to this session's own id:
 
 ```bash
 VENDOR=$(echo "$GC_TEMPLATE" | sed -E 's|.*reviewer-||')
