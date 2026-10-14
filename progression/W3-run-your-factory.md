@@ -134,7 +134,7 @@ Installed systemd service: /home/ubuntu/.local/share/systemd/user/gascity-superv
 
 `[7/8]` and `[8/8]` register `factory1` with the supervisor and start it, so the city is running when your prompt comes back. The supervisor brings up Dolt and the agents with it. The two lines about the service appear only the first time a supervisor starts on a machine, and on a Mac it sets up launchd rather than systemd. **Leave Dolt to `gc` and `bd` from here on, and don't run `bd dolt start` yourself.** See [Troubleshooting](#troubleshooting) if you hit Dolt errors.
 
-On your own machine, a city you registered earlier, such as the Actual Factory Demo from the prerequisites, adds a warning after `[7/8]`: `gc init` reconciles the supervisor that already manages that city, worded in terms of a kill-and-respawn that "cycles those cities' in-flight work", followed by `Continue? [y/N]:`. **Answer `y`.** In practice the supervisor keeps the same PID and the other city stays healthy. The capital `N` is the default, so pressing Enter declines, and `gc init` stops with `aborted by user`.
+On your own machine, a city you registered earlier, such as the [Actual Factory Demo](../README.md#actual-factory-demo) from the workshop prerequisites, adds a warning after `[7/8]`: `gc init` reconciles the supervisor that already manages that city, worded in terms of a kill-and-respawn that "cycles those cities' in-flight work", followed by `Continue? [y/N]:`. **Answer `y`.** In practice the supervisor keeps the same PID and the other city stays healthy. The capital `N` is the default, so pressing Enter declines, and `gc init` stops with `aborted by user`.
 
 If `gc init` stops before `[8/8]`, whether at that prompt or on something it names, the city's files exist and nothing is running. Fix what it names, then run `gc start` from inside `factory1/`. A missing Dolt identity is the usual cause, and [Troubleshooting](#gc-init-stops-at-dolt-author-identity) has its exact message.
 
@@ -611,7 +611,7 @@ cd "$SFI_PATH/ascii-art"
 bd list --status=in_progress
 ```
 
-`gc session list` shows which agents are running and when each last did something, and `bd list --status=in_progress` shows the beads they are working on. Run both again as the bead you slung moves along, or keep the sessions on screen with `watch -n 10 gc session list` from inside `factory1`, which refreshes every ten seconds until `Ctrl-C`. Both work on your own machine too.
+`gc session list` shows which agents are running and when each last did something, and `bd list --status=in_progress` shows the beads they are working on. Run both again as the bead you slung moves along, or keep the sessions on screen with `watch -n 10 gc session list` from inside `factory1`, which refreshes every ten seconds until `Ctrl-C`. Both work on your own machine too, though a Mac needs `brew install watch` before the `watch` line.
 
 [W5](./W5-observability.md) is where you read the factory properly. For now, confirm your beads are there and that one of them is moving.
 
