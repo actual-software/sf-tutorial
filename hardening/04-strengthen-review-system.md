@@ -42,7 +42,7 @@ By the end of this exercise you will have:
   If any provider is missing, you can either pick a different option and stay on the single-vendor flow, or run with two providers (majority rule still works at 2/2; at 1/1 the synthesizer always says `false` — see Troubleshooting).
 
 **This option needs no other option.** It installs on the base factory and replaces the single architecture reviewer with three. The synthesizer stamps `architect_approved`, which is the field the base factory's refinery patrol already gates on, so the fan-out is invisible from the refinery's side: it sees one architecture verdict, the same as before.
-- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
+- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) appends it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
 - You're inside the rig directory:
 
   **Copy and paste**

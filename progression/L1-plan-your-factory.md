@@ -30,7 +30,7 @@ That set of documents is the input to [L2](./L2-capability-map.md), which starts
 
 - [W3](./W3-run-your-factory.md) through [W5](./W5-observability.md) complete: a working factory you can read.
 - A repository you can push to and are willing to let a factory open pull requests against. A personal project or a fork is ideal. A repository you do not control is not.
-- `$SFI_PATH` set in your shell. [W2](./W2-cloud-box-and-preflight.md) and [W3](./W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Step 1 derives `$MY_RIG_PATH` from it and persists that the same way; between them those two write out every path on this page.
+- `$SFI_PATH` set in your shell. [W2](./W2-cloud-box-and-preflight.md) appends it to a shell rc, so it survives a new terminal. Step 1 derives `$MY_RIG_PATH` from it and persists that the same way; between them those two write out every path on this page.
 
 ## Context
 

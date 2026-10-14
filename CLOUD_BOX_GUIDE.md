@@ -2,7 +2,7 @@
 
 Your cloud box is a Linux machine in Google Cloud that already carries `gc`, `bd`, `dolt`, `gh` and three coding agents: Claude Code, Codex and Gemini CLI. You reach it with `sfbox` and the Google account or email address your instructor added to the cohort, so there are no key files, IP addresses or SSH settings to keep track of.
 
-Running the two days on your own laptop instead? You don't need this page. Go straight to [W2 Cloud Box and Preflight](./progression/W2-cloud-box-and-preflight.md), whose appendix covers the local path.
+Running the two days on your own laptop instead? You don't need this page. Go straight to [W2's own-machine path](./progression/W2-cloud-box-and-preflight.md#your-own-machine-alternative).
 
 ## Contents
 
@@ -223,7 +223,7 @@ gh auth login
 
 Press Enter at each question to take the defaults: **GitHub.com**, **HTTPS**, **Yes** to authenticating Git, and **Login with a web browser**. It then prints a one-time code. Open https://github.com/login/device in your laptop's browser, enter that code and approve the request. Along the way you'll see two warnings, one saying `gh` couldn't copy the code to a clipboard and one saying it couldn't open a browser, and both are expected on a box that has neither.
 
-Rather not grant the CLI your whole account? Paste a token instead, as [W2's GitHub sign-in section](./progression/W2-cloud-box-and-preflight.md#1-sign-in-to-github) describes, since those steps work the same on the box.
+Rather not grant the CLI your whole account? Paste a token instead, as [W2's GitHub sign-in section](./progression/W2-cloud-box-and-preflight.md#5-sign-in-to-github) describes, since those steps work the same on the box.
 
 Check it:
 
@@ -237,7 +237,7 @@ It should name your GitHub account.
 
 ## Step 7: back to the tutorial
 
-That's the box ready. Head back to [W2's cloud box section](./progression/W2-cloud-box-and-preflight.md#the-cloud-box-recommended) and run its check.
+That's the box ready. Head back to [W2's box check](./progression/W2-cloud-box-and-preflight.md#2-check-the-box) and run it.
 
 The box has no factory on it yet, and that's deliberate: it brings the toolchain and the agents, and [W3](./progression/W3-run-your-factory.md) is where you build the factory.
 

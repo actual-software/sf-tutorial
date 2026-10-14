@@ -36,7 +36,7 @@ Three ideas that only become interesting once a factory has been running for a w
 
 - A factory from [W3](./W3-run-your-factory.md): the base factory installed on a rig of your own. That is the whole prerequisite, and every command on this page runs against it. A slot already spent in [L3](./L3-L5-feature-labs.md) gives part 1 more history to read, which makes for a better demonstration.
 - Your capability map to hand.
-- `$SFI_PATH` and `$MY_RIG_PATH` set in your shell. [W2](./W2-cloud-box-and-preflight.md) and [W3](./W3-run-your-factory.md) append the first to a shell rc, [L1 step 1](./L1-plan-your-factory.md#1-register-your-repo-as-a-rig) the second, so both survive a new terminal. Every other path on this page is written out from them.
+- `$SFI_PATH` and `$MY_RIG_PATH` set in your shell. [W2](./W2-cloud-box-and-preflight.md) appends the first to a shell rc, [L1 step 1](./L1-plan-your-factory.md#1-register-your-repo-as-a-rig) the second, so both survive a new terminal. Every other path on this page is written out from them.
 
 ## Part 1: Self-improvement loops
 

@@ -7,21 +7,17 @@
 - [Objective](#objective)
 - [Prereqs](#prereqs)
 - [Context](#context)
-- [Run it on your cloud box](#run-it-on-your-cloud-box)
-  - [1. Name your box](#1-name-your-box)
-  - [2. Preflight before you build anything](#2-preflight-before-you-build-anything)
-  - [3. Open a shell on the box](#3-open-a-shell-on-the-box)
-- [Running on your own machine instead](#running-on-your-own-machine-instead)
 - [Setup](#setup)
-  - [1. Create the city](#1-create-the-city)
-  - [2. Read what `gc init` wrote](#2-read-what-gc-init-wrote)
-  - [3. Confirm Dolt is running](#3-confirm-dolt-is-running)
-  - [4. Register the ascii-art rig](#4-register-the-ascii-art-rig)
-  - [5. Add the starting docs](#5-add-the-starting-docs)
-  - [6. Put the rig on GitHub](#6-put-the-rig-on-github)
-  - [7. Install the base factory](#7-install-the-base-factory)
-  - [8. Run the factory checks](#8-run-the-factory-checks)
-  - [9. Seed the beads queue](#9-seed-the-beads-queue)
+  - [1. Set your identity and beads role](#1-set-your-identity-and-beads-role)
+  - [2. Create the city](#2-create-the-city)
+  - [3. Read what `gc init` wrote](#3-read-what-gc-init-wrote)
+  - [4. Confirm Dolt is running](#4-confirm-dolt-is-running)
+  - [5. Register the ascii-art rig](#5-register-the-ascii-art-rig)
+  - [6. Add the starting docs](#6-add-the-starting-docs)
+  - [7. Put the rig on GitHub](#7-put-the-rig-on-github)
+  - [8. Install the base factory](#8-install-the-base-factory)
+  - [9. Run the factory checks](#9-run-the-factory-checks)
+  - [10. Seed the beads queue](#10-seed-the-beads-queue)
 - [Try It](#try-it)
   - [1. Sling your first bead](#1-sling-your-first-bead)
   - [2. Attach to a session and watch it move](#2-attach-to-a-session-and-watch-it-move)
@@ -34,29 +30,28 @@
 
 ## Objective
 
-By the end of this session you have a running software factory of your own, on your cloud box: a city called `factory1`, a rig called `ascii-art` pushed to GitHub, the base factory pack installed, a seeded queue of work, and your first bead moving through the pipeline while you watch it.
+By the end of this session you have a running software factory of your own: a city called `factory1`, a rig called `ascii-art` pushed to GitHub, the base factory pack installed, a seeded queue of work, and your first bead moving through the pipeline while you watch it.
 
 This is the factory you build on for the rest of the curriculum. Everything from here either tours it, observes it, or extends it.
 
 ## Prereqs
 
-- [W2](./W2-cloud-box-and-preflight.md) complete: `gc`, `bd` and `dolt` installed and preflight green, and `gh` signed in.
-- A cloud box you can reach, per [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md): `sfbox` v2 on your laptop and signed in, `sfbox ssh <box>` opening the box's terminal, and your agent CLI signed in there. Working on your own machine instead? None of this page's `sfbox` steps apply, so [skip to the alternate path](#running-on-your-own-machine-instead).
+- [W2](./W2-cloud-box-and-preflight.md) complete on one of its two paths. That leaves you a terminal, on your cloud box or on your own machine, with `gc`, `bd` and `dolt` installed, your coding agent and `gh` signed in, and this tutorial cloned into `$SFI_PATH`.
 
 ## Context
 
 You are not assembling a factory by hand today. The base factory arrives as one pack, and it already contains a worked example of every Gas City primitive, so the rest of Day 1 is spent reading a factory that runs rather than debugging one that half does. [W4](./W4-tour-the-factory.md) will walk through the pieces in more detail.
 
-Your factory runs on the cloud box, and you drive it from a terminal on your laptop that `sfbox ssh` connects to the box. The laptop holds `sfbox` and your sign-in and nothing else; the box holds the city, the rig, the Dolt database and every agent session. Building the whole thing on your own machine works too, and that path is [further down this page](#running-on-your-own-machine-instead). Don't do both.
+The factory lives wherever your terminal is. On a cloud box that's the box: the city, the rig, the Dolt database and every agent session run there, and your laptop only holds the terminal `sfbox ssh` opened. On your own machine it's all on your laptop.
 
 ```mermaid
 flowchart TD
-    A["sfbox ssh your-box<br/>open the box's terminal"] --> B["gas-city-boot-status<br/>the box finished starting"]
-    B --> C["gc init, gc rig add<br/>Setup, in that terminal"]
+    A["dolt config, git config<br/>your identity and beads role"] --> B["gc init<br/>create and start the city"]
+    B --> C["gc rig add<br/>register the ascii-art rig"]
     C --> D["gc import add --rig<br/>the base factory, rig scope"]
     D --> E["gc import add<br/>the mayor's pack, city scope"]
     E --> F["gc reload<br/>pick both packs up now"]
-    F --> G["gc session list, bd list<br/>watch it from the box's terminal"]
+    F --> G["gc sling<br/>watch your first bead move"]
 ```
 
 **Directory tree**, on whichever machine you build the factory on
@@ -70,178 +65,110 @@ flowchart TD
      └── <your projects>              # Your own work can live here too.
 ```
 
-## Run it on your cloud box
-
-Your box arrives carrying the toolchain and all three agent CLIs, and no factory at all. The factory is the part you build in this session. Three short steps get you to a shell on the box where the rest of the page runs, and each answers a different question, so take them in order.
-
-Can't reach your box yet? [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) takes you from installing `sfbox` to the box's terminal, and [W2](./W2-cloud-box-and-preflight.md) is where that fits in the running order.
-
-### 1. Name your box
-
-Every `sfbox` command that reaches a box takes the box's name, so there's no current box to switch between. Yours is the name you gave `sfbox create`, or the one your instructor sent you. This page writes it as `<box>`.
-
-First make sure the `sfbox` on your laptop is version 2, the one these boxes need:
-
-**Copy and paste**
-
-```bash
-sfbox version
-```
-
-**Expected output**
-
-```text
-sfbox v2.0.0
-```
-
-A later `v2` is fine too. `sfbox 0.1.0` is the old script from before the boxes moved to Google Cloud, and [Troubleshooting](#sfbox-says-unknown-command) says how to get it out of the way.
-
-### 2. Preflight before you build anything
-
-sfbox v2 has no `preflight` command, so the check runs on the box itself. Open the box's terminal from your laptop:
-
-**Copy and paste**
-
-```bash
-sfbox ssh <box>
-```
-
-You arrive as the `ubuntu` user in its home directory, which is where the factory will live. Then, in that terminal:
-
-**Copy and paste** (on the box)
-
-```bash
-gas-city-boot-status && echo "box ready"
-command -v gc bd dolt
-systemctl is-active gas-city.service
-```
-
-**Expected output**
-
-```text
-box ready
-/usr/local/bin/gc
-/usr/local/bin/bd
-/usr/local/bin/dolt
-inactive
-```
-
-The answers come in the order things break. Reaching a prompt at all proves the connection, because `sfbox ssh` says why whenever it can't get through. `gas-city-boot-status` prints nothing once the box has finished starting, so `box ready` means it has, and the three paths are the image's own `gc`, `bd` and `dolt`. That ordering is what makes the check worth running first: it separates a broken factory from a broken connection or a box that is still starting, and those get mistaken for each other constantly. Reach for it every time something on the box looks wrong, before you go looking at the factory itself.
-
-Still starting? The first line then names the boot step the box is on, which is usually its data disk arriving, so give it a minute and run the line again. If it says the box did not finish starting, take that to your instructor.
-
-`inactive` is right for the service, and stays right after Setup. `gas-city.service` runs the factory a box can set up for itself, which the intensive skips, while the city you build below runs under the supervisor that `gc start` brings up.
-
-### 3. Open a shell on the box
-
-The terminal from step 2 is that shell, and everything in [Setup](#setup) runs inside it. Set the workspace up once, the same shape W2 had you build on your laptop:
-
-**Copy and paste** (on the box)
-
-```bash
-mkdir -p ~/software-factory-intensive
-cd ~/software-factory-intensive
-export SFI_PATH="$(pwd)"
-cat <<EOF >> ~/.bashrc
-export SFI_PATH="$SFI_PATH"
-EOF
-git clone https://github.com/actual-software/sf-tutorial.git
-```
-
-No `deps.sh` step here. The box already carries `gc`, `bd` and `dolt` at the image's pinned versions, which preflight confirmed a moment ago. You signed the box in to GitHub with `gh auth login` while following [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md), and that sign-in is what the rig push in [step 6](#6-put-the-rig-on-github) uses. Check it before you need it:
-
-**Copy and paste** (on the box)
-
-```bash
-gh auth status
-```
-
-It should name your GitHub account. If it says you aren't logged in, run `gh auth login` on the box now, the way the guide's GitHub step describes.
-
-Leave that terminal open, since the rest of the page runs in it. If it closes or the connection drops, `sfbox ssh <box>` opens a new one, and `$SFI_PATH` comes back with it because the workspace block saved it to `~/.bashrc`.
-
-sfbox v2.0.0 can't run a single command on the box from your laptop: `sfbox ssh` takes the box's name and nothing else. The old `exec` and `gc` commands that did are planned for a later release, so until then every box command on this page runs in the box's terminal.
-
-## Running on your own machine instead
-
-Everything in [Setup](#setup) runs the same way in a terminal on your own laptop, with no `sfbox` in the picture. You already have the toolchain and the workspace directory from [W2](./W2-cloud-box-and-preflight.md), so start at [step 1](#1-create-the-city) and read past the lines marked for the box. One place differs, and it names the alternate inline: in [Try It](#4-watch-it-work) you open the dashboard with `gc dashboard`, because the supervisor is already on your machine.
-
-Pick one route and stay on it. Running half the session on each leaves you with a city on the box and a rig on your laptop, and nothing that can read both.
-
 ## Setup
 
-These steps run wherever you decided the factory lives: the box shell from [step 3](#3-open-a-shell-on-the-box), or a terminal on your own machine. The commands are the same either way, and where they genuinely differ the step says so.
+Every step on this page runs in the terminal W2 left you in: the box's terminal that `sfbox ssh <box>` opens, or a terminal on your own machine. The commands are the same in both. The expected output comes from a cloud box, and wherever the older `gc` that W2 installs on your own machine prints something different that matters, the step says so. If that terminal has closed, open a new one the same way. `echo "$SFI_PATH"` should print your workspace, `/home/ubuntu/software-factory-intensive` on a box.
 
-### 1. Create the city
+### 1. Set your identity and beads role
 
-Create the `factory1/` directory with an auto-generated `city.toml` and `pack.toml`.
+`gc init` stops before starting the city when Dolt has no author identity. `git` signs the rig's commits with whatever name it can guess, which on a box is `Ubuntu <ubuntu@box-…internal>`. And `gc doctor` reports an error until `beads.role` is set. The box doesn't set any of them, so set them now, with your own name and the email on your GitHub account, so the rig's commits show up as yours:
 
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH
+dolt config --global --add user.name "Your Name"
+dolt config --global --add user.email "you@example.com"
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+git config --global beads.role maintainer
+```
+
+Each `dolt` line answers `Config successfully updated.` The `git` lines print nothing. On your own machine `git` may already know who you are, and if `git config --global user.email` prints your address you can skip the two `user.` lines for `git`.
+
+All five are per-user settings, so you set them once per machine, and running them again just replaces the values. `maintainer` tells `bd` that you own the repositories it tracks, so it keeps their issues in place. For a contributor's fork it would route them to a separate planning repository instead.
+
+### 2. Create the city
+
+Create the `factory1/` directory with an auto-generated `city.toml` and `pack.toml`, and start it.
+
+**Copy and paste**
+
+```bash
+cd "$SFI_PATH"
 gc init factory1
 ```
 
-Follow the interactive prompt. Select:
+At `Template [1]:`, type `2` for the **minimal** template. The wizard then lists the coding agents you're signed in to. With one, it picks that agent and carries on. With more than one, it asks `Agent:`, and you type the number of the one you want. If it lists none, it stops with `no configured coding agents found`: sign in to your agent the way W2 describes, then run `gc init factory1` again.
 
-- the **minimal** config template — *2*
-- Claude Code (recommended) or whichever provider you are using (`claude`, `codex`, or `gemini`)
+The first `gc` command you run on a new box or machine may open with a short note about anonymous usage metrics, before the wizard starts. `gc metrics off` turns them off if you'd rather.
 
-Around step 7 of 8 you may see a warning that registering `factory1` reconciles the supervisor already managing that other city, worded in terms of a kill-and-respawn that "cycles those cities' in-flight work", followed by:
+**Expected output** (on a cloud box, signed in to Claude Code only)
 
 ```text
-Continue? [y/N]
+Welcome to Gas City SDK!
+
+Choose a config template:
+  1. gascity   — planning & implementation skills pack (default)
+  2. minimal   — default coding agent
+  3. gastown   — multi-agent orchestration pack
+  4. custom    — empty workspace, configure it yourself
+Template [1]: 2
+
+Choose your coding agent:
+  1. Claude Code
+If you don't see your coding agent, configure it and restart the wizard.
+[1/8] Creating runtime scaffold
+[2/8] Installing hooks (Claude Code)
+[3/8] Writing default prompts
+[4/8] Writing pack.toml
+[5/8] Writing city configuration
+Created minimal config (Level 1) in "factory1".
+[6/8] Checking provider readiness
+[7/8] Registering city with supervisor
+Registered city 'factory1' (/home/ubuntu/software-factory-intensive/factory1)
+Enabled systemd lingering for ubuntu so the supervisor survives logout.
+Installed systemd service: /home/ubuntu/.local/share/systemd/user/gascity-supervisor.service
+[8/8] Waiting for supervisor to start city
+  Adopting sessions...
 ```
 
-**Answer `y`.** The prompt reads more alarming than the reconcile turns out to be: in practice the supervisor keeps the same PID, both cities end up registered, and the pre-existing city stays healthy. Note the capital `N` — that is the default, so pressing Enter *declines*, and declining leaves `factory1` unregistered. If that happens, `gc status` will not find the city; re-run `gc init factory1` and answer `y`.
+`[7/8]` and `[8/8]` register `factory1` with the supervisor and start it, so the city is running when your prompt comes back. The supervisor brings up Dolt and the agents with it. The two lines about the service appear only the first time a supervisor starts on a machine, and on a Mac it sets up launchd rather than systemd. **Leave Dolt to `gc` and `bd` from here on, and don't run `bd dolt start` yourself.** See [Troubleshooting](#troubleshooting) if you hit Dolt errors.
+
+On your own machine, a city you registered earlier, such as the Actual Factory Demo from the prerequisites, adds a warning after `[7/8]`: `gc init` reconciles the supervisor that already manages that city, worded in terms of a kill-and-respawn that "cycles those cities' in-flight work", followed by `Continue? [y/N]:`. **Answer `y`.** In practice the supervisor keeps the same PID and the other city stays healthy. The capital `N` is the default, so pressing Enter declines, and `gc init` stops with `aborted by user`.
+
+If `gc init` stops before `[8/8]`, whether at that prompt or on something it names, the city's files exist and nothing is running. Fix what it names, then run `gc start` from inside `factory1/`. A missing Dolt identity is the usual cause, and [Troubleshooting](#gc-init-stops-at-dolt-author-identity) has its exact message.
 
 **Copy and paste**
 
 ```bash
 cd factory1/
-gc start
-```
-
-`gc start` registers `factory1` with the supervisor, installs the launchd or systemd service if needed, starts the supervisor process, and brings up the city's agents. On a cloud box the city's Dolt server is already running by then, because `gc init` had `bd` start it, and `bd` keeps it running. On your own machine `gc start` brings Dolt up along with the agents. **Either way, leave that server to `gc` and `bd`, and don't run `bd dolt start` yourself.** See [Troubleshooting](#troubleshooting) if you hit Dolt errors.
-
-**Copy and paste**
-
-```bash
 gc status
 gc session list
 ```
 
-**Expected output**
+**Expected output** (`gc status`, trimmed)
 
 ```text
-gc status
 factory1  <your-home>/software-factory-intensive/factory1
-  Controller: supervisor-managed (PID 43909)
-  Authority: supervisor process PID 43909
+  Controller: supervisor-managed (PID 2510)
+  Authority: supervisor process PID 2510
   Suspended:  no
 
 Agents:
-  dog                     scaled (min=0, max=3)
-    dog-1                 stopped
-    dog-2                 running
-    dog-3                 running
-
-2/3 agents running
-
+  bd.dog                  scaled (min=0, max=2)
+    bd.dog-1              unknown  (partial status)
+    bd.dog-2              unknown  (partial status)
+  core.control-dispatcher  unknown  (partial status)
+  mayor                   scaled (min=0, max=1)
+    mayor                 running
+...
 Named sessions:
-  mayor                   awake (always)
-
-Sessions: 3 active, 0 suspended
-
-gc session list
-ID      TEMPLATE  STATE   REASON          TARGET  TITLE  AGE  LAST ACTIVE
-fa-wfm  dog       active  session,config  dog-1   dog    2m   10s ago
-fa-95b  dog       active  session,config  dog-3   dog    3m   0s ago
-fa-a9u  mayor     active  session,config  mayor   mayor  3m   2m ago
+  mayor                   active (always)
 ```
 
-### 2. Read what `gc init` wrote
+The lines that matter are `Controller: supervisor-managed`, and the `mayor` line under `Named sessions` reading `active (always)`. In the first minute or so the other agents can read `unknown (partial status)`, and a last line can say the reconciler may be lagging, while the city finishes starting. The `dog` helpers start and stop on their own as there's work. `gc session list` shows one row per running session: the mayor's, and often a `bd.dog` helper's.
+
+### 3. Read what `gc init` wrote
 
 **Copy and paste**
 
@@ -259,10 +186,10 @@ schema = 2
 
 [imports]
 [imports.bd]
-source = "https://github.com/gastownhall/gascity.git//examples/bd"
+source = "https://github.com/gastownhall/gascity/tree/main/examples/bd"
 version = "sha:f895c0ff47d6ee9334ed282a416387eb5b084d24"
 [imports.core]
-source = "https://github.com/gastownhall/gascity.git//internal/bootstrap/packs/core"
+source = "https://github.com/gastownhall/gascity/tree/main/internal/bootstrap/packs/core"
 version = "sha:f895c0ff47d6ee9334ed282a416387eb5b084d24"
 
 [[named_session]]
@@ -270,13 +197,13 @@ template = "mayor"
 mode = "always"
 ```
 
-The pinned `version` shas track the `gc` release you installed, so yours will differ. What matters is the shape:
+The `source` and `version` lines track the `gc` you have, so yours may differ, and the older `gc` that W2 installs on your own machine writes each `source` as a `.git//` path. What matters is the shape:
 
 - **`[imports]`** pins the two builtin packs every city gets: `bd` for the issue tracker and `core` for the base agent set. Imports are what make agents available to `factory1` and its rigs.
 - **`[[named_session]]`** declares the always-on `mayor` you will talk to later in this session.
-- **There is no `[[agent]]` table, and there should not be.** Agents are discovered from the packs you import, so a schema-2 pack declares imports rather than individual agents.
+- **There is no `[[agent]]` table, and there should not be.** Agents are discovered from the packs you import and from the city's `agents/` directory, which is where `gc init` put the mayor, so a schema-2 pack declares imports rather than individual agents.
 
-`city.toml` for the minimal template is just a few lines, and grows a `[[rigs]]` entry in step 4:
+`city.toml` for the minimal template is a few lines, plus a commented-out `[mail]` example you can leave alone, and it grows a `[[rigs]]` entry in step 5:
 
 ```toml
 [workspace]
@@ -288,7 +215,9 @@ base = "builtin:claude"
 ready_delay_ms = 0
 ```
 
-### 3. Confirm Dolt is running
+If you picked a different agent, `claude` reads `codex` or `gemini` instead.
+
+### 4. Confirm Dolt is running
 
 The city's beads live in a Dolt database whose server is already up. Verify there is exactly one Dolt server for `factory1` and that `bd` can reach it.
 
@@ -299,13 +228,13 @@ ps aux | grep "dolt sql-server" | grep factory1 | grep -v grep
 bd list
 ```
 
-On a cloud box you should see one `dolt sql-server` started with `--config .../factory1/.beads/dolt/config.yaml`. Its parent is a `bd db-proxy-child` process. `bd` started both during `gc init`, and if they ever stop, the next `bd` command starts them again. On your own machine the line ends in `--config .../factory1/.gc/runtime/packs/dolt/dolt-config.yaml` instead, because the laptop toolchain from W2 runs an older `gc` that keeps Dolt under the supervisor. Either way, `bd list` should return without error, most likely "No issues found." for a fresh city.
+This is the step whose output depends on where you are. On a cloud box you should see one `dolt sql-server` started with `--config .../factory1/.beads/dolt/config.yaml`. Its parent is a `bd db-proxy-child` process. `bd` started both during `gc init`, and if they ever stop, the next `bd` command starts them again. On your own machine the line ends in `--config .../factory1/.gc/runtime/packs/dolt/dolt-config.yaml` instead, because the toolchain W2 installs there runs an older `gc` that keeps Dolt under the supervisor. Either way, `bd list` should return without error. A fresh city lists nothing yet, or a bead its `dog` helpers are working through, such as `mol-dog-stale-db`.
 
-On the box each rig gets a Dolt server of its own, so a second `bd db-proxy-child` and `dolt sql-server` appear for `ascii-art` once you register it in [step 4](#4-register-the-ascii-art-rig). The `grep factory1` keeps this check to the city's.
+On the box each rig gets a Dolt server of its own, so a second `bd db-proxy-child` and `dolt sql-server` appear for `ascii-art` once you register it in [step 5](#5-register-the-ascii-art-rig). The `grep factory1` keeps this check to the city's.
 
 > **Don't run `bd dolt start` or `bd dolt stop` on this city.** On a box, `bd dolt stop` stops the server under the city's running agents, and `bd dolt start` can leave a second server over the same data that nothing supervises. Don't go by `bd dolt status` there either: it can report `not running` while the server is up, so `bd list` is the check. On your own machine, `bd dolt start` starts a second Dolt holding a write lock on the same data directory, and the next time the supervisor restarts the city it cannot bring up its own. The `dolt.auto-start` setting in `.beads/config.yaml` only matters there for standalone `bd` use outside a running city, and the supervisor may rewrite it.
 
-### 4. Register the ascii-art rig
+### 5. Register the ascii-art rig
 
 Register the rig as a **sibling** of the city rather than a child. This is the project your factory works on.
 
@@ -318,26 +247,27 @@ mkdir ../ascii-art
 gc rig add ../ascii-art ascii-art
 ```
 
-`gc rig add` resolves the relative path to an absolute one, creates the directory if it does not exist, adds a `[[rigs]]` entry to `city.toml`, and writes the absolute path to `.gc/site.toml`.
+**Expected output**
+
+```text
+Adding rig 'ascii-art'...
+  Prefix: aa
+  Initialized beads database
+  Generated routes.jsonl for cross-rig routing
+Rig added.
+```
+
+`gc rig add` resolves the relative path to an absolute one, creates the directory if it does not exist, initializes the rig's beads, adds a `[[rigs]]` entry naming `ascii-art` to `city.toml`, and writes the absolute path to `.gc/site.toml`.
 
 **Copy and paste**
 
 ```bash
-cat city.toml
 gc rig list
 ```
 
 **Expected output**
 
 ```text
-[workspace]
-provider = "claude"
-
-[providers]
-[providers.claude]
-base = "builtin:claude"
-ready_delay_ms = 0
-
 Rigs in $SFI_PATH/factory1:
 
   factory1 (HQ):
@@ -350,7 +280,7 @@ Rigs in $SFI_PATH/factory1:
     Beads:  initialized
 ```
 
-### 5. Add the starting docs
+### 6. Add the starting docs
 
 **Copy and paste**
 
@@ -368,7 +298,7 @@ cp "$SFI_PATH/sf-tutorial/artifacts/docs/future/0002.ADR.TESTING.md" \
 
 Those two decision records are what the architect reviews against once the factory starts working. `docs/current/` stays empty for now.
 
-### 6. Put the rig on GitHub
+### 7. Put the rig on GitHub
 
 The base factory publishes its work as pull requests, so the rig needs an upstream `main`. Create an empty repository on GitHub using [this link](https://github.com/new?name=ascii-art&description=A%20reference%20project%20for%20a%20software%20factory%20to%20build.), then:
 
@@ -393,7 +323,7 @@ git push -u origin main
 
 **Outcome:** `git status` reports a clean tree tracking `origin/main`.
 
-### 7. Install the base factory
+### 8. Install the base factory
 
 This is the step the whole session is built around. One import brings a complete factory, because packs import transitively and the base pack sits on top of a chain that already carries the rest.
 
@@ -423,7 +353,7 @@ gc import add "$SFI_PATH/sf-tutorial/artifacts/packs/pr-gate-city"
 
 That import makes the pack's mayor available. It does not yet run it, and this is the step that is easy to miss.
 
-`gc init` gave the city a mayor of its own, in `agents/mayor/`, and the `[[named_session]]` block you read in step 2 is what runs it. The pack ships a mayor too. Leave both in place and the factory comes up with two: the stock one, and the one that knows about the PR gate.
+`gc init` gave the city a mayor of its own, in `agents/mayor/`, and the `[[named_session]]` block you read in step 3 is what runs it. The pack ships a mayor too. Leave both in place and the factory comes up with two: the stock one, and the one that knows about the PR gate.
 
 Hand the role over. Delete the city's mayor, then point the always-on session at the pack's:
 
@@ -450,7 +380,7 @@ Confirm the city now has one mayor, and that it is the one carrying the gate:
 **Copy and paste**
 
 ```bash
-gc config show | grep -A1 '^\[\[agent\]\]' | grep -c '^name = "mayor"'
+gc config show 2>/dev/null | grep -A1 '^\[\[agent\]\]' | grep -c '^name = "mayor"'
 gc prime mayor | grep -q 'mol-polecat-pr' && echo "mayor knows the PR gate"
 ```
 
@@ -463,7 +393,9 @@ mayor knows the PR gate
 
 Both lines matter. The first is the count, and `2` here is the two-mayor problem rather than a cosmetic duplicate. The second says the mayor you kept is the one that knows to dispatch with `--on mol-polecat-pr`, which a count on its own would not tell you.
 
-Confirm both landed:
+The `2>/dev/null` hides two warnings that `gc config show` prints on every run, one for the city and one for the rig, each starting `warning: agent "…control-dispatcher": max_active_sessions=1 creates a canonical singleton`. They come from how the `core` pack runs its control dispatcher, and they're expected wherever you run `gc config show`.
+
+Confirm both imports landed:
 
 **Copy and paste**
 
@@ -472,13 +404,7 @@ gc import list --rig ascii-art
 gc import list
 ```
 
-**Expected output**
-
-```text
-base-factory  ...  (path)
-
-pr-gate-city  ...  (path)
-```
+Each prints one line per import, starting with the import's name: `base-factory` for the rig, and `bd`, `core` and `pr-gate-city` for the city.
 
 The supervisor picks the new packs up on its next reconcile tick. To take effect immediately:
 
@@ -488,9 +414,15 @@ The supervisor picks the new packs up on its next reconcile tick. To take effect
 gc reload
 ```
 
-> **If `gc reload` prints `Reload request could not be accepted because the controller is busy`,** that is normal right after `gc start` while the controller is still adopting sessions. The imports are already persisted, so wait for the next tick and move on rather than retrying.
+**Expected output**
 
-### 8. Run the factory checks
+```text
+Config reloaded: 9 agents (+3), 1 rigs (rev f17cdf234170)
+```
+
+> **If `gc reload` prints `Reload request could not be accepted because the controller is busy`,** that is normal right after the city starts, while the controller is still adopting sessions. The imports are already persisted, so wait for the next tick and move on rather than retrying.
+
+### 9. Run the factory checks
 
 Four commands, one per thing that could be wrong. Run them in order and read each result before moving on.
 
@@ -501,7 +433,16 @@ cd "$SFI_PATH/factory1"
 gc doctor
 ```
 
-`✓` is a pass, `⚠` a warning, `✗` an error. A freshly built factory usually shows a warning or two, such as `⚠ jsonl-archive — local-only mode`. Warnings are fine; errors are not.
+`✓` is a pass, `⚠` a warning, `✗` an error. Most lines are `✓`. A fresh factory also shows a few warnings, and these are normal:
+
+| Warning | Reason |
+| --- | --- |
+| `agent-sessions — N agent(s) without sessions` | Most agents start a worker only when there's work for them, so they have no standing session. The check lists them even while their workers run, and its `run gc start` hint doesn't apply. |
+| `orphan-sessions — N orphaned session(s)` | Those workers run under session names of their own, which this check can't match to an agent, so each one running counts here. |
+| `nudge-unconfirmed — … (advisory)` | An agent's startup prompt couldn't be confirmed as delivered. It's advisory, and an older `gc` doesn't run the check at all. |
+| `fork-rate — high process fork rate … (advisory)` | It's measured only on Linux, so a box shows it while agents are busy. It's advisory too. |
+
+An `✗` isn't normal, so fix it before moving on. The one people hit is `✗ beads-role — beads.role not set in global git config`, which means step 1's `git config` line didn't run: run it now.
 
 **Copy and paste**
 
@@ -511,19 +452,19 @@ gc order list
 gc rig list
 ```
 
-`gc formula list` should include `mol-polecat-work`, `mol-refinery-patrol`, `mol-polecat-pr`, `mol-refinery-pr-patrol`, `mol-architect-review` and `mol-refinery-architect-patrol`. `gc order list` should show `factory-pulse` and `bead-closed-log`.
+`gc formula list` should include `mol-polecat-work`, `mol-refinery-patrol`, `mol-polecat-pr`, `mol-refinery-pr-patrol`, `mol-architect-review` and `mol-refinery-architect-patrol`, among others. `gc order list` should show `factory-pulse` and `bead-closed-log`, both on the `ascii-art` rig, alongside the city's own housekeeping orders.
 
 This is also the moment to see that the factory carries all five Gas City primitives, which is what makes it a base to build on rather than a demo:
 
 | Primitive | Prove it |
 | --- | --- |
-| Formula | `gc formula list` shows six, and steps carry no assignee — the pool is resolved per step at dispatch |
+| Formula | `gc formula list` includes the six above, and steps carry no assignee — the pool is resolved per step at dispatch |
 | Agent persona | `gc agent list --rig ascii-art` shows `architect` alongside `polecat` and `refinery` |
-| Order | `gc order list` shows one on a schedule and one on an event |
+| Order | `gc order list` shows `factory-pulse` on a schedule and `bead-closed-log` on an event |
 | Rig | `gc rig list` shows `ascii-art` with its own beads prefix |
 | Mail | `gc mail inbox` — the polecat and refinery send it as they hand work along |
 
-### 9. Seed the beads queue
+### 10. Seed the beads queue
 
 `gc rig add` ran `bd init` for you. Confirm, then seed real work.
 
@@ -563,6 +504,11 @@ Seed complete.
   epics opened: 2
   tasks opened: 26
   total beads:  28
+
+Next steps:
+  bd list --type=epic                           # see the 2 epics
+  bd ready                                      # find a task to start on
+  gc sling --rig ascii-art polecat <bead-id>    # hand a task to an agent
 ```
 
 ## Try It
@@ -583,6 +529,16 @@ cd $SFI_PATH/factory1
 # Name the rig and the agent. This form always works.
 gc sling --rig ascii-art polecat <id-for-a.md>
 ```
+
+**Expected output** (your ids will differ)
+
+```text
+Auto-convoy aa-70w
+Slung aa-gf8.1 → ascii-art/base-factory.polecat
+Dashboard: http://127.0.0.1:8372/city/factory1/runs (new work can take a minute or two to appear)
+```
+
+The `Dashboard:` line links to the factory's dashboard, and [step 4](#4-watch-it-work) opens it.
 
 There is a second, fully qualified form, `<rig>/<binding>.<agent>`. The binding is the name of the import the agent arrived through, and since the base factory brings the polecat in transitively rather than directly, do not guess it — read it:
 
@@ -640,9 +596,13 @@ cat "$SFI_PATH/ascii-art/FACTORY_LOG.md"
 
 ### 4. Watch it work
 
-On a cloud box there is no dashboard yet. The old `sfbox` tunnelled it to your laptop, and that command is planned for a later sfbox v2 release, so watch from the box's terminal in its place:
+The dashboard shows the factory's work in a browser. It's embedded in the `gc` binary and served by the supervisor, so there's nothing to install and nothing to start.
 
-**Copy and paste** (on the box)
+On your own machine, open the `Dashboard:` link `gc sling` printed, or run `gc dashboard` from inside `factory1`, which opens the same dashboard in your browser.
+
+On a cloud box, that link points at the box's own `127.0.0.1`, which your laptop's browser can't open. A command that brings the dashboard to your laptop is coming in a later `sfbox` release. Until then, watch from the box's terminal:
+
+**Copy and paste**
 
 ```bash
 cd "$SFI_PATH/factory1"
@@ -651,9 +611,7 @@ cd "$SFI_PATH/ascii-art"
 bd list --status=in_progress
 ```
 
-`gc session list` shows which agents are running and when each last did something, and `bd list --status=in_progress` shows the beads they are working on. Run both again as the bead you slung moves along, or keep the sessions on screen with `watch -n 10 gc session list` from inside `factory1`, which refreshes every ten seconds until `Ctrl-C`.
-
-On your own machine, run `gc dashboard` from inside `factory1`. The dashboard is embedded in the `gc` binary and served by the supervisor, so there is nothing to install and nothing to start.
+`gc session list` shows which agents are running and when each last did something, and `bd list --status=in_progress` shows the beads they are working on. Run both again as the bead you slung moves along, or keep the sessions on screen with `watch -n 10 gc session list` from inside `factory1`, which refreshes every ten seconds until `Ctrl-C`. Both work on your own machine too.
 
 [W5](./W5-observability.md) is where you read the factory properly. For now, confirm your beads are there and that one of them is moving.
 
@@ -699,27 +657,35 @@ git ls-remote --heads origin
 
 ## Troubleshooting
 
-### `sfbox: command not found`
+### `gc init` stops at Dolt author identity
 
-The `PATH` line the installer printed hasn't reached this terminal. Run that line, then open a new terminal. The rest of `sfbox`'s install and sign-in problems are in the Troubleshooting list of [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md).
+It prints this and exits before `[6/8]`:
 
-### `sfbox` says `unknown command`
+```text
+gc init: city created, but startup is blocked by Dolt author identity
 
-`box`, `preflight`, `start-session`, `exec`, `gc` and `dashboard` belong to the old bash `sfbox`, which these boxes no longer use. sfbox v2 has `login`, `logout`, `create`, `ssh` and `version`, so open the box's terminal with `sfbox ssh <box>` and run the command there. [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md) has a table, *Commands from the old box guide*, of what to run in place of each one.
+Managed bd storage requires Dolt author identity before it can initialize.
 
-If `ssh` itself comes back unknown, the old script is still first on your `PATH`: `sfbox version` prints `sfbox 0.1.0`, and `command -v sfbox` says where it lives. Delete the line that puts `participant-box-cli` on your `PATH` from `~/.zshrc` or `~/.bashrc`, then open a new terminal.
+Missing Dolt config:
+  - user.name
+  - user.email
 
-### `sfbox ssh` can't reach the box
+Set it with:
+  dolt config --global --add user.name "Your Name"
+  dolt config --global --add user.email "you@example.com"
 
-It prints the reason. An expired sign-in, a stopped box and a brand-new box that isn't letting anyone in yet each have an entry in the Troubleshooting list of [`CLOUD_BOX_GUIDE.md`](../CLOUD_BOX_GUIDE.md). If the connection drops partway through this page, run `sfbox ssh <box>` again and `cd` back to where you were.
+gc init: set the Dolt identity, then run 'gc start'
+```
 
-### `git push` on the box can't sign in to GitHub
+Nothing's running yet, though the city's files exist. Run the two `dolt config` lines from [step 1](#1-set-your-identity-and-beads-role) with your own name and email, then `cd factory1` and `gc start`, which picks up where `gc init` stopped.
 
-It asks for a username, or fails with `Authentication failed`. Run `gh auth status` on the box, and if it doesn't name your account, run `gh auth login` the way the box guide's GitHub step describes. Then run `gh auth setup-git`, which points `git` at that sign-in, and push again.
+### `git push` can't sign in to GitHub
+
+It asks for a username, or fails with `Authentication failed`. Run `gh auth status`, and if it doesn't name your account, run `gh auth login` the way W2 describes. Then run `gh auth setup-git`, which points `git` at that sign-in, and push again.
 
 ### `gc status` shows `Controller: stopped` and `bd` reports Dolt unreachable
 
-You ran `gc init` but not `gc start`. The files exist and nothing is running. Run `gc start` from inside `factory1/`. Do not run `bd dolt start` to "fix" this — it creates the next problem instead.
+The city exists but isn't running: `gc init` stopped before `[8/8]`, or you answered `N` at its prompt. Run `gc start` from inside `factory1/`. Do not run `bd dolt start` to "fix" this — it creates the next problem instead.
 
 ### `gc start` fails with `dolt server could not start via gc helper`
 
@@ -742,7 +708,7 @@ kill <PID>
 
 Then re-run `gc start`, or wait about ten seconds for the supervisor's own retry.
 
-### On a cloud box, `bd` errors about Dolt or step 3 shows a different server
+### On a cloud box, `bd` errors about Dolt or step 4 shows a different server
 
 `bd` runs each Dolt server from its city's or rig's `.beads/dolt/`, and both logs live there: `server.log` is Dolt's own, and `proxy.log` belongs to the `bd db-proxy-child` in front of it. A server `bd` runs has a `--config` ending in `.beads/dolt/config.yaml` and a `bd db-proxy-child` as its parent. Anything else pointing into the city or a rig is a stray, usually left by `bd dolt start`, which starts its own server with `--config .../.beads/dolt-server-config.yaml`.
 
@@ -759,7 +725,7 @@ kill <PID>
 bd list
 ```
 
-Then run [step 3](#3-confirm-dolt-is-running)'s check again. It should show one `dolt sql-server` for `factory1`, started with `--config .../factory1/.beads/dolt/config.yaml`.
+Then run [step 4](#4-confirm-dolt-is-running)'s check again. It should show one `dolt sql-server` for `factory1`, started with `--config .../factory1/.beads/dolt/config.yaml`.
 
 ### `bd` commands fail with `database "hq" not found on Dolt server`
 

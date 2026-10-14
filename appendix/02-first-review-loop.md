@@ -32,7 +32,7 @@ By the end of this exercise you will have installed the `review-loop-rig` pack a
 - Page [the basic-flow appendix](./01-basic-flow.md) complete: `pr-gate-city` and
   `pr-gate-rig` are imported, `a.md`/`b.md`/`c.md` are merged via PR,
   the refinery is running on `mol-refinery-pr-patrol`.
-- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
+- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) appends it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
 - You're inside the rig directory: `cd "$SFI_PATH/ascii-art"`.
 - `gh` is authenticated and can create PRs against the rig's GitHub
   repo. Verify with `gh auth status` and `gh repo view`.
