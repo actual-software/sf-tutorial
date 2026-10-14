@@ -59,8 +59,8 @@ The script picks the build for your computer, checks it against the release's ch
 **Expected output**
 
 ```text
-==> Downloading sfbox v2.2.0 for darwin/arm64
-==> Installed sfbox v2.2.0 at /Users/you/.local/bin/sfbox
+==> Downloading sfbox v2.3.0 for darwin/arm64
+==> Installed sfbox v2.3.0 at /Users/you/.local/bin/sfbox
 ==> Next, sign in: sfbox login
 ```
 
@@ -253,7 +253,7 @@ These run on your laptop and work only on your own boxes. `sfbox help` lists the
 | `sfbox start <box>` | Starts it again. Give it about a minute to boot before `sfbox ssh` |
 | `sfbox download <box> <folder>` | Copies a folder from the box to your laptop, leaving out sign-in files |
 | `sfbox delete <box>` | Deletes the box, once you've typed its name to confirm |
-| `sfbox ui` | Opens your boxes in a browser on your laptop, with the same status, stop, start, download and delete |
+| `sfbox ui` | Opens your boxes in a browser on your laptop, where you can also create a box, open its terminal and browse its files |
 
 - **`status`'s `Health` line looks only for a factory in `~/city`.** The one you build in W3 lives in `~/software-factory-intensive/factory1`, so that line keeps reading `service=inactive` and `city=no` while yours runs. Check yours from its own directory on the box with `gc session list`.
 - **`download` reads a folder name without a leading `/` from your home on the box, `/home/ubuntu`.** `sfbox download ada-sfi software-factory-intensive/factory1` copies that folder into `./factory1` on your laptop. `--to <folder>` picks another local name, and an existing local folder is replaced only with `--force`. The copy leaves out every `.ssh` folder, each coding agent's sign-in file, `gh`'s token and `~/city/.env`. A `.env` in your W3 factory's folder is copied like any other file.
@@ -261,7 +261,7 @@ These run on your laptop and work only on your own boxes. `sfbox help` lists the
 
 ## Your boxes in a browser
 
-`sfbox ui` shows your boxes on a web page instead of in the terminal. It runs on your laptop and needs `sfbox` v2.2.0 or later, so update with the step 1 line if `sfbox version` shows an older one.
+`sfbox ui` shows your boxes on a web page instead of in the terminal. It runs on your laptop and needs `sfbox` v2.3.0 or later for everything below, so update with the step 1 line if `sfbox version` shows an older one.
 
 **Copy and paste**
 
@@ -269,10 +269,19 @@ These run on your laptop and work only on your own boxes. `sfbox help` lists the
 sfbox ui
 ```
 
-It opens your browser on a page that lists each box with its status and health, and has buttons for stop, start, downloading a folder and delete. Delete asks you to type the box's name first, the same as `sfbox delete`. The page has no terminal, so each box shows its `sfbox ssh <box>` line with a **Copy** button to paste into yours.
+It opens your browser on a page that lists each box with its status and health, with a button for each of these:
+
+- **New box** makes a box, with the same name rule as `sfbox create`, and shows it booting under **Activity**. If you already own as many boxes as a person may, the page says so.
+- **Terminal** opens the box's shell in a new tab, the same one `sfbox ssh` opens. Closing the tab, or its **Close** button, ends it.
+- **Files** lists the box's folders, starting at `/home/ubuntu`. Click a folder to open it, find files by name, search the text inside them, and download any folder shown. Sign-in files and `.ssh` folders are never listed, searched or downloaded.
+- **Stop**, **Start**, **Download a folder** and **Delete** do what the `sfbox` commands of those names do. Delete asks you to type the box's name first.
+- **Sign out** signs this computer out, which signs out `sfbox` in your terminal too.
+
+About the page itself:
 
 - **The page lives on your laptop.** Its address works only on this computer and only while `sfbox ui` runs, so leave that terminal open and press Ctrl-C there when you're done.
 - **It uses your `sfbox login`.** If you aren't signed in, or your session runs out, it signs you in the same way.
+- **A box you've just made can take a minute** before its terminal or files open, while Google catches up with its access. The page says it's waiting rather than failing.
 - **Downloads land in your `Downloads` folder** by default, as `<box>-<folder>`. Type another folder in **Save to** to change that, and tick the box to replace one that already exists. The folder on the box is read from `/home/ubuntu`, as `sfbox download` reads it, and the same sign-in files are left out.
 
 ## Troubleshooting
