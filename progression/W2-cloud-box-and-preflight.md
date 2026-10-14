@@ -44,7 +44,7 @@ There are two places to run your factory, and you pick one. Most people should t
 | Installed for you | `gc`, `bd`, `dolt`, `gh`, Claude Code, Codex and Gemini CLI, on the box | Nothing |
 | Where you sign in to your agent and GitHub | The box's terminal | Your laptop |
 
-On the cloud box path your laptop never needs `gc`, `bd`, `dolt`, `gh` or a copy of this repo, because everything after setup runs on the box. Whichever path you take, stay on it. From [W3](./W3-run-your-factory.md) on the steps are the same in either terminal, so this page is the only one where the two differ.
+On the cloud box path your laptop never needs `gc`, `bd`, `dolt`, `gh` or a copy of this repo, because everything after setup runs on the box. Whichever path you take, stay on it. From [W3](./W3-run-your-factory.md) on, the commands are the same in either terminal, and the few places that differ, such as opening the dashboard, say so.
 
 ## The cloud box (recommended)
 

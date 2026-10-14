@@ -200,7 +200,7 @@ Whatever the answer is, it becomes a capability-map row in the next lab. "The im
 ## Troubleshooting
 
 - **`gc rig add` fails because the directory already exists with content.** That is fine and expected for a cloned repo; the command adopts the directory. If it refuses, check you passed the path as a sibling of the city rather than a path inside it.
-- **`bd init` refuses because the prefix collides.** Two rigs cannot share a prefix. Pass a distinct one with `--prefix`.
+- **`gc rig add` refuses because the prefix collides.** It derives the rig's bead prefix from its name, and two rigs, or a rig and the city, cannot share one. Pass a distinct one: `gc rig add ../<your-rig-name> <your-rig-name> --prefix <prefix>`.
 - **The manifest generator produces something thin.** It is reading your project overview. Go back to step 2 and answer the questions properly; the generator cannot know what you did not write down.
 - **You do not have a repo you can push to.** Fork something you know well, or use a scratch repo and pick beads you could plausibly implement in it. The mechanics are the lesson; the codebase is the setting.
 

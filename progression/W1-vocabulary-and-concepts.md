@@ -23,7 +23,7 @@
 
 This session is talking rather than typing. By the end of it you can name every Gas City primitive you are about to use, say what a rig is and how it differs from a city, and explain why a factory has five ways for agents to talk to each other rather than one.
 
-Nothing here needs a terminal. The next session sets your machine up, and the one after that builds the factory these words describe.
+Nothing here needs a terminal. The next session sets up your cloud box or your own machine, and the one after that builds the factory these words describe.
 
 ## Prereqs
 
@@ -185,6 +185,6 @@ You are ready to move on if you can answer these without looking back:
 
 ## What's next
 
-[W2](./W2-cloud-box-and-preflight.md) gets the tools onto your machine and proves they work.
+[W2](./W2-cloud-box-and-preflight.md) gets you a terminal with the tools in it, on your cloud box or your own machine, and proves they work.
 
 « [next: W2 Cloud Box and Preflight](./W2-cloud-box-and-preflight.md) »

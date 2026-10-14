@@ -2,7 +2,7 @@
 
 Your cloud box is a Linux machine in Google Cloud that already carries `gc`, `bd`, `dolt`, `gh` and three coding agents: Claude Code, Codex and Gemini CLI. You reach it with `sfbox` and the Google account or email address your instructor added to the cohort, so there are no key files, IP addresses or SSH settings to keep track of.
 
-Running the two days on your own laptop instead? You don't need this page. Go straight to [W2's own-machine path](./progression/W2-cloud-box-and-preflight.md#your-own-machine-alternative).
+Running the two days on your own machine instead? You don't need this page. Go straight to [W2's own-machine path](./progression/W2-cloud-box-and-preflight.md#your-own-machine-alternative).
 
 ## Contents
 
