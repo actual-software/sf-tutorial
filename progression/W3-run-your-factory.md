@@ -15,7 +15,7 @@
 - [Setup](#setup)
   - [1. Create the city](#1-create-the-city)
   - [2. Read what `gc init` wrote](#2-read-what-gc-init-wrote)
-  - [3. Confirm Dolt is supervisor-managed](#3-confirm-dolt-is-supervisor-managed)
+  - [3. Confirm Dolt is running](#3-confirm-dolt-is-running)
   - [4. Register the ascii-art rig](#4-register-the-ascii-art-rig)
   - [5. Add the starting docs](#5-add-the-starting-docs)
   - [6. Put the rig on GitHub](#6-put-the-rig-on-github)
@@ -203,7 +203,7 @@ cd factory1/
 gc start
 ```
 
-`gc start` registers `factory1` with the supervisor, installs the launchd or systemd service if needed, starts the supervisor process, and brings up the city's Dolt server and agents. **From here on the supervisor owns the Dolt server's lifecycle — do not run `bd dolt start` yourself.** See [Troubleshooting](#troubleshooting) if you hit Dolt errors.
+`gc start` registers `factory1` with the supervisor, installs the launchd or systemd service if needed, starts the supervisor process, and brings up the city's agents. On a cloud box the city's Dolt server is already running by then, because `gc init` had `bd` start it, and `bd` keeps it running. On your own machine `gc start` brings Dolt up along with the agents. **Either way, leave that server to `gc` and `bd`, and don't run `bd dolt start` yourself.** See [Troubleshooting](#troubleshooting) if you hit Dolt errors.
 
 **Copy and paste**
 
@@ -288,9 +288,9 @@ base = "builtin:claude"
 ready_delay_ms = 0
 ```
 
-### 3. Confirm Dolt is supervisor-managed
+### 3. Confirm Dolt is running
 
-`gc start` also started the city's Dolt server. Verify there is exactly one Dolt process for `factory1` and that `bd` can reach it.
+The city's beads live in a Dolt database whose server is already up. Verify there is exactly one Dolt server for `factory1` and that `bd` can reach it.
 
 **Copy and paste**
 
@@ -299,9 +299,11 @@ ps aux | grep "dolt sql-server" | grep factory1 | grep -v grep
 bd list
 ```
 
-You should see one `dolt sql-server` started with `--config .../factory1/.gc/runtime/packs/dolt/dolt-config.yaml`. `bd list` should return without error, most likely "No issues found." for a fresh city.
+On a cloud box you should see one `dolt sql-server` started with `--config .../factory1/.beads/dolt/config.yaml`. Its parent is a `bd db-proxy-child` process. `bd` started both during `gc init`, and if they ever stop, the next `bd` command starts them again. On your own machine the line ends in `--config .../factory1/.gc/runtime/packs/dolt/dolt-config.yaml` instead, because the laptop toolchain from W2 runs an older `gc` that keeps Dolt under the supervisor. Either way, `bd list` should return without error, most likely "No issues found." for a fresh city.
 
-> **Do not run `bd dolt start` while the city is supervisor-managed.** It starts a second Dolt holding a write lock on the same data directory, and the next time the supervisor restarts the city it cannot bring up its own. The `dolt.auto-start` setting in `.beads/config.yaml` only matters for standalone `bd` use outside a running city, and the supervisor may rewrite it.
+On the box each rig gets a Dolt server of its own, so a second `bd db-proxy-child` and `dolt sql-server` appear for `ascii-art` once you register it in [step 4](#4-register-the-ascii-art-rig). The `grep factory1` keeps this check to the city's.
+
+> **Don't run `bd dolt start` or `bd dolt stop` on this city.** On a box, `bd dolt stop` stops the server under the city's running agents, and `bd dolt start` can leave a second server over the same data that nothing supervises. Don't go by `bd dolt status` there either: it can report `not running` while the server is up, so `bd list` is the check. On your own machine, `bd dolt start` starts a second Dolt holding a write lock on the same data directory, and the next time the supervisor restarts the city it cannot bring up its own. The `dolt.auto-start` setting in `.beads/config.yaml` only matters there for standalone `bd` use outside a running city, and the supervisor may rewrite it.
 
 ### 4. Register the ascii-art rig
 
@@ -721,7 +723,7 @@ You ran `gc init` but not `gc start`. The files exist and nothing is running. Ru
 
 ### `gc start` fails with `dolt server could not start via gc helper`
 
-Open `.gc/runtime/packs/dolt/dolt.log`. The usual cause is another Dolt process holding the lock on `.beads/dolt/`, generally a leftover `bd dolt start`. Note that `bd dolt stop` does not always terminate it.
+This one happens on your own machine, where `gc` starts Dolt itself. On a cloud box `bd` does that, and the next entry covers it. Open `.gc/runtime/packs/dolt/dolt.log`. The usual cause is another Dolt process holding the lock on `.beads/dolt/`, generally a leftover `bd dolt start`. Note that `bd dolt stop` does not always terminate it.
 
 **Copy and paste**
 
@@ -739,6 +741,25 @@ kill <PID>
 ```
 
 Then re-run `gc start`, or wait about ten seconds for the supervisor's own retry.
+
+### On a cloud box, `bd` errors about Dolt or step 3 shows a different server
+
+`bd` runs each Dolt server from its city's or rig's `.beads/dolt/`, and both logs live there: `server.log` is Dolt's own, and `proxy.log` belongs to the `bd db-proxy-child` in front of it. A server `bd` runs has a `--config` ending in `.beads/dolt/config.yaml` and a `bd db-proxy-child` as its parent. Anything else pointing into the city or a rig is a stray, usually left by `bd dolt start`, which starts its own server with `--config .../.beads/dolt-server-config.yaml`.
+
+**Copy and paste**
+
+```bash
+# Every Dolt server and bd proxy, with each one's parent PID
+ps -eo pid,ppid,command | grep -E "dolt sql-server|db-proxy-child" | grep -v grep
+
+# Kill the stray:
+kill <PID>
+
+# Any bd command restarts bd's own server if it has stopped
+bd list
+```
+
+Then run [step 3](#3-confirm-dolt-is-running)'s check again. It should show one `dolt sql-server` for `factory1`, started with `--config .../factory1/.beads/dolt/config.yaml`.
 
 ### `bd` commands fail with `database "hq" not found on Dolt server`
 
@@ -764,7 +785,7 @@ You ran the script outside the rig, so the beads went into a different database.
 
 ### Recurring breakage after reinstalling `gc` or `bd`
 
-Reinstalling the binaries does not kill running Dolt processes. Check for orphans with `ps aux | grep "dolt sql-server"` before retrying. Anything pointing at a project you are not using is safe to kill. Leave alone the supervisor-managed Dolt for cities you are using, and any standalone `~/.dolt-server` you set up deliberately.
+Reinstalling the binaries does not kill running Dolt processes. Check for orphans with `ps aux | grep "dolt sql-server"` before retrying. Anything pointing at a project you are not using is safe to kill. Leave alone the Dolt servers of cities you are using, whether the supervisor or `bd` runs them, and any standalone `~/.dolt-server` you set up deliberately.
 
 ## What's next
 
