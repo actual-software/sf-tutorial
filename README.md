@@ -44,7 +44,7 @@ For the authoritative definitions of every Gas City term (agent, pack, rig, bead
 
 ## Community & Support
 
-Stuck on a step, want to share what you've built, or looking to collaborate with other participants? Join the [Actual AI User Community Slack](https://join.slack.com/t/actualaiusercommunity/shared_invite/zt-3vibgzapf-ywx0Db29mZ4lhtQJGzZfGQ) to ask questions and get help from other participants.
+Stuck on a step, want to share what you've built, or looking to collaborate with other participants? Join the [Actual AI User Community Slack](https://join.slack.com/t/actualaiusercommunity/shared_invite/zt-4d18pkwcm-7YA0K_5pvJ5MLhuk0WJIOQ) to ask questions and get help from other participants.
 
 ## Prerequisites
 
