@@ -48,9 +48,9 @@ Stuck on a step, want to share what you've built, or looking to collaborate with
 
 ## Prerequisites
 
-### CLI Coding Agent Subscription (or API key)
+### CLI Coding Agent Subscription
 
-You’ll need at least one coding agent subscription (or API key) to run the workshop. Having more than one gives you broader capabilities and redundancy.
+You’ll need at least one coding agent subscription to run the workshop, signed in with the account itself rather than an API key, because `gc init` checks each agent’s sign-in and refuses API keys. Having more than one gives you broader capabilities and redundancy.
   - **Recommended**: Claude Code Max (20x) or Codex Pro (20x)
   - **Minimum**: Claude Code Max or Codex Pro (standard tier)
   - **Alternatives**: Gemini CLI, OpenCode (compatibility not guaranteed)
