@@ -254,7 +254,7 @@ These run on your laptop and work only on your own boxes. `sfbox help` lists the
 | `sfbox delete <box>` | Deletes the box, once you've typed its name to confirm |
 
 - **`status`'s `Health` line looks only for a factory in `~/city`.** The one you build in W3 lives in `~/software-factory-intensive/factory1`, so that line keeps reading `service=inactive` and `city=no` while yours runs. Check yours from its own directory on the box with `gc session list`.
-- **`download` reads a folder name without a leading `/` from your home on the box, `/home/ubuntu`.** `sfbox download ada-sfi software-factory-intensive/factory1` copies that folder into `./factory1` on your laptop. `--to <folder>` picks another local name, and an existing local folder is replaced only with `--force`. The copy leaves out every `.ssh` folder, each coding agent's sign-in file, `gh`'s token and the city's `.env`.
+- **`download` reads a folder name without a leading `/` from your home on the box, `/home/ubuntu`.** `sfbox download ada-sfi software-factory-intensive/factory1` copies that folder into `./factory1` on your laptop. `--to <folder>` picks another local name, and an existing local folder is replaced only with `--force`. The copy leaves out every `.ssh` folder, each coding agent's sign-in file, `gh`'s token and `~/city/.env`. A `.env` in your W3 factory's folder is copied like any other file.
 - **`delete` takes two or three minutes** and removes the box's VM, disk and accounts. A snapshot of its disk is kept for now, so an instructor can still recover files, but download anything you want to keep first.
 
 ## Troubleshooting
