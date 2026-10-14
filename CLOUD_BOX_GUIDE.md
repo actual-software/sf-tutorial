@@ -281,7 +281,7 @@ About the page itself:
 
 - **The page lives on your laptop.** Its address works only on this computer and only while `sfbox ui` runs, so leave that terminal open and press Ctrl-C there when you're done.
 - **It uses your `sfbox login`.** If you aren't signed in, or your session runs out, it signs you in the same way.
-- **A box you've just made can take a minute** before its terminal or files open, while Google catches up with its access. The page says it's waiting rather than failing.
+- **A box you've just made can take a minute or two** before its terminal or files open, while Google catches up with its access. The page says it's waiting rather than failing.
 - **Downloads land in your `Downloads` folder** by default, as `<box>-<folder>`. Type another folder in **Save to** to change that, and tick the box to replace one that already exists. The folder on the box is read from `/home/ubuntu`, as `sfbox download` reads it, and the same sign-in files are left out.
 
 ## Troubleshooting
