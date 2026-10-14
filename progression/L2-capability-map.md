@@ -93,7 +93,7 @@ git commit -m "Add capability map for factory changes"
 
 ### 4. Day 2: finish and review
 
-Come back to the map with a night's distance. A new shell needs `$SFI_PATH` and `$MY_RIG_PATH`. [W2](./W2-cloud-box-and-preflight.md) and [W3](./W3-run-your-factory.md) append the first to a shell rc and [L1 step 1](./L1-plan-your-factory.md#1-register-your-repo-as-a-rig) appends the second, so a Day 2 terminal opens with both; every path on this page and in the labs that follow is written out from them.
+Come back to the map with a night's distance. A new shell needs `$SFI_PATH` and `$MY_RIG_PATH`. [W2](./W2-cloud-box-and-preflight.md) appends the first to a shell rc and [L1 step 1](./L1-plan-your-factory.md#1-register-your-repo-as-a-rig) appends the second, so a Day 2 terminal opens with both; every path on this page and in the labs that follow is written out from them.
 
 Then three things to do, in order:
 

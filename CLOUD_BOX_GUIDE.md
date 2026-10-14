@@ -2,7 +2,7 @@
 
 Your cloud box is a Linux machine in Google Cloud that already carries `gc`, `bd`, `dolt`, `gh` and three coding agents: Claude Code, Codex and Gemini CLI. You reach it with `sfbox` and the Google account or email address your instructor added to the cohort, so there are no key files, IP addresses or SSH settings to keep track of.
 
-Running the two days on your own laptop instead? You don't need this page. Go straight to [W2 Cloud Box and Preflight](./progression/W2-cloud-box-and-preflight.md), whose appendix covers the local path.
+Running the two days on your own laptop instead? You don't need this page. Go straight to [W2's own-machine path](./progression/W2-cloud-box-and-preflight.md#your-own-machine-alternative).
 
 ## Contents
 
@@ -59,8 +59,8 @@ The script picks the build for your computer, checks it against the release's ch
 **Expected output**
 
 ```text
-==> Downloading sfbox v2.3.0 for darwin/arm64
-==> Installed sfbox v2.3.0 at /Users/you/.local/bin/sfbox
+==> Downloading sfbox v2.4.0 for darwin/arm64
+==> Installed sfbox v2.4.0 at /Users/you/.local/bin/sfbox
 ==> Next, sign in: sfbox login
 ```
 
@@ -223,7 +223,7 @@ gh auth login
 
 Press Enter at each question to take the defaults: **GitHub.com**, **HTTPS**, **Yes** to authenticating Git, and **Login with a web browser**. It then prints a one-time code. Open https://github.com/login/device in your laptop's browser, enter that code and approve the request. Along the way you'll see two warnings, one saying `gh` couldn't copy the code to a clipboard and one saying it couldn't open a browser, and both are expected on a box that has neither.
 
-Rather not grant the CLI your whole account? Paste a token instead, as [W2's GitHub sign-in section](./progression/W2-cloud-box-and-preflight.md#1-sign-in-to-github) describes, since those steps work the same on the box.
+Rather not grant the CLI your whole account? Paste a token instead, as [W2's GitHub sign-in section](./progression/W2-cloud-box-and-preflight.md#5-sign-in-to-github) describes, since those steps work the same on the box.
 
 Check it:
 
@@ -237,7 +237,7 @@ It should name your GitHub account.
 
 ## Step 7: back to the tutorial
 
-That's the box ready. Head back to [W2's cloud box section](./progression/W2-cloud-box-and-preflight.md#the-cloud-box-recommended) and run its check.
+That's the box ready. Head back to [W2's box check](./progression/W2-cloud-box-and-preflight.md#2-check-the-box) and run it.
 
 The box has no factory on it yet, and that's deliberate: it brings the toolchain and the agents, and [W3](./progression/W3-run-your-factory.md) is where you build the factory.
 
@@ -254,6 +254,7 @@ These run on your laptop and work only on your own boxes. `sfbox help` lists the
 | `sfbox download <box> <folder>` | Copies a folder from the box to your laptop, leaving out sign-in files |
 | `sfbox delete <box>` | Deletes the box, once you've typed its name to confirm |
 | `sfbox ui` | Opens your boxes in a browser on your laptop, where you can also create a box, open its terminal and browse its files |
+| `sfbox dashboard <box>` | Opens your factory's dashboard from the box in your laptop's browser, until you press Ctrl-C. Needs v2.4.0 or later |
 
 - **`status`'s `Health` line looks only for a factory in `~/city`.** The one you build in W3 lives in `~/software-factory-intensive/factory1`, so that line keeps reading `service=inactive` and `city=no` while yours runs. Check yours from its own directory on the box with `gc session list`.
 - **`download` reads a folder name without a leading `/` from your home on the box, `/home/ubuntu`.** `sfbox download ada-sfi software-factory-intensive/factory1` copies that folder into `./factory1` on your laptop. `--to <folder>` picks another local name, and an existing local folder is replaced only with `--force`. The copy leaves out every `.ssh` folder, each coding agent's sign-in file, `gh`'s token and `~/city/.env`. A `.env` in your W3 factory's folder is copied like any other file.
@@ -274,6 +275,7 @@ It opens your browser on a page that lists each box with its status and health, 
 - **New box** makes a box, with the same name rule as `sfbox create`, and shows it booting under **Activity**. If you already own as many boxes as a person may, the page says so.
 - **Terminal** opens the box's shell in a new tab, the same one `sfbox ssh` opens. Closing the tab, or its **Close** button, ends it.
 - **Files** lists the box's folders, starting at `/home/ubuntu`. Click a folder to open it, find files by name, search the text inside them, and download any folder shown. Sign-in files and `.ssh` folders are never listed, searched or downloaded.
+- **Dashboard** opens the factory dashboard from that box in a new tab, the one `sfbox dashboard` opens, once a city is running there. It needs v2.4.0 or later, and it stays open until `sfbox ui` stops or you sign out.
 - **Stop**, **Start**, **Download a folder** and **Delete** do what the `sfbox` commands of those names do. Delete asks you to type the box's name first.
 - **Sign out** signs this computer out, which signs out `sfbox` in your terminal too.
 
@@ -304,6 +306,7 @@ About the page itself:
 - **The terminal freezes after your laptop sleeps or changes Wi-Fi.** Close it and run `sfbox ssh` again. Your files on the box are where you left them.
 - **An agent rejects its code.** Codes are single-use and expire. Start that agent's sign-in again for a fresh one.
 - **`IAP reached box … but nothing answered on port 22`.** The box was started moments ago and is still booting. Give it a minute, then try again.
+- **`gc's supervisor isn't running on box …, so there's no dashboard to open`.** `sfbox dashboard` found no running city on the box. Start yours with `gc start` in its folder on the box, then run `sfbox dashboard` again.
 - **The `sfbox ui` page says to open the address `sfbox ui` printed.** That address belongs to an `sfbox ui` that has stopped, or the page was opened some other way. Run `sfbox ui` again, or open the address it printed in your terminal.
 
 ## Commands from the old box guide
@@ -319,7 +322,7 @@ Anything written for the previous `sfbox`, a bash script in this repo, uses its 
 | `sfbox preflight` | `sfbox status <box>`, whose `Boot` line reads `ready` once the box is. On the box, `gas-city-boot-status` prints nothing once it's ready, and `systemctl is-active gas-city.service` checks the image's own factory service |
 | `sfbox exec <command>` | `sfbox ssh <box>`, then run the command there |
 | `sfbox gc <args>` | `sfbox ssh <box>`, then `gc <args>` from your city's directory |
-| `sfbox dashboard` | Nothing yet. On the box, `gc session list` and `bd list` from your city's directory show the agents and the work |
+| `sfbox dashboard` | `sfbox dashboard <box>`, from v2.4.0 |
 
 ## Coming later
 
@@ -328,4 +331,4 @@ These parts of `sfbox` are designed and not released yet. Until they are, the st
 - `sfbox setup`, which sets up and starts a factory on the box for you. During the intensive you build yours by hand in W3, so you won't miss it.
 - `sfbox secrets set`, for values such as a Slack app's two tokens.
 - Signing in to `sfbox` with a GitHub account instead of Google.
-- `sfbox dashboard`, `code`, `exec` and `gc`, among the rest.
+- `sfbox code`, `exec` and `gc`, among the rest.

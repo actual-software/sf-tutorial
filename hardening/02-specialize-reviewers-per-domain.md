@@ -24,7 +24,7 @@ Install the `domain-reviewers-rig` pack into the `ascii-art` rig, replacing the 
 ## Prereqs
 
 - [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on a rig, with the polecat, refinery and architect running.
-- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) and [W3](../progression/W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
+- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) appends it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
 - You are inside the rig directory: `cd "$SFI_PATH/ascii-art"`.
 - `gh` is authenticated; `jq` is installed.
 - An open task bead to work with. `bd list --status open --limit 5` picks one.

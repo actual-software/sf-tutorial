@@ -19,7 +19,6 @@
 - [Tinkering with formula configuration](#tinkering-with-formula-configuration)
 - [Deliverable](#deliverable)
 - [Verification](#verification)
-- [Ceiling](#ceiling)
 - [Troubleshooting](#troubleshooting)
 - [What's next](#whats-next)
 
@@ -65,7 +64,7 @@ Every command below is written out from two variables:
 
 | Variable | Points at | Set by |
 | --- | --- | --- |
-| `SFI_PATH` | your workspace directory | [W2](./W2-cloud-box-and-preflight.md) on your laptop, [W3 step 3](./W3-run-your-factory.md#3-open-a-shell-on-the-box) on the box. Both append it to a shell rc, so it survives |
+| `SFI_PATH` | your workspace directory | [W2](./W2-cloud-box-and-preflight.md), [on the box](./W2-cloud-box-and-preflight.md#3-set-up-your-workspace-on-the-box) or [on your laptop](./W2-cloud-box-and-preflight.md#2-clone-the-tutorial). Both paths append it to a shell rc, so it survives |
 | `MY_RIG_PATH` | your own rig's directory | [L1 step 1](./L1-plan-your-factory.md#1-register-your-repo-as-a-rig), which appends it to a shell rc too |
 
 Your factory is `$SFI_PATH/factory1` and your own rig is `$MY_RIG_PATH`. Nothing on this page asks you to export either; both were set and persisted on the pages that created them.
@@ -332,7 +331,7 @@ the bead you deliberately made fail, still blocked with a reason
 - **The option's page refers to agents you do not have.** Each option page assumes the base factory plus that option. If it names an agent from a different option, you found a bug worth reporting; the options are meant to be independent.
 - **`gc import add` succeeds and the new agent never appears.** Check the scope. Options install at rig scope with `--rig`; installing at city scope puts the agent somewhere the rig cannot see.
 - **You installed from a URL and the agent never appears.** Run `gc import install`. A remote import is recorded by `gc import add` and fetched by `gc import install`, and until the fetch happens there is nothing on disk for `gc reload` to read.
-- **A command runs somewhere unexpected, or `ls` reports `cannot access '': No such file or directory`.** `$SFI_PATH` or `$MY_RIG_PATH` is unset in this shell. `cd ""` exits 0 in both bash and zsh, so an unset variable leaves you where you were rather than reporting an error. `echo "$SFI_PATH" "$MY_RIG_PATH"` settles it; [W2](./W2-cloud-box-and-preflight.md) and [W3](./W3-run-your-factory.md) append the first to a shell rc and [L1 step 1](./L1-plan-your-factory.md#1-register-your-repo-as-a-rig) appends the second, so a Day 2 shell missing either never ran that step.
+- **A command runs somewhere unexpected, or `ls` reports `cannot access '': No such file or directory`.** `$SFI_PATH` or `$MY_RIG_PATH` is unset in this shell. `cd ""` exits 0 in both bash and zsh, so an unset variable leaves you where you were rather than reporting an error. `echo "$SFI_PATH" "$MY_RIG_PATH"` settles it; [W2](./W2-cloud-box-and-preflight.md) appends the first to a shell rc and [L1 step 1](./L1-plan-your-factory.md#1-register-your-repo-as-a-rig) appends the second, so a Day 2 shell missing either never ran that step.
 - **Your change works on `ascii-art` and not on your rig.** Your rig needs the base factory imported too — L1 step 1. `gc import list --rig <your-rig-name>` settles it.
 - **The negative case passes when it should fail.** Either the input was better-formed than you thought, or the check is not on the path the bead took. Both are worth a map row.
 

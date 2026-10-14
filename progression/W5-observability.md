@@ -25,7 +25,7 @@ Your factory runs without you. This session is about seeing what it did and why.
 ## Prereqs
 
 - [W4](./W4-tour-the-factory.md) complete, and at least one bead that has moved through the pipeline.
-- `$SFI_PATH` set in your shell. [W2](./W2-cloud-box-and-preflight.md) and [W3](./W3-run-your-factory.md) both append it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
+- `$SFI_PATH` set in your shell. [W2](./W2-cloud-box-and-preflight.md) appends it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
 - On a cloud box, every command on this page runs in the box's terminal, which `sfbox ssh <box>` opens.
 
 ## Context
@@ -40,13 +40,15 @@ Three questions come up constantly once a factory is doing real work, and each h
 
 The trap is using one surface for all three. A dashboard is excellent at breadth and poor at "why", because the reasoning lives on the bead. A session attach is excellent at "right now" and useless an hour later. Knowing which to reach for is the whole skill.
 
-Everything below has a CLI form and a browser form. Neither is authoritative over the other; they read the same store. On a cloud box only the CLI form is open to you for now, and [step 1](#1-open-the-dashboard) says why.
+Everything below has a CLI form and a browser form. Neither is authoritative over the other; they read the same store. On a cloud box the browser form reaches your laptop through `sfbox dashboard`, which [step 1](#1-open-the-dashboard) sets up.
 
 ## Try It
 
 ### 1. Open the dashboard
 
-The dashboard is a single-page app embedded in the `gc` binary and served by the supervisor, so nothing separate needs starting. On your own machine, open it from inside the city:
+The dashboard is a single-page app embedded in the `gc` binary and served by the supervisor, so nothing separate needs starting.
+
+**On your own machine**, open the `Dashboard:` link that `gc sling` printed in W3, or open the dashboard from inside the city:
 
 **Copy and paste** (on your own machine)
 
@@ -57,11 +59,19 @@ gc dashboard
 
 That resolves the supervisor URL, opens your browser, and prints the URL as well.
 
-On a cloud box the dashboard isn't open to you yet. The supervisor serves it on the box, and the old `sfbox` tunnelled it to your laptop. That command is planned for a later sfbox v2 release, and `sfbox ssh` takes no ssh flags, so there's no `-L` port forward to stand in for it. Until it ships, work through this page in the box's terminal. Every step below has a CLI form, and those are enough for the [verification](#verification) at the end, so read the browser parts as what the dashboard adds once it reaches your laptop.
+**On a cloud box**, the supervisor serves the dashboard on the box's own `127.0.0.1:8372`, which is also where the `Dashboard:` link from `gc sling` points. Bring it to your laptop from a second terminal there, the way [W3's step 4](./W3-run-your-factory.md#4-watch-it-work) does:
+
+**Copy and paste** (on your laptop, in a new terminal)
+
+```bash
+sfbox dashboard <box>
+```
+
+It opens the dashboard in your browser, and the `Dashboard:` links `gc` prints on the box work unchanged while it runs. Leave it running for the rest of this page, keep the box's terminal for the CLI forms, and press `Ctrl-C` in the `sfbox` terminal when you're done. The **Dashboard** button in `sfbox ui` does the same thing.
 
 ### 2. The beads list, and what a bead carries
 
-Find the beads list in the dashboard, then pick the bead you watched move in W4. On a cloud box, `bd list --all` from inside `ascii-art` gives you the same list. Without `--all` it leaves out closed beads, and yours may be one.
+Find the beads list in the dashboard, then pick the bead you watched move in W4. From the command line, `bd list --all` from inside `ascii-art` gives you the same list. Without `--all` it leaves out closed beads, and yours may be one.
 
 A bead is not just a title and a status. Every field on it is either something a human set or something an agent recorded, and the second kind is what makes a factory traceable.
 
@@ -106,7 +116,7 @@ A formula is the method; a *run* is one execution of it against one bead. **This
 
 In the browser, open a formula and read its runs: which steps ran, in what order, and where one stopped. Compare that against the `[[steps]]` graph you read in W4. A run that stopped early is a step whose `needs` were never satisfied, and the run view is where that becomes obvious rather than mysterious.
 
-From the command line, which is all a cloud box offers for now, you get the recipe and the wreckage rather than the run itself:
+From the command line you get the recipe and the wreckage rather than the run itself:
 
 **Copy and paste**
 
@@ -178,7 +188,8 @@ gc order history
 **Expected output**
 
 ```text
-a http:// URL for the dashboard (on a cloud box, the box's own, which your laptop can't open yet)
+The dashboard is served by the gc supervisor at http://127.0.0.1:8372
+  (on a cloud box that address is the box's own, and sfbox dashboard <box> brings it to your laptop)
 at least one closed bead
 a handful of recent events
 at least one order run
@@ -190,7 +201,7 @@ at least one order run
 - **The dashboard opens but the beads list is empty.** You are looking at a different city or a different rig than the one holding your work. Check the city selector, and remember `factory1` and `ascii-art` have separate beads stores with different prefixes.
 - **`gc session peek` reports no such session.** Ephemeral sessions exit when their work is done. Re-run `gc session list`; if nothing is live, sling a bead to spawn one.
 - **`gc events` returns nothing for a type you expected.** Check the spelling against a broader `gc events --since 2h`; event types are dotted names such as `bead.closed`, and a near-miss returns a silent empty rather than an error.
-- **On a cloud box the browser cannot reach the URL.** The dashboard is bound on the box, not on your laptop, and sfbox v2.0.0 has nothing that tunnels it there yet. A command for it is planned for a later release. In the meantime, use each step's CLI form in the box's terminal.
+- **On a cloud box the browser cannot reach the URL.** The dashboard is bound on the box, not on your laptop. Run `sfbox dashboard <box>` in a terminal on your laptop and leave it running, and the URL opens while it does. If `sfbox` says the command is unknown, update it with the [guide's install line](../CLOUD_BOX_GUIDE.md#step-1-install-sfbox), since it needs v2.4.0 or later. If it says `gc's supervisor isn't running`, start your city with `gc start` in `factory1` on the box first.
 
 ## What's next
 
