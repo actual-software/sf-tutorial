@@ -26,12 +26,18 @@ between `reviewer-` and end:
 - `reviewer-claude` → vendor slug `claude`
 - `reviewer-gemini` → vendor slug `gemini`
 
-Compute it once at session start:
+Compute it once at session start from `$GC_TEMPLATE`, which names the
+agent you run as, rig and pack included (for example
+`ascii-art/multi-vendor-rig.reviewer-claude`). Don't derive it from
+`$GC_AGENT`, which current gc sets to this session's own id:
 
 ```bash
-VENDOR=$(echo "$GC_AGENT" | sed -E 's|.*/||; s|^reviewer-||')
+VENDOR=$(echo "$GC_TEMPLATE" | sed -E 's|.*reviewer-||')
 echo "vendor=$VENDOR"
 ```
+
+If it prints anything other than `codex`, `claude` or `gemini`, stop
+and report that instead of writing metadata under the wrong name.
 
 You will write `vendor_${VENDOR}_approved` and
 `vendor_${VENDOR}_feedback` — your siblings write the equivalent
