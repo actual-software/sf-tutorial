@@ -189,7 +189,7 @@ gc order history
 
 ```text
 The dashboard is served by the gc supervisor at http://127.0.0.1:8372
-  (on a cloud box that address is the box's own, and `sfbox dashboard <box>` brings it to your laptop)
+  (on a cloud box that address is the box's own, and sfbox dashboard <box> brings it to your laptop)
 at least one closed bead
 a handful of recent events
 at least one order run
