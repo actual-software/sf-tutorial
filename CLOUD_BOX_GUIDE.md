@@ -254,6 +254,7 @@ These run on your laptop and work only on your own boxes. `sfbox help` lists the
 | `sfbox download <box> <folder>` | Copies a folder from the box to your laptop, leaving out sign-in files |
 | `sfbox delete <box>` | Deletes the box, once you've typed its name to confirm |
 | `sfbox ui` | Opens your boxes in a browser on your laptop, where you can also create a box, open its terminal and browse its files |
+| `sfbox dashboard <box>` | Opens your factory's dashboard from the box in your laptop's browser, until you press Ctrl-C. Needs v2.4.0 or later |
 
 - **`status`'s `Health` line looks only for a factory in `~/city`.** The one you build in W3 lives in `~/software-factory-intensive/factory1`, so that line keeps reading `service=inactive` and `city=no` while yours runs. Check yours from its own directory on the box with `gc session list`.
 - **`download` reads a folder name without a leading `/` from your home on the box, `/home/ubuntu`.** `sfbox download ada-sfi software-factory-intensive/factory1` copies that folder into `./factory1` on your laptop. `--to <folder>` picks another local name, and an existing local folder is replaced only with `--force`. The copy leaves out every `.ssh` folder, each coding agent's sign-in file, `gh`'s token and `~/city/.env`. A `.env` in your W3 factory's folder is copied like any other file.
@@ -274,6 +275,7 @@ It opens your browser on a page that lists each box with its status and health, 
 - **New box** makes a box, with the same name rule as `sfbox create`, and shows it booting under **Activity**. If you already own as many boxes as a person may, the page says so.
 - **Terminal** opens the box's shell in a new tab, the same one `sfbox ssh` opens. Closing the tab, or its **Close** button, ends it.
 - **Files** lists the box's folders, starting at `/home/ubuntu`. Click a folder to open it, find files by name, search the text inside them, and download any folder shown. Sign-in files and `.ssh` folders are never listed, searched or downloaded.
+- **Dashboard** opens the factory dashboard from that box in a new tab, the one `sfbox dashboard` opens, once a city is running there. It needs v2.4.0 or later, and it stays open until `sfbox ui` stops or you sign out.
 - **Stop**, **Start**, **Download a folder** and **Delete** do what the `sfbox` commands of those names do. Delete asks you to type the box's name first.
 - **Sign out** signs this computer out, which signs out `sfbox` in your terminal too.
 
@@ -304,6 +306,7 @@ About the page itself:
 - **The terminal freezes after your laptop sleeps or changes Wi-Fi.** Close it and run `sfbox ssh` again. Your files on the box are where you left them.
 - **An agent rejects its code.** Codes are single-use and expire. Start that agent's sign-in again for a fresh one.
 - **`IAP reached box … but nothing answered on port 22`.** The box was started moments ago and is still booting. Give it a minute, then try again.
+- **`gc's supervisor isn't running on box …, so there's no dashboard to open`.** `sfbox dashboard` found no running city on the box. Start yours with `gc start` in its folder on the box, then run `sfbox dashboard` again.
 - **The `sfbox ui` page says to open the address `sfbox ui` printed.** That address belongs to an `sfbox ui` that has stopped, or the page was opened some other way. Run `sfbox ui` again, or open the address it printed in your terminal.
 
 ## Commands from the old box guide
@@ -319,7 +322,7 @@ Anything written for the previous `sfbox`, a bash script in this repo, uses its 
 | `sfbox preflight` | `sfbox status <box>`, whose `Boot` line reads `ready` once the box is. On the box, `gas-city-boot-status` prints nothing once it's ready, and `systemctl is-active gas-city.service` checks the image's own factory service |
 | `sfbox exec <command>` | `sfbox ssh <box>`, then run the command there |
 | `sfbox gc <args>` | `sfbox ssh <box>`, then `gc <args>` from your city's directory |
-| `sfbox dashboard` | Nothing yet. On the box, `gc session list` and `bd list` from your city's directory show the agents and the work |
+| `sfbox dashboard` | `sfbox dashboard <box>`, from v2.4.0 |
 
 ## Coming later
 
@@ -328,4 +331,4 @@ These parts of `sfbox` are designed and not released yet. Until they are, the st
 - `sfbox setup`, which sets up and starts a factory on the box for you. During the intensive you build yours by hand in W3, so you won't miss it.
 - `sfbox secrets set`, for values such as a Slack app's two tokens.
 - Signing in to `sfbox` with a GitHub account instead of Google.
-- `sfbox dashboard`, `code`, `exec` and `gc`, among the rest.
+- `sfbox code`, `exec` and `gc`, among the rest.

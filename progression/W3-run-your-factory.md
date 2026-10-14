@@ -600,7 +600,26 @@ The dashboard shows the factory's work in a browser. It's embedded in the `gc` b
 
 On your own machine, open the `Dashboard:` link `gc sling` printed, or run `gc dashboard` from inside `factory1`, which opens the same dashboard in your browser.
 
-On a cloud box, that link points at the box's own `127.0.0.1`, which your laptop's browser can't open. A command that brings the dashboard to your laptop is coming in a later `sfbox` release. Until then, watch from the box's terminal:
+On a cloud box, that link points at the box's own `127.0.0.1:8372`, which your laptop's browser can't reach by itself. `sfbox dashboard` carries it across. Run it in a second terminal on your laptop, so the box's terminal stays free. It needs `sfbox` v2.4.0 or later, so if `sfbox version` shows an older one, update with the [guide's install line](../CLOUD_BOX_GUIDE.md#step-1-install-sfbox).
+
+**Copy and paste** (on your laptop, in a new terminal)
+
+```bash
+sfbox dashboard <box>
+```
+
+**Expected output**
+
+```text
+==> Connecting to box <box>'s dashboard.
+==> Opening box <box>'s dashboard in your browser. If nothing opens, visit:
+    http://127.0.0.1:8372/
+==> The address works on this computer only, and only until this stops. Press Ctrl-C to stop.
+```
+
+While it runs, the `Dashboard:` link from `gc sling` opens unchanged on your laptop. Leave that terminal running while you watch, and press `Ctrl-C` in it when you're done. If port 8372 is already taken on your laptop, by a local `gc` say, `sfbox` picks another and prints it, and you swap that port into the link. The **Dashboard** button on each running box in `sfbox ui` does the same from its page.
+
+The same picture is there as text, in the box's terminal or on your own machine:
 
 **Copy and paste**
 
@@ -611,7 +630,7 @@ cd "$SFI_PATH/ascii-art"
 bd list --status=in_progress
 ```
 
-`gc session list` shows which agents are running and when each last did something, and `bd list --status=in_progress` shows the beads they are working on. Run both again as the bead you slung moves along, or keep the sessions on screen with `watch -n 10 gc session list` from inside `factory1`, which refreshes every ten seconds until `Ctrl-C`. Both work on your own machine too, though a Mac needs `brew install watch` before the `watch` line.
+`gc session list` shows which agents are running and when each last did something, and `bd list --status=in_progress` shows the beads they are working on. Run both again as the bead you slung moves along, or keep the sessions on screen with `watch -n 10 gc session list` from inside `factory1`, which refreshes every ten seconds until `Ctrl-C`. On a Mac, `watch` needs `brew install watch` first.
 
 [W5](./W5-observability.md) is where you read the factory properly. For now, confirm your beads are there and that one of them is moving.
 
