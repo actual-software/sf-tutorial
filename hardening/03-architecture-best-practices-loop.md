@@ -312,7 +312,7 @@ publishing a branch:
 cd "$SFI_PATH/ascii-art"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement l\.md$" | awk '{print $2}')
 
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/principles-loop-rig.polecat $BEAD_ID --on mol-polecat-pr
 # Wait for the polecat to publish a branch and hand back to the refinery.
 watch -n 5 'gc bd show $BEAD_ID | grep -E "_approved|branch|review"'
@@ -326,7 +326,7 @@ waiting for the refinery's auto-dispatch (which would sling
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/principles-loop-rig.architect $BEAD_ID --on mol-principles-review
 ```
 
@@ -354,7 +354,7 @@ findings:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 cat docs/reviews/principles.$BEAD_ID.yaml | head -50
 ls docs/reviews/principles/$BEAD_ID.*.md
 ```
@@ -366,7 +366,7 @@ You should see `rc=0` and a JSON line on stdout with `aggregate>=0.9`.
 **Copy and paste**
 
 ```bash
-$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh \
+"$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh" \
   docs/reviews/principles.$BEAD_ID.yaml --target=0.9 --min-per-principle=3
 echo "rc=$?"
 ```
@@ -396,7 +396,7 @@ let the patrol dispatch them itself:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/domain-reviewers-rig.design-reviewer  $BEAD_ID --on mol-design-review
 gc sling ascii-art/domain-reviewers-rig.testing-reviewer $BEAD_ID --on mol-testing-review
 gc sling ascii-art/domain-reviewers-rig.docs-reviewer    $BEAD_ID --on mol-docs-review
@@ -410,7 +410,7 @@ Wait for the refinery to aggregate and publish the PR:
 watch -n 5 'gc bd show $BEAD_ID'
 # Ctrl-C once metadata.pr_number is set.
 
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view "$PR" --web
 gh pr merge "$PR" --merge
@@ -425,7 +425,7 @@ Stage a bad version of the file before the polecat runs:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export WEAK_BEAD=$(bd list --type=task --status=open --limit 0 | grep -E "Implement m\.md$" | awk '{print $2}')
 
 git checkout -b weak/m
@@ -445,7 +445,7 @@ bad code:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/principles-loop-rig.polecat $WEAK_BEAD --on mol-polecat-pr
 
 # Wait for the polecat to publish the (weak) branch...
@@ -487,8 +487,8 @@ Run the aggregator between iterations:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
-$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh \
+cd "$SFI_PATH/ascii-art"
+"$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh" \
   docs/reviews/principles.$WEAK_BEAD.yaml --target=0.9 --min-per-principle=3
 # Iteration 1: rc=1, JSON shows aggregate ~0.5, lowest 3 principles named.
 # Iteration 2: rc=1, aggregate ~0.7, lowest principles changing.
@@ -538,7 +538,7 @@ After slinging on a clean bead, 23 rows in the YAML and PASS.
 
 ```bash
 wc -l docs/reviews/principles.$BEAD_ID.yaml
-$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh \
+"$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh" \
   docs/reviews/principles.$BEAD_ID.yaml
 echo "rc=$?"
 ```

@@ -204,7 +204,7 @@ Same recipe as Hardening 1 / 2 / 3 up through the polecat publishing a branch.
 cd "$SFI_PATH/ascii-art"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement n\.md$" | awk '{print $2}')
 
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/multi-vendor-rig.polecat $BEAD_ID --on mol-polecat-pr
 # Wait for the polecat to publish a branch and hand back to the refinery.
 watch -n 5 'gc bd show $BEAD_ID | grep -E "branch|pr_url|_approved"'
@@ -219,7 +219,7 @@ Run all three slings without waiting between them. Each spawns a separate sessio
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/multi-vendor-rig.reviewer-codex  $BEAD_ID --on mol-vendor-codex-review
 gc sling ascii-art/multi-vendor-rig.reviewer-claude $BEAD_ID --on mol-vendor-claude-review
 gc sling ascii-art/multi-vendor-rig.reviewer-gemini $BEAD_ID --on mol-vendor-gemini-review
@@ -277,7 +277,7 @@ After all three vendors have stamped, sling the synthesizer.
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/multi-vendor-rig.synthesizer $BEAD_ID --on mol-synthesize-reviews
 ```
 
@@ -326,7 +326,7 @@ dispatch them itself:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/domain-reviewers-rig.design-reviewer  $BEAD_ID --on mol-design-review
 gc sling ascii-art/domain-reviewers-rig.testing-reviewer $BEAD_ID --on mol-testing-review
 gc sling ascii-art/domain-reviewers-rig.docs-reviewer    $BEAD_ID --on mol-docs-review
@@ -340,7 +340,7 @@ Wait for the PR:
 watch -n 5 'gc bd show $BEAD_ID | grep -E "pr_url|pr_number"'
 # Ctrl-C once metadata.pr_number is set.
 
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view "$PR" --web
 gh pr merge "$PR" --merge
@@ -372,7 +372,7 @@ Run the standard pipeline:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/multi-vendor-rig.polecat $WEAK_BEAD --on mol-polecat-pr
 # Wait for the polecat to publish the (weak) branch.
 watch -n 5 'gc bd show $WEAK_BEAD | grep -E "branch"'

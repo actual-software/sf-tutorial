@@ -263,7 +263,7 @@ side, so the polecat dispatch is unchanged:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/review-loop-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -318,7 +318,7 @@ Watch the polecat pick up the bead and address the feedback:
 gc session attach <polecat-session>
 
 # WARNING: a `tmux` session will open, but if you give it a prompt this will interrupt
-#its session. When you are done, detach from the session by pressing `Ctrl+b` and then `d`.
+#its session. When you are done, detach from the session by pressing `Ctrl-b` and then `d`.
 ```
 
 Back in the other terminal, the bead transitions `OPEN → IN_PROGRESS` once the polecat claims it.
@@ -368,7 +368,7 @@ gc session list
 # Attach to the refinery session
 gc session attach <refinery-session>
 
-# Remember to use `Ctrl+b` and then `d` to detach from the session.
+# Remember to use `Ctrl-b` and then `d` to detach from the session.
 ```
 
 Once the refinery has finished its first pass, you should see the bead notes and metadata change:
@@ -431,7 +431,7 @@ and is done; an approval block on the second patrol is a separate concern.
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view $PR
 gh pr view $PR --web   # open in browser
@@ -448,10 +448,10 @@ patrol, manually merge:
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement e\.md$" | awk '{print $2}')
 
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/review-loop-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -489,7 +489,7 @@ What's still missing:
 
 ```bash
 # 1. Two new commits on origin/main from the polecat → loop → polecat → refinery → PR cycle.
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 git fetch origin && git pull
 git log --oneline origin/main
 ```

@@ -291,7 +291,7 @@ the polecat at it.
 cd "$SFI_PATH/ascii-art"
 export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement k\.md$" | awk '{print $2}')
 
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/domain-reviewers-rig.polecat $BEAD_ID --on mol-polecat-pr
 ```
 
@@ -377,7 +377,7 @@ Once the PR is up, merge as before.
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
 gh pr view "$PR" --web
 gh pr merge "$PR" --merge
@@ -393,11 +393,11 @@ one is enough to arm the lane.
 **Copy and paste**
 
 ```bash
-cd $SFI_PATH/ascii-art
+cd "$SFI_PATH/ascii-art"
 export NEXT_BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement l\.md$" | awk '{print $2}')
 
 # Add a DESIGN ADR carrying a rule the polecat has no way to know about.
-cat > $SFI_PATH/ascii-art/docs/decision-records/0002.ADR.DESIGN.md <<'EOF'
+cat > "$SFI_PATH/ascii-art/docs/decision-records/0002.ADR.DESIGN.md" <<'EOF'
 # 0002. Letter files carry a rendering attribution
 
 ## Status
@@ -406,9 +406,9 @@ Accepted
 ## Decision
 Every letter file MUST include a 'Rendered by: <author>' line directly under the heading.
 EOF
-git -C $SFI_PATH/ascii-art add docs/decision-records && git -C $SFI_PATH/ascii-art commit -m "docs(adr): require a rendering attribution line" && git -C $SFI_PATH/ascii-art push
+git -C "$SFI_PATH/ascii-art" add docs/decision-records && git -C "$SFI_PATH/ascii-art" commit -m "docs(adr): require a rendering attribution line" && git -C "$SFI_PATH/ascii-art" push
 
-cd $SFI_PATH/factory1
+cd "$SFI_PATH/factory1"
 gc sling ascii-art/domain-reviewers-rig.polecat $NEXT_BEAD_ID --on mol-polecat-pr
 ```
 

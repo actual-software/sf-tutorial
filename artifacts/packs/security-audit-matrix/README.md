@@ -48,7 +48,7 @@ bd create "Add row-level security to the reports table" \
 Pour the gate on it. The architect is the agent that pours it, because this pack ships no agent of its own and the architect is the base factory's reader-and-judge:
 
 ```bash
-gc sling <rig-name>/architect-rig.architect <bead-id> --on mol-audit-matrix-gate
+gc sling <rig-name>/base-factory.architect <bead-id> --on mol-audit-matrix-gate
 ```
 
 The bead comes back `blocked`, carrying `audit_matrix_feedback` that names the four columns. Now add the table to the description, set the bead back to `open`, and pour the formula again. It routes to the polecat pool, and the polecat picks the work up as usual.
