@@ -1,0 +1,34 @@
+# shred-scope — an optional Day 2 pack: one skill that turns a scope document
+# into an epic and child beads the factory can work, with the dependencies
+# between them written down.
+#
+# This is the shredding step a planner does by hand: read what someone wants
+# built, cut it into pieces one polecat can finish in a single run, and say
+# which piece needs which. The skill writes every child so the bead gate's
+# project-manager passes it, proposes the whole cut before it writes anything,
+# and never slings.
+#
+# WHAT IT ADDS, on top of a base-factory installation:
+#
+#   skills/shred-scope/SKILL.md   The skill. Nothing in this file declares it:
+#                                 gc discovers any skills/<name>/SKILL.md in an
+#                                 imported pack and puts it in the skill
+#                                 directory of every agent in the import's
+#                                 scope, named <binding>.<name>. Imported at
+#                                 city scope it reaches the mayor as
+#                                 shred-scope.shred-scope.
+#   examples/PROJECT_MANIFEST.md  A project manifest filled in for ascii-art,
+#                                 ending in a small scope to shred, for a first
+#                                 run or for anyone without a manifest of their
+#                                 own from L1.
+#
+# It contributes no agents, formulas or orders. The skill runs on an agent you
+# already have.
+#
+# NO IMPORTS, deliberately. The pack sits on top of whatever you already have
+# and pulls no chain in behind it, so it can be installed and removed without
+# touching the base factory. See README.md for the install.
+
+[pack]
+name = "shred-scope"
+schema = 1
