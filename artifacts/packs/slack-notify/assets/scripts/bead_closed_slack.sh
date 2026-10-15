@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Post each piece of work the rig closes to a Slack channel, through an incoming
-# webhook. Fired by orders/bead-closed-slack.toml on each `bead.closed` event.
+# Post each piece of work the rig closes to a Slack channel, through slack-mini's
+# `gc slack-mini post-message` verb. Fired by orders/bead-closed-slack.toml on
+# each `bead.closed` event.
 #
 # Same skeleton as base-factory's bead_closed_log.sh: the event wakes the script
 # without saying which bead closed, so it asks bd what is closed and skips what
 # it has already sent. A post to a shared channel costs more than a line in a
-# log nobody reads, so four things sit on top of that skeleton:
+# log nobody reads, so three things sit on top of that skeleton:
 #
 #   a filter     formula steps and wisps close too, several per sling. Only
 #                work items post: the beads you created or slung, not the
@@ -13,37 +14,46 @@
 #   a baseline   the first run records what is already closed and posts none of
 #                it, so installing on a busy factory does not replay its history.
 #   a burst cap  more than BURST_MAX new closes in one firing become a single
-#                summary message, so a burst costs one webhook call.
-#   a secret     the webhook URL lets anyone who holds it post to your channel.
-#                It is read from .env, handed to curl on stdin rather than on the
-#                command line, and never printed.
+#                summary message, so a burst costs one post.
 #
-# Needs bash, curl, jq and bd, and nothing else.
+# The script holds no secret. slack-mini's adapter keeps the bot token, and
+# post-message reaches the adapter through the supervisor.
+#
+# Needs bash, jq, bd and gc, and nothing else.
 set -uo pipefail
 
 BURST_MAX=5             # more new closes than this in one firing: one summary
 SUMMARY_LINES=20        # beads listed in a summary before "...and N more"
 WORK_TYPES='["task","bug","feature","chore","epic"]'
 
-# ── 1. The webhook URL ────────────────────────────────────────────────────
+# ── 1. The channel ────────────────────────────────────────────────────────
 # An exec order is handed the controller's environment, and the city's .env is
 # never loaded into it, so the script reads the file itself. Process environment
 # wins over the file, the same rule the self-improvement pack's gate follows.
-# No URL means the pack is installed but switched off: exit quietly.
+# No channel means the pack is installed but switched off: exit quietly.
 ENV_FILE="${FACTORY_ROOT:-${GC_CITY_PATH:-.}}/.env"
-if [ -z "${SLACK_WEBHOOK_URL:-}" ] && [ -r "$ENV_FILE" ]; then
-    line="$(grep -E '^[[:space:]]*(export[[:space:]]+)?SLACK_WEBHOOK_URL=' "$ENV_FILE" | tail -n 1)"
+if [ -z "${SLACK_NOTIFY_CHANNEL:-}" ] && [ -r "$ENV_FILE" ]; then
+    line="$(grep -E '^[[:space:]]*(export[[:space:]]+)?SLACK_NOTIFY_CHANNEL=' "$ENV_FILE" | tail -n 1)"
     line="${line#*=}"
     # Cut at the first space, which drops a trailing comment or a Windows \r, then strip quotes.
-    SLACK_WEBHOOK_URL="$(printf '%s' "${line%%[[:space:]]*}" | tr -d "\"'")"
+    SLACK_NOTIFY_CHANNEL="$(printf '%s' "${line%%[[:space:]]*}" | tr -d "\"'")"
 fi
-[ -n "${SLACK_WEBHOOK_URL:-}" ] || exit 0
+[ -n "${SLACK_NOTIFY_CHANNEL:-}" ] || exit 0
 
-case "$SLACK_WEBHOOK_URL" in
-    https://*|http://*) ;;
-    *) echo "slack-notify: SLACK_WEBHOOK_URL is set but is not a URL; nothing sent" >&2
-       exit 1 ;;
-esac
+if ! printf '%s' "$SLACK_NOTIFY_CHANNEL" | grep -Eq '^[CGD][A-Z0-9]{6,}$'; then
+    echo "slack-notify: SLACK_NOTIFY_CHANNEL is set but is not a channel id like C0123ABCD; nothing sent" >&2
+    exit 1
+fi
+
+# post-message reaches the adapter through the supervisor's API, and falls back
+# to a port the supervisor does not use. Point it at the supervisor's own port
+# unless the environment already does.
+if [ -z "${GC_API_BASE_URL:-}" ]; then
+    port="$(sed -n 's/^[[:space:]]*port[[:space:]]*=[[:space:]]*\([0-9][0-9]*\).*/\1/p' \
+        "${GC_HOME:-$HOME/.gc}/supervisor.toml" 2>/dev/null | head -n 1)"
+    export GC_API_BASE_URL="http://127.0.0.1:${port:-8372}"
+fi
+GC="${GC_BIN:-gc}"
 
 # ── 2. Where this rig's sent list lives ───────────────────────────────────
 # GC_PACK_STATE_DIR is the controller's per-pack directory under the city's
@@ -114,23 +124,17 @@ MESSAGES="$(printf '%s' "$NEW" | jq -c \
                  | join("\n"))}]
     end')"
 
-# The URL goes to curl as a config line on stdin, so it never appears in an
-# argument list that `ps` can show. Each call is capped well under the order's
-# 60s timeout, so a Slack outage costs one slow firing rather than a hung one.
-post() {
-    curl -s -o /dev/null -w '%{http_code}' --connect-timeout 5 --max-time 8 \
-         -H 'Content-Type: application/json' --data-binary "$1" \
-         -K - <<< "url = \"$SLACK_WEBHOOK_URL\""
-}
-
 POSTED=0
 SENT_MESSAGES=0
 while IFS= read -r msg; do
     [ "$SENT_MESSAGES" -eq 0 ] || sleep 1      # Slack allows one post a second
     ids="$(printf '%s' "$msg" | jq -r '.ids | join(" ")')"
-    code="$(post "$(printf '%s' "$msg" | jq -c '{text}')")"
-    if [ "$code" != "200" ]; then
-        echo "slack-notify: posting $ids failed (HTTP ${code:-000}, where 000 means no answer); the next firing retries it" >&2
+    text="$(printf '%s' "$msg" | jq -r '.text')"
+    if ! out="$("$GC" slack-mini post-message --channel "$SLACK_NOTIFY_CHANNEL" --text "$text" 2>&1)"; then
+        # The verb's JSON error and its stderr line can arrive in either order.
+        why="$(printf '%s\n' "$out" | jq -rR 'fromjson? | objects | .error // empty' 2>/dev/null | head -n 1)"
+        [ -n "$why" ] || why="$(printf '%s\n' "$out" | sed -n 's/^gc slack-mini post-message: //p' | head -n 1)"
+        echo "slack-notify: posting $ids failed (${why:-no answer from gc slack-mini post-message}); the next firing retries it" >&2
         exit 1
     fi
     printf '%s' "$msg" | jq -r '.ids[]' >> "$SENT"
