@@ -8,6 +8,7 @@
 - [Prereqs](#prereqs)
 - [The three slots, and what each allows](#the-three-slots-and-what-each-allows)
 - [The six options](#the-six-options)
+- [Three uncertified extras](#three-uncertified-extras)
 - [How each lab runs](#how-each-lab-runs)
 - [Paths this page uses](#paths-this-page-uses)
 - [Try It](#try-it)
@@ -36,8 +37,8 @@ Three slots, three changes to your own factory, each one verified. This page ser
 | Slot | You may build |
 | --- | --- |
 | **L3** | One of the six options below. |
-| **L4** | An option you have not used yet, **or** a feature of your own from the map. |
-| **L5** | Same as L4: an option you have not used yet, or a feature of your own. |
+| **L4** | An option you have not used yet, from the six or the [three uncertified extras](#three-uncertified-extras), **or** a feature of your own from the map. |
+| **L5** | Same as L4: an option you have not used yet, from either list, or a feature of your own. |
 
 L3 is intended to give you a sense of the scope of possible features and changes you can introduce within a single pack, beyond the base factory. The two later slots allow you to explore other capabilities relevant to your capabilities map.
 
@@ -52,7 +53,25 @@ L3 is intended to give you a sense of the scope of possible features and changes
 | [Specialized domain reviewers](../hardening/02-specialize-reviewers-per-domain.md) | One reviewer judging everything reviews nothing well | `domain-reviewers-rig` |
 | [Architecture best-practices loop](../hardening/03-architecture-best-practices-loop.md) | Reviews are opinions rather than scores against named principles | `principles-loop-rig` |
 | [Strengthen the review system](../hardening/04-strengthen-review-system.md) | One model is one point of view, and it is confidently wrong sometimes | `multi-vendor-rig` |
-| [Self-improvement loop](../hardening/05-self-improvement-loop.md) | The factory produces evidence about itself and nobody reads it | none — it is a loop, not a pack |
+| [Self-improvement loop](../hardening/05-self-improvement-loop.md) | The factory produces evidence about itself and nobody reads it | `self-improvement`, at city scope with no `--rig` |
+
+## Three uncertified extras
+
+These three haven't been certified like the six, so each one stays an open pull request instead of joining `main`. L3 stays with the six above, and L4 and L5 can use one. Each one's page and files exist only on its pull request's branch, so check that branch out in your copy of this repo before you start, then follow the page from there:
+
+**Copy and paste**
+
+```bash
+cd "$SFI_PATH/sf-tutorial" && gh pr checkout <the-pr-number>
+```
+
+Run `git switch main` in the same directory when you're done. A pack you imported from the branch keeps working after the switch, because `gc import add` pins it to the commit it read.
+
+| Option | Solves | Pack | Pull request |
+| --- | --- | --- | --- |
+| Shred a scope into beads | A real backlog is too big to cut into beads by hand | `shred-scope`, at city scope with no `--rig` | [#78](https://github.com/actual-software/sf-tutorial/pull/78) |
+| Slack notifications | Nobody hears that work finished unless they are watching the factory | `slack-notify` | [#76](https://github.com/actual-software/sf-tutorial/pull/76) |
+| Architecture Agent with the Actual CLI | The architect paraphrases your ADRs instead of naming the rule a diff breaks | none: the `actual` CLI and its Claude Code plugin | [#77](https://github.com/actual-software/sf-tutorial/pull/77) |
 
 ## How each lab runs
 

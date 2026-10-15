@@ -19,7 +19,7 @@ fails the workflow.
 | 2 | File location               | Sits directly in `ascii/` at repo root; no subdirectories                         | `find ascii -mindepth 2 -type f`                                                |
 | 3 | H1 with character title     | Exactly one H1; letters match `^# [A-Z]$`, numbers match `^# [1-9][0-9]?$\|^# 100$` | `grep -c '^# ' ascii/a.md` then `grep -E '^# ([A-Z]\|[1-9][0-9]?\|100)$' ascii/a.md` |
 | 4 | Single fenced `text` block  | Exactly one fenced code block opened with ```` ```text ```` and closed with ```` ``` ```` | `grep -c '^```' ascii/a.md` (must print `2`)                                    |
-| 5 | ASCII art bounds            | Inside the fence: at most 8 lines, at most 20 columns, printable ASCII only, no tabs, no trailing whitespace | `awk '/^```text$/{f=1;next} /^```$/{f=0} f' ascii/a.md \| awk 'length>20 \|\| /\t/ \|\| / +$/'` |
+| 5 | ASCII art bounds            | Inside the fence: at most 40 lines, at most 40 columns, printable ASCII only, no tabs, no trailing whitespace | `awk '/^```text$/{f=1;next} /^```$/{f=0} f' ascii/a.md \| awk 'length>40 \|\| /\t/ \|\| / +$/'` |
 | 6 | Two-line rhyme couplet      | Below the closing fence: exactly two non-empty lines and nothing else             | `awk '/^```$/{f=1;next} f && NF' ascii/a.md \| wc -l` (must print `2`)          |
 
 The order matches ADR 0002 exactly. Do not reorder when triaging.
@@ -52,7 +52,7 @@ Sample invocation:
 # PASS: ascii/a.md
 
 ./scripts/check-ascii.sh ascii/a.md
-# FAIL: rule 5 — art is 9 lines (max 8)
+# FAIL: rule 5 — art is 41 lines (max 40)
 ```
 
 To check every file at once:
@@ -93,8 +93,8 @@ they do not duplicate these mechanical checks.
 | `file ascii/letters/a.md not at ascii/ root`           | Move it up: `git mv ascii/letters/a.md ascii/a.md`. No subdirectories under `ascii/`.     |
 | `H1 text "# Letter A" doesn't match ^# [A-Z]$`         | Change the heading to `# A`. Letters are uppercased and bare; numbers are bare digits.    |
 | `fenced block uses lang bash not text`                 | Change ` ```bash ` to ` ```text ` on the opening fence. `text` is the only allowed lang.  |
-| `art is 9 lines (max 8)`                               | Trim a line. ASCII art does not need to fill the box; 4–6 lines is common.                |
-| `line 3 is 22 cols (max 20)`                           | Redraw inside the 20-column width. Leading spaces count.                                  |
+| `art is 41 lines (max 40)`                             | Trim a line. ASCII art does not need to fill the box; 4–6 lines is common.                |
+| `line 3 is 42 cols (max 40)`                           | Redraw inside the 40-column width. Leading spaces count.                                  |
 | `found 3 non-empty lines after fence (expected 2)`     | Check for an accidental third rhyme line, signature, or blockquote. The couplet is exactly 2 lines. |
 | `non-ASCII byte at line 5 col 12`                      | Editor inserted a smart quote or em-dash. Convert to plain ASCII (`'`, `-`).               |
 

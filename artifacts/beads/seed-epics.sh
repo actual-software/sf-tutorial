@@ -67,7 +67,7 @@ create_child() {
     --parent="${parent}" \
     --priority=2 \
     --metadata "{\"target_file\":\"ascii/${fname}\"}" \
-    --description "Create ascii/${fname} for '${fname%.md}' with one printable-ASCII text block no larger than 8 lines by 20 columns and a two-line rhyme, following docs/decision-records/0001.ADR.ASCII.md." \
+    --description "Create ascii/${fname} for '${fname%.md}' with one printable-ASCII text block no larger than 40 lines by 40 columns and a two-line rhyme, following docs/decision-records/0001.ADR.ASCII.md." \
     --silent \
     "Implement ${fname}" \
   >/dev/null
