@@ -30,10 +30,18 @@ can reproduce both the pass and the block paths.
 ## Compatibility
 
 The override of `merge-push` adds `approval-review` to its `needs` list
-so the engine cannot run merge-push concurrently with the gate."""
+so the engine cannot run merge-push concurrently with the gate.
+
+Every exit path, including the ones inherited from `mol-refinery-patrol`,
+pours `{{patrol_formula}}` as the next patrol. This formula sets it to
+its own name, so the approval gate stays on every later patrol."""
 formula = "mol-refinery-pr-patrol"
 extends = ["mol-refinery-patrol"]
 version = 1
+
+[vars.patrol_formula]
+description = "Formula every exit path pours as the next patrol: the formula this wisp was poured from. Each patrol that extends another sets the default to its own name, so when you read a step from a parent formula, use your own formula's value."
+default = "mol-refinery-pr-patrol"
 
 [[steps]]
 id = "approval-review"
@@ -115,7 +123,7 @@ The refinery refused to publish a PR. Bead returned to the polecat pool."
 
 # Pour the next patrol iteration before burning, then drain & exit so
 # merge-push does NOT run for this bead:
-NEXT=$(gc bd mol wisp mol-refinery-pr-patrol --root-only \\
+NEXT=$(gc bd mol wisp {{patrol_formula}} --root-only \\
   --var target_branch={{target_branch}} --var rig_name={{rig_name}} \\
   --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
 gc bd update "$NEXT" --assignee=$GC_AGENT
@@ -130,22 +138,25 @@ and merge-push will run, or the bead is back in the polecat pool with
 `metadata.refinery_approved=false` and this wisp has been burnt."""
 
 # Override the inherited merge-push step's `needs` so it cannot run
-# concurrently with approval-review. The body is otherwise inherited
-# unchanged from mol-refinery-patrol — re-declaring `id = "merge-push"`
-# with new metadata pulls the inherited body forward and only modifies
-# the dependency edge.
+# concurrently with approval-review. A re-declared step replaces the
+# inherited one whole, description included, so the description below
+# says where the merge/publish body lives instead of carrying a copy.
 [[steps]]
 id = "merge-push"
 title = "Merge or publish PR (gated on approval-review)"
 needs = ["handle-failures", "approval-review"]
 description = """
-Inherited from `mol-refinery-patrol`. The only change in this override
-is the added `approval-review` dependency: this step cannot start until
-the approval gate has cleared the bead.
+Run the `merge-push` step of `mol-refinery-patrol` exactly as written
+there; read it with `gc formula show mol-refinery-patrol --json`. The
+only change in this override is the added `approval-review` dependency:
+this step cannot start until the approval gate has cleared the bead.
 
 If `approval-review` blocked the bead, this wisp was burnt before
 reaching here and merge-push is never invoked. If approval cleared,
 proceed exactly as the inherited step describes — direct merge for
 `merge_strategy=direct`, PR publish for `merge_strategy=pr`/`mr`.
 
-Refer to the inherited step body for the full merge/publish logic."""
+That body pours the next patrol when it blocks an invalid
+`existing_pr`. Pour `{{patrol_formula}}` there, the value set by the
+formula this wisp was poured from, not the `mol-refinery-patrol`
+default that `gc formula show mol-refinery-patrol` lists."""
