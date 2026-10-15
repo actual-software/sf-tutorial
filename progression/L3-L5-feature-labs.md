@@ -8,7 +8,7 @@
 - [Prereqs](#prereqs)
 - [The three slots, and what each allows](#the-three-slots-and-what-each-allows)
 - [The six options](#the-six-options)
-  - [Three more options for L4 and L5](#three-more-options-for-l4-and-l5)
+- [Three uncertified extras](#three-uncertified-extras)
 - [How each lab runs](#how-each-lab-runs)
 - [Paths this page uses](#paths-this-page-uses)
 - [Try It](#try-it)
@@ -37,8 +37,8 @@ Three slots, three changes to your own factory, each one verified. This page ser
 | Slot | You may build |
 | --- | --- |
 | **L3** | One of the six options below. |
-| **L4** | An option you have not used yet, from the six or the [three more](#three-more-options-for-l4-and-l5), **or** a feature of your own from the map. |
-| **L5** | Same as L4: an option you have not used yet from all nine, or a feature of your own. |
+| **L4** | An option you have not used yet, from the six or the [three uncertified extras](#three-uncertified-extras), **or** a feature of your own from the map. |
+| **L5** | Same as L4: an option you have not used yet, from either list, or a feature of your own. |
 
 L3 is intended to give you a sense of the scope of possible features and changes you can introduce within a single pack, beyond the base factory. The two later slots allow you to explore other capabilities relevant to your capabilities map.
 
@@ -55,25 +55,23 @@ L3 is intended to give you a sense of the scope of possible features and changes
 | [Strengthen the review system](../hardening/04-strengthen-review-system.md) | One model is one point of view, and it is confidently wrong sometimes | `multi-vendor-rig` |
 | [Self-improvement loop](../hardening/05-self-improvement-loop.md) | The factory produces evidence about itself and nobody reads it | `self-improvement`, at city scope with no `--rig` |
 
-### Three more options for L4 and L5
+## Three uncertified extras
 
-L3 stays with the six above. These three are open to L4 and L5.
-
-They're newer than the six, so a copy of this repo cloned before they were added has neither their packs nor the files their pages ask for. Pull yours before you start one:
+These three haven't been certified like the six, so each one stays an open pull request instead of joining `main`. L3 stays with the six above, and L4 and L5 can use one. Each one's page and files exist only on its pull request's branch, so check that branch out in your copy of this repo before you start, then follow the page from there:
 
 **Copy and paste**
 
 ```bash
-git -C "$SFI_PATH/sf-tutorial" pull --ff-only
+cd "$SFI_PATH/sf-tutorial" && gh pr checkout <the-pr-number>
 ```
 
-A pull brings in new packs only: a pack you've already imported stays on the commit it came from, and `gc import upgrade` won't move one imported from inside `$SFI_PATH/sf-tutorial`. To pick up a fix to an imported pack, remove it with `gc import remove <the-option-pack>` (add `--rig <your-rig-name>` if you imported it to your rig), rerun the `gc import add` you first used, and run `gc reload`.
+Run `git switch main` in the same directory when you're done. A pack you imported from the branch keeps working after the switch, because `gc import add` pins it to the commit it read.
 
-| Option | Solves | Pack |
-| --- | --- | --- |
-| [Shred a scope into beads](../hardening/07-shred-a-scope-into-beads.md) | A real backlog is too big to cut into beads by hand | `shred-scope`, at city scope with no `--rig` |
-| [Slack notifications](../hardening/08-slack-notifications.md) | Nobody hears that work finished unless they are watching the factory | `slack-notify` |
-| [Architecture Agent with the Actual CLI](../hardening/09-architecture-agent-cli.md) | The architect paraphrases your ADRs instead of naming the rule a diff breaks | none: the `actual` CLI and its Claude Code plugin |
+| Option | Solves | Pack | Pull request |
+| --- | --- | --- | --- |
+| Shred a scope into beads | A real backlog is too big to cut into beads by hand | `shred-scope`, at city scope with no `--rig` | [#78](https://github.com/actual-software/sf-tutorial/pull/78) |
+| Slack notifications | Nobody hears that work finished unless they are watching the factory | `slack-notify` | [#76](https://github.com/actual-software/sf-tutorial/pull/76) |
+| Architecture Agent with the Actual CLI | The architect paraphrases your ADRs instead of naming the rule a diff breaks | none: the `actual` CLI and its Claude Code plugin | [#77](https://github.com/actual-software/sf-tutorial/pull/77) |
 
 ## How each lab runs
 

@@ -99,15 +99,15 @@ The three feature labs draw on the same menu of options. In **L3** you pick one 
 | [Self-improvement loop](./hardening/05-self-improvement-loop.md) | The factory produces evidence about itself and nobody reads it |
 | [Bead gate checks](./hardening/06-bead-gate-checks.md) | Work reaches an implementer under-specified and it has to guess |
 
-#### Three more options for L4 and L5
+#### Three uncertified extras
 
-L3 stays with the six above. These three are open from L4 on.
+These three haven't been certified like the six above, so each one stays an open pull request instead of joining `main`. L3 stays with the six. From L4 on you can read one in its pull request and try it, the way [L3-L5](./progression/L3-L5-feature-labs.md#three-uncertified-extras) describes.
 
-| Option | Solves |
-|---|---|
-| [Shred a scope into beads](./hardening/07-shred-a-scope-into-beads.md) | A real backlog is too big to cut into beads by hand |
-| [Slack notifications](./hardening/08-slack-notifications.md) | Nobody hears that work finished unless they are watching the factory |
-| [Architecture Agent with the Actual CLI](./hardening/09-architecture-agent-cli.md) | The architect paraphrases your ADRs instead of naming the rule a diff breaks |
+| Option | Solves | Pull request |
+|---|---|---|
+| Shred a scope into beads | A real backlog is too big to cut into beads by hand | [#78](https://github.com/actual-software/sf-tutorial/pull/78) |
+| Slack notifications | Nobody hears that work finished unless they are watching the factory | [#76](https://github.com/actual-software/sf-tutorial/pull/76) |
+| Architecture Agent with the Actual CLI | The architect paraphrases your ADRs instead of naming the rule a diff breaks | [#77](https://github.com/actual-software/sf-tutorial/pull/77) |
 
 ### The Base Factory
 
