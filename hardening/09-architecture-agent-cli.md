@@ -96,7 +96,7 @@ gc sling ascii-art/base-factory.polecat "$BEAD_ID" --on mol-polecat-pr
 
 If `echo` prints nothing, your factory probably built `p.md` already. Pick any letter whose bead is still open and that you haven't slung, and put its title in the `select`.
 
-Keep this terminal open. Steps 6 and 7 read `$BEAD_ID` from it.
+Keep this terminal open. Step 6 reads `$BEAD_ID` from it.
 
 ### 2. Install the actual CLI
 
@@ -178,7 +178,7 @@ git -C "$SFI_PATH/ascii-art" diff --stat
  1 file changed, 46 insertions(+), 32 deletions(-)
 ```
 
-It's worth a minute with `git -C "$SFI_PATH/ascii-art" diff` to watch the old numbered lists turn into the `### Rules` section. Thirteen constraints, thirteen rules. The size bound is still 40 lines by 40 columns, and the tutorial's `docs/future/0002.ADR.TESTING.md` now says the same, so the two records finally agree.
+It's worth a minute with `git -C "$SFI_PATH/ascii-art" diff` to watch the old numbered lists turn into the `### Rules` section. Thirteen constraints, thirteen rules. The size bound is still 40 lines by 40 columns, and the tutorial's `artifacts/docs/future/0002.ADR.TESTING.md` now says the same, so the two records finally agree.
 
 The CLI reads the file straight from disk, so nothing here waits on a commit; you'll commit it in [step 9](#9-reflect).
 
