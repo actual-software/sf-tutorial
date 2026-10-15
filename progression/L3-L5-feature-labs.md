@@ -8,6 +8,7 @@
 - [Prereqs](#prereqs)
 - [The three slots, and what each allows](#the-three-slots-and-what-each-allows)
 - [The six options](#the-six-options)
+  - [Three more options for L4 and L5](#three-more-options-for-l4-and-l5)
 - [How each lab runs](#how-each-lab-runs)
 - [Paths this page uses](#paths-this-page-uses)
 - [Try It](#try-it)
@@ -36,8 +37,8 @@ Three slots, three changes to your own factory, each one verified. This page ser
 | Slot | You may build |
 | --- | --- |
 | **L3** | One of the six options below. |
-| **L4** | An option you have not used yet, **or** a feature of your own from the map. |
-| **L5** | Same as L4: an option you have not used yet, or a feature of your own. |
+| **L4** | An option you have not used yet, from the six or the [three more](#three-more-options-for-l4-and-l5), **or** a feature of your own from the map. |
+| **L5** | Same as L4: an option you have not used yet from all nine, or a feature of your own. |
 
 L3 is intended to give you a sense of the scope of possible features and changes you can introduce within a single pack, beyond the base factory. The two later slots allow you to explore other capabilities relevant to your capabilities map.
 
@@ -52,7 +53,27 @@ L3 is intended to give you a sense of the scope of possible features and changes
 | [Specialized domain reviewers](../hardening/02-specialize-reviewers-per-domain.md) | One reviewer judging everything reviews nothing well | `domain-reviewers-rig` |
 | [Architecture best-practices loop](../hardening/03-architecture-best-practices-loop.md) | Reviews are opinions rather than scores against named principles | `principles-loop-rig` |
 | [Strengthen the review system](../hardening/04-strengthen-review-system.md) | One model is one point of view, and it is confidently wrong sometimes | `multi-vendor-rig` |
-| [Self-improvement loop](../hardening/05-self-improvement-loop.md) | The factory produces evidence about itself and nobody reads it | none — it is a loop, not a pack |
+| [Self-improvement loop](../hardening/05-self-improvement-loop.md) | The factory produces evidence about itself and nobody reads it | `self-improvement` |
+
+### Three more options for L4 and L5
+
+L3 stays with the six above. These three are open to L4 and L5.
+
+They're newer than the six, so a copy of this repo cloned before they were added has neither their packs nor the files their pages ask for. Pull yours before you start one:
+
+**Copy and paste**
+
+```bash
+git -C "$SFI_PATH/sf-tutorial" pull --ff-only
+```
+
+A pull brings in new packs only: a pack you've already imported stays on the commit it came from, and `gc import upgrade` won't move one imported from inside `$SFI_PATH/sf-tutorial`. To pick up a fix to an imported pack, remove it with `gc import remove <the-option-pack>` (add `--rig <your-rig-name>` if you imported it to your rig), rerun the `gc import add` you first used, and run `gc reload`.
+
+| Option | Solves | Pack |
+| --- | --- | --- |
+| [Shred a scope into beads](../hardening/07-shred-a-scope-into-beads.md) | A real backlog is too big to cut into beads by hand | `shred-scope` |
+| [Slack notifications](../hardening/08-slack-notifications.md) | Nobody hears that work finished unless they are watching the factory | `slack-notify` |
+| [Architecture Agent with the Actual CLI](../hardening/09-architecture-agent-cli.md) | The architect paraphrases your ADRs instead of naming the rule a diff breaks | none: the `actual` CLI and its Claude Code plugin |
 
 ## How each lab runs
 

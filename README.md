@@ -99,6 +99,16 @@ The three feature labs draw on the same menu of options. In **L3** you pick one 
 | [Self-improvement loop](./hardening/05-self-improvement-loop.md) | The factory produces evidence about itself and nobody reads it |
 | [Bead gate checks](./hardening/06-bead-gate-checks.md) | Work reaches an implementer under-specified and it has to guess |
 
+#### Three more options for L4 and L5
+
+L3 stays with the six above. These three are open from L4 on.
+
+| Option | Solves |
+|---|---|
+| [Shred a scope into beads](./hardening/07-shred-a-scope-into-beads.md) | A real backlog is too big to cut into beads by hand |
+| [Slack notifications](./hardening/08-slack-notifications.md) | Nobody hears that work finished unless they are watching the factory |
+| [Architecture Agent with the Actual CLI](./hardening/09-architecture-agent-cli.md) | The architect paraphrases your ADRs instead of naming the rule a diff breaks |
+
 ### The Base Factory
 
 W3 installs one pack, [`base-factory`](./artifacts/packs/base-factory/README.md), and gets a working multi-agent factory with an example of every Gas City primitive already running in it: formulas, an agent persona, orders, a rig, and mail. Day 2 extends it.
