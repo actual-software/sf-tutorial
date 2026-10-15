@@ -28,7 +28,7 @@ By the end of this exercise you'll have installed a pack that ships a skill inst
 ## Prereqs
 
 - [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on a rig, and the mayor from `pr-gate-city` running at city scope.
-- `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) appends it to a shell rc, so it survives a new terminal, and every other path on this page is written out from it.
+- `$SFI_PATH` set in your shell, plus `$MY_RIG_PATH` if you're shredding your own manifest. [W2](../progression/W2-cloud-box-and-preflight.md) appends the first to a shell rc and [L1 step 1](../progression/L1-plan-your-factory.md#1-register-your-repo-as-a-rig) the second, so both survive a new terminal. Every other path on this page is written out from them.
 - A scope to shred. The intended one is your own project manifest from [L1](../progression/L1-plan-your-factory.md), at `$MY_RIG_PATH/docs/PROJECT_MANIFEST.md`. Skipped L1? The pack ships a small sample for `ascii-art`, and step 3 installs it.
 - `jq` installed, since the skill uses it to read bead ids back from `bd`.
 - **A mayor running Claude Code, or Codex on the cloud box.** gc v1.4.0, the build W2 installs on a laptop, writes Codex's skills to `.codex/skills`, a directory Codex never reads, so a Codex mayor on a laptop won't ever see the skill. Upstream moved them to `.agents/skills` in [`4160b0ec8`](https://github.com/gastownhall/gascity/commit/4160b0ec833cd532ce987db4b52ad2073e767082), and the cloud box runs a build that has the change. So it's a lab for the cloud box, or for Claude on a laptop.
@@ -188,7 +188,7 @@ It creates the epic, then the children, then the edges, and finishes with a repo
 
 ### 5. Read what it wrote
 
-The beads live in the rig's store, so read them from the rig directory, using the epic id from the mayor's report.
+The beads live in the rig's store, so read them from the rig directory, using the epic id from the mayor's report. On your own rig, that's `cd "$MY_RIG_PATH"`, here and wherever a later step runs `cd "$SFI_PATH/ascii-art"`.
 
 **Copy and paste**
 
