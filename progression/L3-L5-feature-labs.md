@@ -57,21 +57,21 @@ L3 is intended to give you a sense of the scope of possible features and changes
 
 ## Three uncertified extras
 
-These three haven't been certified like the six, so each one stays an open pull request instead of joining `main`. L3 stays with the six above, and L4 and L5 can use one. Each one's page and files exist only on its pull request's branch, so check that branch out in your copy of this repo before you start, then follow the page from there:
+These three haven't been certified like the six. L3 stays with the six above, and L4 and L5 can use one. Their pages and packs are on `main` now, so pull your copy of the tutorial before you start one:
 
 **Copy and paste**
 
 ```bash
-cd "$SFI_PATH/sf-tutorial" && gh pr checkout <the-pr-number>
+cd "$SFI_PATH/sf-tutorial" && git switch main && git pull
 ```
 
-Run `git switch main` in the same directory when you're done. A pack you imported from the branch keeps working after the switch, because `gc import add` pins it to the commit it read.
+The `git switch main` is for anyone who checked one of these out from its pull request earlier, since those branches are gone. A pull doesn't move a pack you already imported, because `gc import add` pinned it to the commit it read. To pick up a later fix to one, run `gc import remove <pack>` in `$SFI_PATH/factory1`, adding `--rig <rig-name>` if you imported it with one, then its page's `gc import add` again, and `gc reload`.
 
-| Option | Solves | Pack | Pull request |
-| --- | --- | --- | --- |
-| Shred a scope into beads | A real backlog is too big to cut into beads by hand | `shred-scope`, at city scope with no `--rig` | [#78](https://github.com/actual-software/sf-tutorial/pull/78) |
-| Slack notifications | Nobody hears that work finished unless they are watching the factory | `slack-notify` | [#76](https://github.com/actual-software/sf-tutorial/pull/76) |
-| Architecture Agent with the Actual CLI | The architect paraphrases your ADRs instead of naming the rule a diff breaks | none: the `actual` CLI and its Claude Code plugin | [#77](https://github.com/actual-software/sf-tutorial/pull/77) |
+| Option | Solves | Pack |
+| --- | --- | --- |
+| [Shred a scope into beads](../hardening/07-shred-a-scope-into-beads.md) | A real backlog is too big to cut into beads by hand | `shred-scope`, at city scope with no `--rig` |
+| [Slack notifications](../hardening/08-slack-notifications.md) | Nobody hears that work finished unless they are watching the factory | `slack-notify` |
+| [Architecture Agent with the Actual CLI](../hardening/09-architecture-agent-cli.md) | The architect paraphrases your ADRs instead of naming the rule a diff breaks | none: the `actual` CLI and its Claude Code plugin |
 
 ## How each lab runs
 
