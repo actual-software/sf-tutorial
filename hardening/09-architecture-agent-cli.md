@@ -180,6 +180,8 @@ git -C "$SFI_PATH/ascii-art" diff --stat
 
 It's worth a minute with `git -C "$SFI_PATH/ascii-art" diff` to watch the old numbered lists turn into the `### Rules` section. Thirteen constraints, thirteen rules. The size bound is still 40 lines by 40 columns, and the tutorial's `artifacts/docs/future/0002.ADR.TESTING.md` now says the same, so the two records finally agree.
 
+The copy replaces the whole file, so a rule you added to your rig's 0001 since W3, such as the optional one in [the ADR reviewer appendix](../appendix/04-adr-reviewer.md), goes with it. Add it back as a `### Rules` bullet if you still want it.
+
 The CLI reads the file straight from disk, so nothing here waits on a commit; you'll commit it in [step 9](#9-reflect).
 
 ### 5. List the rules the CLI reads
@@ -239,13 +241,13 @@ RHYME-3  conforming
 
 ### 7. Break a rule and check again
 
-Now make a second diff from the first. The `awk` line stretches the art's first line by 40 characters, which pushes it past ART-2's 40 columns whatever the polecat drew.
+Now make a second diff from the first. The `awk` line stretches the art's first line by 50 characters, which pushes it past ART-2's 40 columns whatever the polecat drew, even an empty line.
 
 **Copy and paste**
 
 ```bash
 cd "$SFI_PATH/adr-lab"
-awk '/^\+```text$/ {print; getline; print $0 "########################################"; next} {print}' good.diff > bad.diff
+awk '/^\+```text$/ {print; getline; print $0 "##################################################"; next} {print}' good.diff > bad.diff
 diff good.diff bad.diff
 
 cd "$SFI_PATH/ascii-art"
@@ -259,11 +261,11 @@ jq -r '.verdicts[] | select(.verdict != "conforming") | "\(.rule_id): \(.reason)
 ```text
 ╭─ Error ──────────────────────────────────────────────────────────────────────╮
 │                                                                              │
-│ Error: implementation does not conform: ART-2: ART-2 requires at most 40 co… │
+│ Error: implementation does not conform: ART-2: ART-2 limits art to 40 colum… │
 │                                                                              │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 conflicting
-ART-2: ART-2 requires at most 40 columns; this line is 52 characters wide (12 leading characters plus 40 `#` characters), exceeding the limit.
+ART-2: ART-2 limits art to 40 columns; this line is 62 characters wide, exceeding the limit.
 ```
 
 The error panel is `impl-check` reporting the conflict on stderr. The judge is a model, so now and then a judgment rule such as RHYME-2 comes back `conflicting` too; ART-2 is the one the stretched line guarantees.
