@@ -64,7 +64,7 @@ agreement and disagreement. Cite each vendor by slug. Be terse.
 
 ```bash
 SUMMARY="<one paragraph, e.g.: 'Codex and Claude approve. Gemini
-rejected citing ADR 0001 rule 3 (line width). The two approving
+rejected citing ADR 0001 rule 2 (line width). The two approving
 reviewers explicitly read line width as compliant; the rejecting
 reviewer cited the same rule with a stricter interpretation.
 Forwarding as approved per majority.'>"
