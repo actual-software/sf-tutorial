@@ -53,7 +53,7 @@ L3 is intended to give you a sense of the scope of possible features and changes
 | [Specialized domain reviewers](../hardening/02-specialize-reviewers-per-domain.md) | One reviewer judging everything reviews nothing well | `domain-reviewers-rig` |
 | [Architecture best-practices loop](../hardening/03-architecture-best-practices-loop.md) | Reviews are opinions rather than scores against named principles | `principles-loop-rig` |
 | [Strengthen the review system](../hardening/04-strengthen-review-system.md) | One model is one point of view, and it is confidently wrong sometimes | `multi-vendor-rig` |
-| [Self-improvement loop](../hardening/05-self-improvement-loop.md) | The factory produces evidence about itself and nobody reads it | `self-improvement` |
+| [Self-improvement loop](../hardening/05-self-improvement-loop.md) | The factory produces evidence about itself and nobody reads it | `self-improvement`, at city scope with no `--rig` |
 
 ### Three more options for L4 and L5
 
@@ -71,7 +71,7 @@ A pull brings in new packs only: a pack you've already imported stays on the com
 
 | Option | Solves | Pack |
 | --- | --- | --- |
-| [Shred a scope into beads](../hardening/07-shred-a-scope-into-beads.md) | A real backlog is too big to cut into beads by hand | `shred-scope` |
+| [Shred a scope into beads](../hardening/07-shred-a-scope-into-beads.md) | A real backlog is too big to cut into beads by hand | `shred-scope`, at city scope with no `--rig` |
 | [Slack notifications](../hardening/08-slack-notifications.md) | Nobody hears that work finished unless they are watching the factory | `slack-notify` |
 | [Architecture Agent with the Actual CLI](../hardening/09-architecture-agent-cli.md) | The architect paraphrases your ADRs instead of naming the rule a diff breaks | none: the `actual` CLI and its Claude Code plugin |
 
