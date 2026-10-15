@@ -49,18 +49,13 @@ malformed beads for the operator to fix.
 
 Agent workflow with the project-manager in place:
 
-1. The **operator** (or the mayor, in larger flows) slings each new
-   bead at the project-manager: `gc sling <rig>/bead-gate-rig.project-manager <bead> --on mol-bead-review`.
-   The project-manager — not the polecat — is now the front door.
+1. The **operator** (or the mayor, in larger flows) stamps each new bead `merge_strategy=pr` and slings it at the project-manager: `gc sling <rig>/bead-gate-rig.project-manager <bead> --on mol-bead-review`. The project-manager — not the polecat — is now the front door.
 1. The **project-manager** (new) reads the bead's title,
    description, type, and metadata and walks a small checklist: title
    is meaningful, description names a deliverable, `target_file` is
    set on tasks and consistent with the title, parent epic exists,
    etc. It writes a verdict back onto the bead.
-   - **PASS**: the project-manager stamps `bead_review_passed=true`
-     and sets `gc.routed_to=<rig>/polecat`. The polecat pool's
-     reconciler picks the bead up next; the polecat poured against
-     the bead runs `mol-polecat-pr` (taught in the base factory).
+   - **PASS**: the project-manager stamps `bead_review_passed=true`, sets `gc.routed_to=<rig>/bead-gate-rig.polecat` and attaches no formula. The polecat pool's reconciler picks the bead up next, and the bead's own `merge_strategy` decides whether the refinery merges the work into `main` or publishes a pull request.
    - **FAIL**: the project-manager stamps `bead_review_passed=false`
      and `bead_review_feedback=<reason>`, sets the bead's status to
      `blocked`, mails the mayor, and exits. The polecat pool ignores
@@ -69,12 +64,11 @@ Agent workflow with the project-manager in place:
 1. The **operator** reviews any blocked beads, fixes the underlying
    problem on the bead (correct the title, fill in the description,
    set `target_file`, etc.), runs `bd update <bead> --status=open`,
-   and re-slings the project-manager for a clean re-review. Page
+   and re-slings the project-manager for a clean re-review.
    The Grill-Me section below walks through using a Grill-Me skill in
    your local agent to refine beads quickly so the project-manager
    passes them on the first pass.
-1. The **polecat / refinery / architect** chain (the base factory) runs
-   exactly as before once the bead is in the polecat pool.
+1. The **polecat / refinery / architect** chain (the base factory's, in the copy this option brings) runs exactly as before once the bead is in the polecat pool.
 
 The project-manager does **not** push code, modify the bead's text
 on the operator's behalf, run on closed or already-passed beads, or
@@ -83,7 +77,7 @@ agent at the very front of the pipeline.
 
 ## Setup
 
-This lesson has two paths to the same end state. Pick one.
+This lesson has two paths, and they end in different factories. Pick one.
 
 ### Bootstrap Factory1 with Script
 
@@ -92,11 +86,11 @@ If this is your first run, complete the one-time setup in the [bootstrap README]
 **Copy and paste**
 
 ```bash
-cd path/to/sf-tutorial/bootstrap
+cd "$SFI_PATH/sf-tutorial/bootstrap"
 ./bootstrap.sh 05.1-bead-gate-checks
 ```
 
-The script reproduces every step up through this lesson — `bead-gate-rig` is added at rig scope, `architect-rig` is removed from the rig's direct imports (still resolved transitively), and the city is restarted.
+The script deletes `factory1` and `ascii-art`, rebuilds them along the [appendix](../appendix/README.md) track, adds `bead-gate-rig` at rig scope in place of `architect-rig`, and starts the city. That is the appendix's factory, not W3's base factory plus this option: Day 1's work is gone, the new city no longer knows the rig you registered in L1, and the appendix's branch protection on `ascii-art` refuses `gh pr merge` in step 3 until a code owner other than you approves. To keep what Day 1 built, use [Build Factory1 by Hand](#build-factory1-by-hand).
 
 After it finishes, jump to [Try It](#try-it).
 
@@ -132,9 +126,11 @@ overridden, and the polecat formulas do not need to gate on
 `bead_review_passed=true` because beads simply do not reach the
 polecat pool unless the project-manager routes them there.
 
+That import brings its own copy of the base chain. After the install, `gc agent list --rig ascii-art` shows `bead-gate-rig.architect`, `bead-gate-rig.polecat`, `bead-gate-rig.project-manager` and `bead-gate-rig.refinery` beside the base factory's `base-factory.architect`, `base-factory.polecat` and `base-factory.refinery`. The project-manager routes a passing bead to this copy's polecat, `ascii-art/bead-gate-rig.polecat`, which hands on to this copy's refinery and architect. With two polecats on the rig, the short `gc sling --rig ascii-art polecat` form stops resolving (`agent "polecat" not found in city.toml`), so name an agent in full when you sling one by hand.
+
 `pr-gate-city` (the pack that supplies the mayor) stays in place at city scope. The
 mayor's pr-gate guidance is still useful for the post-PM polecat
-dispatch; the new entry point — `gc sling <rig>/project-manager <bead> --on mol-bead-review` — is taught in this lesson rather than
+dispatch; the new entry point — `gc sling <rig>/bead-gate-rig.project-manager <bead> --on mol-bead-review` — is taught in this lesson rather than
 patched into the mayor's prompt.
 
 Inspect the pack before installing.
@@ -163,38 +159,9 @@ What to notice in the pack:
   rewrite bead text on the operator's behalf.
 - **Status flips matter.** A FAIL sets `status=blocked`, which the
   polecat pool ignores. A PASS leaves the bead `open` and sets
-  `gc.routed_to=<rig>/polecat`. The status is the durable signal.
+  `gc.routed_to=<rig>/bead-gate-rig.polecat`. The status is the durable signal.
 
-Copy the pack into the city's `packs/` directory.
-
-**Copy and paste**
-
-```bash
-mkdir -p "$SFI_PATH/factory1/packs"
-
-# Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
-rm -rf "$SFI_PATH/factory1/packs/bead-gate-rig"
-
-cp -r "$SFI_PATH/sf-tutorial/artifacts/packs/bead-gate-rig" \
-      "$SFI_PATH/factory1/packs/bead-gate-rig"
-```
-
-Confirm the pack landed flat, with a single `pack.toml` at its top level:
-
-**Copy and paste**
-
-```bash
-find "$SFI_PATH/factory1/packs/bead-gate-rig" -name pack.toml
-```
-
-**Expected output**
-
-```text
-$SFI_PATH/factory1/packs/bead-gate-rig/pack.toml
-```
-
-Now register the new import at rig scope and remove the now-redundant
-direct `architect-rig` import. Run from the city directory.
+Now register the new import at rig scope. Run from the city directory.
 
 **Copy and paste**
 
@@ -205,13 +172,11 @@ cd "$SFI_PATH/factory1"
 gc import add --rig ascii-art "$SFI_PATH/sf-tutorial/artifacts/packs/bead-gate-rig"
 
 # Nothing is removed. This option sits alongside the base factory,
-# which keeps its orders and resolves the shared packs once.
+# which keeps its orders and its own polecat, refinery and architect.
 
 ```
 
-Verify the rig now imports `bead-gate-rig` and not `architect-rig`.
-
-The rig should now import `bead-gate-rig` and no longer import `architect-rig`.
+Verify the rig now imports `bead-gate-rig` beside `base-factory`.
 
 **Copy and paste**
 
@@ -222,8 +187,11 @@ gc import list --rig ascii-art
 **Expected output**
 
 ```text
-bead-gate-rig	packs/bead-gate-rig		(path)
+base-factory	file:///home/ubuntu/software-factory-intensive/sf-tutorial//artifacts/packs/base-factory	sha:<commit>	sha:<commit>
+bead-gate-rig	file:///home/ubuntu/software-factory-intensive/sf-tutorial//artifacts/packs/bead-gate-rig	sha:<commit>	sha:<commit>
 ```
+
+On your own machine the paths start from your own `$SFI_PATH`. Each `sha:` is the commit of your clone that the import is pinned to.
 
 The city's imports are unchanged — `pr-gate-city` should still be there.
 
@@ -236,16 +204,24 @@ gc import list
 **Expected output**
 
 ```text
-pr-gate-city	packs/pr-gate-city		(path)
+three rows: bd, core and pr-gate-city
 ```
 
-Restart the city so the new agent and formula take effect.
+Reload the city so the new agent and formula take effect.
 
 **Copy and paste**
 
 ```bash
-gc restart
+gc reload
 ```
+
+**Expected output**
+
+```text
+Config reloaded: <n> agents (+<m>), <r> rigs (rev …)
+```
+
+If the supervisor's own tick got there first, it prints `No config changes detected.` instead, which means the pack is already loaded.
 
 Confirm everything loaded.
 
@@ -253,6 +229,7 @@ All four formulas should be listed. `mol-architect-review` and `mol-polecat-pr` 
 
 **Copy and paste**
 ```bash
+cd "$SFI_PATH/ascii-art"
 gc formula list | grep -E "mol-architect-review|mol-refinery-architect-patrol|mol-polecat-pr|mol-bead-review"
 ```
 
@@ -294,12 +271,16 @@ during its first pass.
 
 ### 2. Sling the bead at the project-manager (new entry point)
 
-The new entry point is the project-manager. Run from the city
-directory.
+The new entry point is the project-manager. Stamp the bead in the rig directory, then sling it from the city directory.
+
+A bead the gate passes goes to the polecat pool by route alone, with no formula attached, so the `merge_strategy=pr` stamp is what makes the refinery open a pull request for it instead of merging it into `main`. Every sling at the project-manager on this page stamps the bead first.
 
 **Copy and paste**
 
 ```bash
+cd "$SFI_PATH/ascii-art"
+bd update $BEAD_ID --set-metadata merge_strategy=pr
+
 cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-gate-rig.project-manager $BEAD_ID --on mol-bead-review
 ```
@@ -310,9 +291,7 @@ along with the formula.
 **Expected output**
 
 ```text
-⎿  Auto-convoy aa-0s7
-    Attached wisp aa-3ii (formula "mol-bead-review") to aa-ne 1
-    Slung aa-nel.1 (with formula "mol-bead-review") → ascii-art/bead-gate-rig.project-manager
+a confirmation that your bead was slung to ascii-art/bead-gate-rig.project-manager with formula mol-bead-review (ids differ per run)
 ```
 
 What this does: the project-manager reads the bead's title,
@@ -328,6 +307,7 @@ In another terminal, list the live agent sessions.
 **Copy and paste**
 
 ```bash
+cd "$SFI_PATH/factory1"
 gc session list
 ```
 
@@ -360,13 +340,12 @@ project-manager: PASSED. <one-line summary>. Routing to polecat pool.
 METADATA
   bead_review_passed: true
   gc.routed_to: ascii-art/bead-gate-rig.polecat
+  merge_strategy: pr
   target_file: ascii/h.md
   ...
 ```
 
-The bead is back in the polecat pool. The polecat reconciler will
-spawn a polecat session next; the polecat pours `mol-polecat-pr`
-exactly as in the base factory.
+The bead is back in the polecat pool. The polecat reconciler will spawn a polecat session next, and the polecat works the bead from its own prompt: a routed bead carries no formula, so nothing here pours `mol-polecat-pr`.
 
 **Copy and paste**
 
@@ -380,16 +359,18 @@ polecat writes the file, hands the bead to the refinery, the
 refinery routes to the architect, the architect approves, the
 refinery publishes a PR. Wait for the PR and merge as before.
 
+Expect the status to go `open`, `in_progress` and back several times as the bead changes hands. [W3's note on statuses](../progression/W3-run-your-factory.md#what-the-statuses-mean) says what each stop means.
+
 **Copy and paste**
 
 ```bash
-# Poll until pr_number is populated.
+# Poll until pr_number is populated, then Ctrl-C. On a Mac, watch needs `brew install watch` first.
 watch -n 5 'gc bd show $BEAD_ID'
 
 # When ready:
 cd "$SFI_PATH/ascii-art"
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
-gh pr view "$PR" --web
+gh pr view "$PR" --json url -q .url   # prints the PR's URL: open it in your browser
 gh pr merge "$PR" --merge
 ```
 
@@ -407,6 +388,9 @@ export BAD_BEAD=$(bd list --type=task --status=open --limit 0 | grep -E "Impleme
 # Wipe target_file so the bead fails the task-checklist's
 # "target_file is set" check.
 bd update $BAD_BEAD --unset-metadata target_file
+
+# Stamp it for a pull request, as in step 2.
+bd update $BAD_BEAD --set-metadata merge_strategy=pr
 
 bd show $BAD_BEAD
 # metadata.target_file should be absent.
@@ -473,6 +457,7 @@ clean re-review.
 cd "$SFI_PATH/ascii-art"
 bd update $BAD_BEAD --set-metadata target_file=ascii/i.md
 bd update $BAD_BEAD --status=open
+bd update $BAD_BEAD --set-metadata merge_strategy=pr   # the step 2 stamp, before every sling
 
 cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-gate-rig.project-manager $BAD_BEAD --on mol-bead-review
@@ -505,6 +490,7 @@ export VAGUE_BEAD=$(bd create --title "Improve the rendering of j.md" \
   --type task --priority 2 --json | jq -r '.id')
 
 bd update $VAGUE_BEAD --set-metadata target_file=ascii/j.md
+bd update $VAGUE_BEAD --set-metadata merge_strategy=pr   # the step 2 stamp, before every sling
 bd show $VAGUE_BEAD
 ```
 
@@ -518,6 +504,8 @@ test-generation check has anything to object to.
 cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-gate-rig.project-manager $VAGUE_BEAD --on mol-bead-review
 ```
+
+Once the project-manager finishes, `gc bd show $VAGUE_BEAD` shows the verdict.
 
 **Expected output**
 
@@ -541,6 +529,7 @@ Now answer the question the feedback asked, and re-sling:
 cd "$SFI_PATH/ascii-art"
 bd update $VAGUE_BEAD --description "Create ascii/j.md containing a 5-line ASCII block for the letter J and a two-line rhyme, matching the line count and front-matter of ascii/i.md."
 bd update $VAGUE_BEAD --status=open --unset-metadata bead_review_passed
+bd update $VAGUE_BEAD --set-metadata merge_strategy=pr
 
 cd "$SFI_PATH/factory1"
 gc sling ascii-art/bead-gate-rig.project-manager $VAGUE_BEAD --on mol-bead-review
@@ -594,6 +583,8 @@ That is the operator's half of the problem, and it has an operator-side fix that
 
 ### Install it
 
+On a cloud box, run both blocks in the box's terminal and start your coding agent there too: the agent needs `bd` and the rig, and both live on the box.
+
 **Copy and paste**
 
 ```bash
@@ -643,6 +634,7 @@ The `mol-bead-review` formula is loaded — one row.
 **Copy and paste**
 
 ```bash
+cd "$SFI_PATH/ascii-art"
 gc formula list | grep mol-bead-review
 ```
 
@@ -665,13 +657,15 @@ gc bd show $BEAD_ID
 ```text
 METADATA
 ...
-  pr_number: 2
+  merge_result: pull_request
+  merge_strategy: pr
+  pr_number: <pr-number>
   pr_url: https://github.com/<username>/ascii-art/pull/<pr-number>
   refinery_approval_at: <timestamp>
   refinery_approved: true
 ```
 
-The deliberately-broken bead is blocked. After step 5: `status=blocked`, `bead_review_passed=false`, `bead_review_feedback` set. After step 6: `status=open`, `bead_review_passed=true`.
+The deliberately-broken bead was blocked, then passed. After step 4: `status=blocked`, `bead_review_passed=false`, `bead_review_feedback` set. After step 5: `bead_review_passed=true`, and the bead heads down the same chain as `h.md`.
 
 **Copy and paste**
 
@@ -702,17 +696,9 @@ ls ascii/h.md
 
 ## Troubleshooting
 
-- **`gc formula list` doesn't show `mol-bead-review`.** The
-  `bead-gate-rig` pack didn't load. Run `gc import list --rig ascii-art` and confirm you see `bead-gate-rig`. If it's missing,
-  re-run `gc import add --rig ascii-art packs/bead-gate-rig` and restart.
-- **Project-manager passes a bead but the polecat never picks it up.**
-  Check `gc.routed_to` on the bead — it should read
-  `ascii-art/<binding-prefix>polecat` (the binding prefix is
-  rig-pack-specific; for `bead-gate-rig` running over `architect-rig`
-  the prefix may differ). If the `routed_to` value points at a
-  non-existent agent, the reconciler will not spawn a polecat. Compare
-  against a working bead from the base factory's architect by `gc bd show` after the
-  refinery's bounce path fired.
+- **`gc formula list` doesn't show `mol-bead-review`.** The `bead-gate-rig` pack didn't load. Run `gc import list --rig ascii-art` and confirm you see `bead-gate-rig`. If it's missing, re-run `gc import add --rig ascii-art "$SFI_PATH/sf-tutorial/artifacts/packs/bead-gate-rig"` and `gc reload`.
+- **Project-manager passes a bead but the polecat never picks it up.** Check `gc.routed_to` on the bead: it should read `ascii-art/bead-gate-rig.polecat`, the option's own polecat, which `gc agent list --rig ascii-art` lists. If the `routed_to` value points at a non-existent agent, the reconciler will not spawn a polecat.
+- **`pr_number` never appears, and the letter reached `main` without a pull request.** The bead went through the gate without the `merge_strategy=pr` stamp, so the refinery merged it directly and recorded `merge_result: merged`. Stamp each bead before you sling it at the project-manager, as in [step 2](#2-sling-the-bead-at-the-project-manager-new-entry-point).
 - **Project-manager keeps failing a bead the operator believes is
   fine.** Read `metadata.bead_review_feedback` carefully — it cites
   one specific check. The most common false-positive is rule 3
