@@ -115,7 +115,7 @@ gc bd update $WORK \
   --status=open \
   --assignee="" \
   --set-metadata bead_review_passed=true \
-  --set-metadata gc.routed_to="${GC_RIG:+$GC_RIG/}{{binding_prefix}}polecat"
+  --set-metadata gc.routed_to="${GC_RIG:+$GC_RIG/}{{ .BindingPrefix }}polecat"
 gc bd note $WORK "project-manager: PASSED. <one-line summary of which checks were relevant>. Routing to polecat pool."
 ```
 
