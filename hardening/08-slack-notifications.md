@@ -28,6 +28,7 @@ By the end of this lab your factory posts to a Slack channel each time it closes
 
 - [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on the `ascii-art` rig, which publishes its work as pull requests to your GitHub repository.
 - `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) appends it to a shell rc, so it survives a new terminal.
+- A copy of this repo recent enough to hold the pack. `ls "$SFI_PATH/sf-tutorial/artifacts/packs/slack-notify"` should list `pack.toml`; if the folder is missing, run `git -C "$SFI_PATH/sf-tutorial" pull`. Packs you've already imported stay pinned to the commit they came from.
 - A Slack workspace where you're allowed to install apps. A free workspace you create yourself takes two minutes. The SFI community workspace may not allow app installs, so use your own.
 - A browser on your laptop, signed in to that workspace, for the Slack app settings.
 - `curl` and `jq` where your factory runs. Both ship on the cloud box. On a laptop, `jq --version` tells you.
@@ -196,7 +197,7 @@ cd "$SFI_PATH/ascii-art"
 bd list --type=task --status=open --limit 0 | grep "Implement"
 ```
 
-Then sling it through the PR path, the way W3 did:
+Then sling it with `--on mol-polecat-pr`, so the refinery publishes the work as a pull request:
 
 **Copy and paste**
 
@@ -211,7 +212,7 @@ Keep the channel open while the factory works, which takes a few minutes. The po
 ✅ Closed on ascii-art: `aa-7ln.8` Implement h.md · PR #4
 ```
 
-`PR #4` links to the pull request. Heads up: the bead closes when the PR opens, so treat the post as your cue to go review it. Merge it the way you did in W3.
+`PR #4` links to the pull request. Heads up: the bead closes when the PR opens, so treat the post as your cue to go review it, then merge it on GitHub.
 
 **What to notice.** That one sling closed more beads than the one you slung: the `mol-polecat-pr` workflow's steps and the convoy around the sling close too, and you can list them with `bd list --status closed --limit 0` in the rig. Still, only one message arrived, since the script posts just the kinds of bead a person creates or slings.
 
