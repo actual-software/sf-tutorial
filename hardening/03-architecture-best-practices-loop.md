@@ -27,12 +27,12 @@ By the end of this exercise you will have installed the `principles-loop-rig` pa
   (`python3 -m pip install pyyaml`).
 - `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) appends it to a shell rc, so it survives a new terminal. Every other path on this page is written out from it.
 - You are inside the rig directory: `cd "$SFI_PATH/ascii-art"`.
-- `gh` is authenticated; `jq` is installed.
+- `gh` is authenticated; `jq` and `watch` are installed (on a Mac, `brew install watch`).
 - Two open task beads: one you expect to pass cleanly, one you expect to score badly.
 
 **This option needs no other option.** It ships a formula and a check script rather than an agent, so it is poured by an agent you already have: the base factory's **architect**. The refinery patrol already gates on `architect_approved`, which is what this formula stamps, so the loop closes with nothing else installed.
 
-Install the [domain reviewers](./02-specialize-reviewers-per-domain.md) as well and the same loop deepens whichever architecture lane that option leaves in place.
+Installing the [domain reviewers](./02-specialize-reviewers-per-domain.md) as well changes nothing on this page: that option wires its lanes into its own copy of the refinery, and every bead here runs through `principles-loop-rig.refinery`.
 
 ## Context
 
@@ -84,15 +84,7 @@ or close the bead. The principles loop owns its own iteration
 counter (the `iteration` formula var), separate from the refinery's
 `review_loops` counter.
 
-In this exercise you install the **principles-loop-rig** pack into the `ascii-art` rig.
-It imports the base factory directly, so the polecat, refinery and
-architect you already have keep working. Drop the principles schema
-doc into the rig. Sling the next letter at the polecat, then watch
-the architect fan out 23 scoring writes into the YAML audit trail.
-The aggregator decides PASS or CONTINUE; on CONTINUE the formula
-self-pours with the next iteration. Then deliberately weaken a
-later bead and watch the loop iterate 2-3 times until aggregate
-converges (or the cap trips and operator gets mailed).
+In this exercise you install the **principles-loop-rig** pack into the `ascii-art` rig. It imports the base factory's `architect-rig`, so it arrives with its own polecat, refinery and architect, and the ones you already have keep working. Drop the principles schema doc into the rig. Sling the next letter at the polecat, then watch the architect fan out 23 scoring writes into the YAML audit trail. The aggregator decides PASS or CONTINUE; on CONTINUE the formula self-pours with the next iteration. Then deliberately weaken a later bead and watch the loop iterate 2-3 times until aggregate converges (or the cap trips and operator gets mailed).
 
 The [multi-vendor review](./04-strengthen-review-system.md) option
 adds review **breadth** where this one adds depth: vendor-diverse
@@ -159,36 +151,6 @@ What to notice:
 - **Self-pour pattern.** On CONTINUE, the formula `gc sling`s
   itself with `--var iteration=$NEXT`. Cap at 3.
 
-Copy the pack into the city's `packs/` directory. Later steps on this page run
-`checks/aggregate-score.sh` straight out of this directory, so the path you copy
-to here is the path those steps expect:
-
-**Copy and paste**
-
-```bash
-mkdir -p "$SFI_PATH/factory1/packs"
-
-# Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
-rm -rf "$SFI_PATH/factory1/packs/principles-loop-rig"
-
-cp -r "$SFI_PATH/sf-tutorial/artifacts/packs/principles-loop-rig" \
-      "$SFI_PATH/factory1/packs/principles-loop-rig"
-```
-
-Confirm the pack landed flat, with a single `pack.toml` at its top level:
-
-**Copy and paste**
-
-```bash
-find "$SFI_PATH/factory1/packs/principles-loop-rig" -name pack.toml
-```
-
-**Expected output**
-
-```text
-$SFI_PATH/factory1/packs/principles-loop-rig/pack.toml
-```
-
 Register the new import at rig scope:
 
 **Copy and paste**
@@ -199,11 +161,13 @@ cd "$SFI_PATH/factory1"
 gc import add --rig ascii-art "$SFI_PATH/sf-tutorial/artifacts/packs/principles-loop-rig"
 
 # Nothing is removed. This option sits alongside the base factory,
-# which keeps its orders and resolves the shared packs once.
+# which keeps its orders, and brings its own copy of the base chain.
 
 ```
 
-The rig should now import `principles-loop-rig` and no longer import `domain-reviewers-rig`.
+The option arrives with its own copy of the base chain. It imports `architect-rig`, so once the city reloads, `gc agent list --rig ascii-art` shows `principles-loop-rig.architect`, `principles-loop-rig.polecat` and `principles-loop-rig.refinery` beside the three `base-factory` ones. The principles formula hands the bead back to the refinery in the same copy as the architect that poured it, which is why every sling on this page names `ascii-art/principles-loop-rig.<agent>`. The short `gc sling --rig ascii-art polecat` form stops resolving, with `agent "polecat" not found in city.toml`.
+
+The rig now imports `principles-loop-rig` beside `base-factory`.
 
 **Copy and paste**
 
@@ -214,41 +178,52 @@ gc import list --rig ascii-art
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+base-factory	file:///home/ubuntu/software-factory-intensive/sf-tutorial//artifacts/packs/base-factory	sha:<commit>	sha:<commit>
+principles-loop-rig	file:///home/ubuntu/software-factory-intensive/sf-tutorial//artifacts/packs/principles-loop-rig	sha:<commit>	sha:<commit>
 ```
 
-Restart and confirm the new formula loaded — one row for `mol-principles-review`.
+That is a cloud box's output, plus a row for any other option you have installed; on your own machine the paths start from your own `$SFI_PATH`. The `sha:` is the commit your clone is on, and the import stays pinned to it, so later edits to the pack's files in `sf-tutorial` never reach the factory.
+
+Reload and confirm the new formula loaded — one row for `mol-principles-review`.
 
 **Copy and paste**
 
 ```bash
-gc restart
+cd "$SFI_PATH/factory1"
+gc reload
 
+cd "$SFI_PATH/ascii-art"
 gc formula list | grep mol-principles-review
 ```
 
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+Config reloaded: <n> agents (+<m>), <r> rigs (rev …)
+one row: mol-principles-review
 ```
+
+If the supervisor's own tick got there first, `gc reload` prints `No config changes detected.` instead, which means the option is already loaded.
 
 Check the aggregator script exists, and run it bare to confirm it prints a usage message and exits 2.
 
 **Copy and paste**
 
 ```bash
-ls "$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh"
-bash "$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh"
+ls "$SFI_PATH/sf-tutorial/artifacts/packs/principles-loop-rig/checks/aggregate-score.sh"
+bash "$SFI_PATH/sf-tutorial/artifacts/packs/principles-loop-rig/checks/aggregate-score.sh"
+echo "rc=$?"
 ```
 
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+the script's path
+usage: aggregate-score.sh <yaml-path> [--target=0.9] [--min-per-principle=3]
+rc=2
 ```
 
-Confirm PyYAML is installed (a version string prints). If you get `ModuleNotFoundError`, run `python3 -m pip install pyyaml`.
+Confirm PyYAML is installed (a version string prints). If you get `ModuleNotFoundError`, install it with `sudo apt-get install -y python3-yaml` on the cloud box or any Ubuntu machine, where `pip` may refuse to install into the system Python, or with `python3 -m pip install pyyaml` elsewhere.
 
 **Copy and paste**
 
@@ -259,22 +234,21 @@ python3 -c "import yaml; print(yaml.__version__)"
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+one line: the installed PyYAML version number
 ```
 
 ### 2. Author and commit the principles schema doc
 
-The schema doc is the human-readable reference for the YAML
-format. It lives in the rig (not the pack), committed alongside
-the audit trail. Drop the version from the pack into
-`docs/reviews/principles-schema.md` if your pack ships one; if
-not, write a short one inline:
+The schema doc is the human-readable reference for the YAML format. It lives in the rig (not the pack), beside the audit trail the architect writes there, so write a short one inline.
+
+The formula runs the aggregator as `./checks/aggregate-score.sh` from the rig directory, which is where the architect works, and sends the architect to that file's `CANONICAL` array for the 23 names, so the same commit puts a copy of the script there. `git pull --ff-only` first brings your local `main` level with GitHub's, which moved on as the factory's work merged, so the push goes through.
 
 **Copy and paste**
 
 ````bash
 cd "$SFI_PATH/ascii-art"
-mkdir -p docs/reviews docs/reviews/principles
+git pull --ff-only
+mkdir -p docs/reviews docs/reviews/principles checks
 cat > docs/reviews/principles-schema.md <<'EOF'
 # Principles audit trail schema
 
@@ -296,8 +270,10 @@ floor: every principle's latest row must score >= 3. Missing
 principles count as 0.
 EOF
 
-git add docs/reviews/principles-schema.md
-git commit -m "docs(reviews): add principles audit-trail schema"
+cp "$SFI_PATH/sf-tutorial/artifacts/packs/principles-loop-rig/checks/aggregate-score.sh" checks/
+
+git add docs/reviews/principles-schema.md checks/aggregate-score.sh
+git commit -m "docs(reviews): add principles audit-trail schema and aggregator"
 git push origin main
 ````
 
@@ -314,8 +290,9 @@ export BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implemen
 
 cd "$SFI_PATH/factory1"
 gc sling ascii-art/principles-loop-rig.polecat $BEAD_ID --on mol-polecat-pr
-# Wait for the polecat to publish a branch and hand back to the refinery.
-watch -n 5 'gc bd show $BEAD_ID | grep -E "_approved|branch|review"'
+# Wait for the polecat to publish a branch and hand back to the refinery:
+# it stamps merge_strategy as it hands over (branch appears earlier, when it starts).
+watch -n 5 'gc bd show $BEAD_ID | grep -E "_approved|branch|merge_strategy|review"'
 ```
 
 When the bead is back at the refinery and `architect_approved` is
@@ -366,7 +343,8 @@ You should see `rc=0` and a JSON line on stdout with `aggregate>=0.9`.
 **Copy and paste**
 
 ```bash
-"$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh" \
+cd "$SFI_PATH/ascii-art"
+./checks/aggregate-score.sh \
   docs/reviews/principles.$BEAD_ID.yaml --target=0.9 --min-per-principle=3
 echo "rc=$?"
 ```
@@ -374,7 +352,9 @@ echo "rc=$?"
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+a JSON line ending "decision": "PASS"}, with "aggregate" at 0.9 or more and "lowest" naming three principles
+aggregate=<value> target=0.9 decision=PASS
+rc=0
 ```
 
 Confirm `architect_approved=true` and `principles_review_passed=true`
@@ -389,20 +369,9 @@ gc bd show $BEAD_ID | grep -E "architect_approved|principles_review_passed"
 That is the only verdict field the base factory's refinery waits on,
 so the bead is now free to proceed.
 
-If you also installed the [domain reviewers](./02-specialize-reviewers-per-domain.md)
-option, its refinery patrol waits on three more lanes. Run them, or
-let the patrol dispatch them itself:
+If you also installed the [domain reviewers](./02-specialize-reviewers-per-domain.md) option, it adds no lanes to this bead: its reviewers hand each bead they review to that option's own refinery, so leave them off this one.
 
-**Copy and paste**
-
-```bash
-cd "$SFI_PATH/factory1"
-gc sling ascii-art/domain-reviewers-rig.design-reviewer  $BEAD_ID --on mol-design-review
-gc sling ascii-art/domain-reviewers-rig.testing-reviewer $BEAD_ID --on mol-testing-review
-gc sling ascii-art/domain-reviewers-rig.docs-reviewer    $BEAD_ID --on mol-docs-review
-```
-
-Wait for the refinery to aggregate and publish the PR:
+Wait for the refinery to publish the PR:
 
 **Copy and paste**
 
@@ -412,7 +381,7 @@ watch -n 5 'gc bd show $BEAD_ID'
 
 cd "$SFI_PATH/ascii-art"
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
-gh pr view "$PR" --web
+gh pr view "$PR" --json url -q .url   # open this link in your laptop's browser
 gh pr merge "$PR" --merge
 ```
 
@@ -437,10 +406,14 @@ mkdir -p ascii && cat > ascii/m.md <<'BAD'
    M   M
 BAD
 git add ascii/m.md && git commit -m "implement m (deliberately weak)" && git push -u origin weak/m
+
+bd update "$WEAK_BEAD" --set-metadata branch=weak/m
+git checkout main
 ```
 
-Run the standard pipeline so the polecat opens the PR around the
-bad code:
+The polecat reuses a branch only when the bead names it in `metadata.branch`, which is why the block stamps `weak/m` on the bead. `git checkout main` then frees the branch, because git lets only one checkout hold a branch and the polecat works in a checkout of its own.
+
+Run the standard pipeline so the polecat starts from the bad code:
 
 **Copy and paste**
 
@@ -448,8 +421,8 @@ bad code:
 cd "$SFI_PATH/factory1"
 gc sling ascii-art/principles-loop-rig.polecat $WEAK_BEAD --on mol-polecat-pr
 
-# Wait for the polecat to publish the (weak) branch...
-watch -n 5 'gc bd show $WEAK_BEAD | grep -E "branch|pr_url"'
+# Wait for the polecat to publish the (weak) branch: merge_strategy appears as it hands over...
+watch -n 5 'gc bd show $WEAK_BEAD | grep -E "branch|merge_strategy|pr_url"'
 
 # ... then sling the principles loop.
 gc sling ascii-art/principles-loop-rig.architect $WEAK_BEAD --on mol-principles-review
@@ -461,9 +434,7 @@ What you should see across iterations:
   (DRY, KISS, Don't Swallow Errors, TDD likely 0-2). Aggregator
   returns 1 (CONTINUE); the formula self-slings with
   `iteration=2`.
-- **Iteration 2**: a polecat pass against the lowest-scoring
-  principles fixes the worst offenders; the 23 reviewers re-score;
-  aggregate climbs.
+- **Iteration 2**: the formula re-slings the architect, which scores all 23 principles again against whatever the branch holds by then. Nothing in the loop edits the code between iterations.
 - **Iteration 3**: same loop. If aggregate now clears 0.9 with no
   principle below 3, stamps PASS. Otherwise the cap trips and
   operator gets mailed.
@@ -473,6 +444,7 @@ Watch the YAML grow:
 **Copy and paste**
 
 ```bash
+cd "$SFI_PATH/ascii-art"
 watch -n 5 'wc -l docs/reviews/principles.$WEAK_BEAD.yaml'
 ```
 
@@ -488,11 +460,12 @@ Run the aggregator between iterations:
 
 ```bash
 cd "$SFI_PATH/ascii-art"
-"$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh" \
+./checks/aggregate-score.sh \
   docs/reviews/principles.$WEAK_BEAD.yaml --target=0.9 --min-per-principle=3
+echo "rc=$?"
 # Iteration 1: rc=1, JSON shows aggregate ~0.5, lowest 3 principles named.
-# Iteration 2: rc=1, aggregate ~0.7, lowest principles changing.
-# Iteration 3: rc=0 (PASS) or rc=1 (cap will trip on next CONTINUE).
+# Iteration 2: a fresh score of the same branch, with its own rc.
+# Iteration 3: rc=0 (PASS), or rc=1, which trips the cap and escalates.
 ```
 
 ### 6. Reflect
@@ -522,13 +495,14 @@ What's still missing:
 
 ## Verification
 
-Pack is installed and the formula is loaded.
+Pack is installed, the formula is loaded, and the rig carries the aggregator the formula runs.
 
 **Copy and paste**
 
 ```bash
+cd "$SFI_PATH/ascii-art"
 gc formula list | grep mol-principles-review
-ls "$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh"
+ls checks/aggregate-score.sh
 python3 -c "import yaml" && echo "PyYAML ok"
 ```
 
@@ -537,8 +511,9 @@ After slinging on a clean bead, 23 rows in the YAML and PASS.
 **Copy and paste**
 
 ```bash
+cd "$SFI_PATH/ascii-art"
 wc -l docs/reviews/principles.$BEAD_ID.yaml
-"$SFI_PATH/factory1/packs/principles-loop-rig/checks/aggregate-score.sh" \
+./checks/aggregate-score.sh \
   docs/reviews/principles.$BEAD_ID.yaml
 echo "rc=$?"
 ```
@@ -571,15 +546,8 @@ ls docs/reviews/principles/$BEAD_ID.*.md | head -5
 - **`python3` says `No module named yaml`.**
   `python3 -m pip install pyyaml`. The aggregator escalates with
   `PyYAML missing` if it cannot import.
-- **Aggregator exits 2 with `principle not in canonical 23`.** A
-  reviewer wrote a name that doesn't match — most often a
-  parenthetical alias like `Separation of Concerns (SoC)`. Edit
-  the offending YAML row to the canonical string and update the
-  reviewer's prompt to stop emitting the alias.
-- **Aggregator exits 2 with `duplicate row for principle=...`.**
-  Two reviewer wisps appended at the exact same timestamp. Delete
-  one duplicate; if this becomes common, add a small jitter to the
-  timestamp generation in the formula.
+- **Aggregator exits 2 with `principle not in canonical 23`.** The architect wrote a name that doesn't match — most often a parenthetical alias like `Separation of Concerns (SoC)`. Edit the offending YAML row to the canonical string, and if it recurs, tighten the wording of the formula's `score-principles` step (**A formula edit changes nothing**, below, says where).
+- **Aggregator exits 2 with `duplicate row for principle=...`.** Two rows for the same principle were appended at the exact same timestamp. Delete one duplicate; if this becomes common, add a small jitter to the timestamp generation in the formula (**A formula edit changes nothing**, below, says where).
 - **Loop runs once and stops.** The CONTINUE branch must `gc sling`
   the formula again with `iteration=$NEXT`; if that sling silently
   fails the loop ends without escalation.
@@ -594,6 +562,7 @@ ls docs/reviews/principles/$BEAD_ID.*.md | head -5
   the refinery's next patrol.
 - **`<coordinator>` mail bounces.** Substitute your operator
   handle (e.g., `mayor`).
+- **A formula edit changes nothing.** The import is pinned to the commit your clone was on when you added it, so the factory never reads later edits to the pack in `sf-tutorial`, committed or not. Edit a copy outside any git clone and import that copy in place of this one, as [the feature labs' build step](../progression/L3-L5-feature-labs.md#2-build-it) shows. The rig's own `checks/aggregate-score.sh` is a plain file the architect runs from the rig, so an edit to it counts from the next run.
 
 ## What's next
 

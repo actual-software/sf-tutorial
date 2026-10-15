@@ -321,7 +321,7 @@ git remote add origin https://github.com/<your-github-handle>/ascii-art.git
 git push -u origin main
 ```
 
-**Outcome:** `git status` reports a clean tree tracking `origin/main`.
+**Outcome:** `git status` reports `main` tracking `origin/main`. The one untracked entry it may list is your coding agent's folder, such as `.claude/`, where `gc` keeps the agent's skills for the rig. Leave it untracked.
 
 ### 8. Install the base factory
 
@@ -420,6 +420,8 @@ gc reload
 Config reloaded: 9 agents (+3), 1 rigs (rev f17cdf234170)
 ```
 
+If the supervisor's own tick got there first, it prints `No config changes detected.` instead, which means the packs are already loaded.
+
 > **If `gc reload` prints `Reload request could not be accepted because the controller is busy`,** that is normal right after the city starts, while the controller is still adopting sessions. The imports are already persisted, so wait for the next tick and move on rather than retrying.
 
 ### 9. Run the factory checks
@@ -508,16 +510,16 @@ Seed complete.
   total beads:  28
 
 Next steps:
-  bd list --type=epic                           # see the 2 epics
-  bd ready                                      # find a task to start on
-  gc sling --rig ascii-art polecat <bead-id>    # hand a task to an agent
+  bd list --type=epic                                                     # see the 2 epics
+  bd ready                                                                # find a task to start on
+  gc sling ascii-art/base-factory.polecat <bead-id> --on mol-polecat-pr   # hand a task to an agent
 ```
 
 ## Try It
 
 ### 1. Sling your first bead
 
-To start work by hand you *sling* a bead at an agent. Two equivalent forms:
+To start work by hand you *sling* a bead at an agent. Every sling at the polecat carries `--on mol-polecat-pr`, the formula that tells the refinery to publish the work as a pull request. Leave it off and the refinery merges the polecat's branch straight into `main` instead.
 
 **Copy and paste**
 
@@ -527,31 +529,20 @@ bd list --type=epic                 # find the Letters a-m epic
 bd list --parent=<epic-id>          # find its child tasks
 
 cd "$SFI_PATH/factory1"
-
-# Name the rig and the agent. This form always works.
-gc sling --rig ascii-art polecat <id-for-a.md>
+gc agent list --rig ascii-art       # the polecat is ascii-art/base-factory.polecat
+gc sling ascii-art/base-factory.polecat <id-for-a.md> --on mol-polecat-pr
 ```
 
-**Expected output** (your ids will differ)
+**Expected output** from the sling (your ids will differ)
 
 ```text
-Auto-convoy aa-70w
-Slung aa-gf8.1 → ascii-art/base-factory.polecat
-Dashboard: http://127.0.0.1:8372/city/factory1/runs (new work can take a minute or two to appear)
+Attached workflow aa-gd1 (formula "mol-polecat-pr") to aa-gd1
+Dashboard: http://127.0.0.1:8372/city/factory1/runs/aa-gd1
 ```
 
-The `Dashboard:` line links to the factory's dashboard, and [step 4](#4-watch-it-work) opens it.
+Both ids on the first line name the workflow `gc` started for your bead, not the bead itself. The formula runs as a bead of its own, titled `mol-polecat-pr`, plus one bead per step, and the polecat works through those. The `Dashboard:` line links to that run, and [step 4](#4-watch-it-work) opens it.
 
-There is a second, fully qualified form, `<rig>/<binding>.<agent>`. The binding is the name of the import the agent arrived through, and since the base factory brings the polecat in transitively rather than directly, do not guess it — read it:
-
-**Copy and paste**
-
-```bash
-gc agent list --rig ascii-art
-gc sling ascii-art/base-factory.polecat <id-for-b.md>
-```
-
-Worth doing once. The qualified form is what disambiguates two agents of the same name arriving from different packs, which is exactly the situation a Day 2 option can create.
+The target is the fully qualified form, `<rig>/<binding>.<agent>`. The binding is the name of the import the agent arrived through, and since the base factory brings the polecat in transitively rather than directly, do not guess it — read it from `gc agent list`, which is why the block runs that first. Name agents in full like this from now on. The short form, `gc sling --rig ascii-art polecat <id>`, works only while your whole city has one polecat: once [L1](./L1-plan-your-factory.md) installs the base factory on your own rig, or a Day 2 option brings its own polecat, it stops resolving, with `agent "polecat" not found in city.toml`.
 
 You can also ask the mayor to sling in plain language, which is the next step.
 
@@ -566,7 +557,7 @@ cd "$SFI_PATH/factory1"
 gc session attach mayor
 ```
 
-Ask it something: *What is the status of the factory?* or *Sling the bead for c.md at the polecat.*
+Ask it something: *What is the status of the factory?* or *Sling the bead for c.md at the polecat with mol-polecat-pr.* Naming the formula keeps the mayor on the pull-request path.
 
 > **Detach with `Ctrl-b` then `d`.** Do **not** use `Ctrl-c` — that interrupts the agent, and exiting that way kills the session inside Gas City. `Ctrl-b` `d` returns you to your shell with the mayor still running.
 
@@ -579,7 +570,7 @@ gc session list
 gc session attach <alias-or-id>
 ```
 
-A bead you slung a minute ago should be moving: a polecat claiming it, then a refinery or the architect picking it up. Watching a session mid-flight is the fastest way to understand what the formulas in [W4](./W4-tour-the-factory.md) actually do.
+A bead you slung a minute ago should be moving: a polecat working through its steps, then the refinery and the architect picking it up. Watching a session mid-flight is the fastest way to understand what the formulas in [W4](./W4-tour-the-factory.md) actually do.
 
 ### 3. Watch the orders fire
 
@@ -633,6 +624,21 @@ bd list --status=in_progress
 ```
 
 `gc session list` shows which agents are running and when each last did something, and `bd list --status=in_progress` shows the beads they are working on. Run both again as the bead you slung moves along, or keep the sessions on screen with `watch -n 10 gc session list` from inside `factory1`, which refreshes every ten seconds until `Ctrl-C`. On a Mac, `watch` needs `brew install watch` first.
+
+#### What the statuses mean
+
+The bead you slung changes hands several times on its way through: polecat to refinery, refinery to architect, architect back to refinery. Each hand-off puts it back to `open` so the next agent's queue can pick it up, so expect it to go `open`, `in_progress`, `open` and so on several times before it closes. That's the bead moving forward.
+
+| Status | During a run |
+| --- | --- |
+| `open` | Waiting for the next agent. Right after the sling it also stays `open` while the polecat works the formula's step beads: those are the `in_progress` ones `bd list --status=in_progress` shows, under a bead titled `mol-polecat-pr` |
+| `in_progress` | An agent has claimed it and is working on it now |
+| `blocked` | An agent stopped it and wrote the reason on the bead. The base factory doesn't do this; the gates you can add on Day 2 do |
+| `closed` | Done. The refinery opened the pull request, and the bead's `pr_url` links to it |
+
+The work can also be sent back. When the architect or the refinery's approval step rejects it, the bead returns to the polecat, `open` again, with a `rejection_reason` that starts `architect:` or `approval-review:`. The architect's rejections are capped at two, after which the refinery lets the bead through. The approval step has no cap. Its checklist asks for a one-file diff, the bead's `target_file` when it has one, and the refinery applies it with judgment: in testing it approved a two-file change on a bead with no `target_file`. If a bead keeps coming back with the same `approval-review:` reason, read the reason and narrow or split the bead, so it doesn't loop.
+
+A bead also drops back to `open` when the session holding it ends early. The runtime returns it to the queue and the next session picks it up, so no work is lost. To follow one bead through all of this, read its assignee and metadata with `bd show <bead-id> --json | jq '.[0] | {status, assignee, metadata}'`, or open its run on the dashboard.
 
 [W5](./W5-observability.md) is where you read the factory properly. For now, confirm your beads are there and that one of them is moving.
 

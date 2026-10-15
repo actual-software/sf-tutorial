@@ -22,6 +22,14 @@ graph LR
 
 `setup` carries the polecat and refinery agents and the two reference formulas. `pr-gate-rig` turns the merge path into a pull request and inserts an approval step ahead of it. `architect-rig` adds the architect agent, which reads each branch against the rig's decision records and writes its verdict back onto the bead. This pack adds the orders.
 
+The pull request happens for a bead slung with `--on mol-polecat-pr`, the formula that stamps `merge_strategy=pr` on it:
+
+```bash
+gc sling <rig-name>/base-factory.polecat <bead-id> --on mol-polecat-pr
+```
+
+Sling without it and the refinery still runs the architect and the approval step, then merges the branch straight into `main`.
+
 ## The five primitives, and where to read each one
 
 | Primitive | Where it lives in the installed factory |
@@ -63,4 +71,4 @@ There is no environment switch on these two. They append to a file nobody reads,
 
 ## Extending it
 
-The hardening options each import `architect-rig` directly rather than importing each other, so any option composes on top of this pack alone and you can take them in any order. Add one with `gc import add --rig <rig-name> artifacts/packs/<option-pack>`; the option page names its pack.
+The hardening options each import `architect-rig` directly rather than importing each other, so any option composes on top of this pack alone and you can take them in any order. Add one with `gc import add --rig <rig-name> artifacts/packs/<option-pack>`; the option page names its pack. Each option arrives with its own copy of the polecat, refinery and architect, named after the option, so work goes through it when you sling at `<rig-name>/<option-pack>.polecat`. Name agents in full like this: the short `--rig <rig-name> polecat` form stops resolving as soon as the city has a second polecat, whether an option's or another rig's.

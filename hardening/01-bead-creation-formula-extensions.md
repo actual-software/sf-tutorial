@@ -43,16 +43,16 @@ Agent workflow with the Leads in place:
 
 1. The **operator** drafts the bead (or uses the Grill-Me skill from the [bead gate](./06-bead-gate-checks.md) option's Grill-Me section to refine its title and description).
 1. The **operator** slings the three Leads at the bead, one at a time:
-   - `gc sling <rig>/design-lead <bead> --on mol-design-spec` — drafts `docs/design/<bead-id>.md`, stamps `metadata.design_doc=<path>`.
-   - `gc sling <rig>/test-lead <bead> --on mol-test-spec` — drafts `docs/testing/<bead-id>.md`, stamps `metadata.test_plan=<path>`.
-   - `gc sling <rig>/doc-lead <bead> --on mol-doc-spec` — drafts `docs/outlines/<bead-id>.md`, stamps `metadata.docs_outline=<path>`.
+   - `gc sling <rig>/bead-builders-rig.design-lead <bead> --on mol-design-spec` — drafts `docs/design/<bead-id>.md`, stamps `metadata.design_doc=<path>`.
+   - `gc sling <rig>/bead-builders-rig.test-lead <bead> --on mol-test-spec` — drafts `docs/testing/<bead-id>.md`, stamps `metadata.test_plan=<path>`.
+   - `gc sling <rig>/bead-builders-rig.doc-lead <bead> --on mol-doc-spec` — drafts `docs/outlines/<bead-id>.md`, stamps `metadata.docs_outline=<path>`.
 1. The **polecat / refinery / architect** chain (the base factory) runs exactly as before, and the bead now carries three spec paths through it.
 
 Each Lead stamps its path onto the bead, so anything that wants a spec looks it up in the bead's metadata rather than guessing at a filename. Nothing in the base factory *requires* the specs, and nothing there reads them by name either: a bead without them still moves, and a bead with them moves the same way. What changes is that the design, the test plan and the docs impact are now written down where the operator, a reviewer, or a later option can pick them up.
 
 The Leads do **not** write production code, modify the bead's title or description, or stamp any downstream verdict flags. They are upstream "light-side" helpers — agents whose job is to **shape higher-quality work with less effort**. The operator could have written all three docs by hand; the Leads automate the boring parts and surface trade-offs the operator would otherwise miss.
 
-This page installs the `bead-builders-rig` pack into the `ascii-art` rig. The pack imports the base factory directly, so the polecat / refinery / architect flow you already have keeps working. After a restart, the three Leads (`design-lead`, `test-lead`, `doc-lead`) are registered. You sling the next letter from `letters-a-m` at each Lead in turn, watch the three spec files land under `docs/design/`, `docs/testing/`, `docs/outlines/`, and the matching metadata stamps appear on the bead. Then you hand the bead to the polecat and watch it carry the specs through the run.
+This page installs the `bead-builders-rig` pack into the `ascii-art` rig. The pack imports `architect-rig`, the top of the base factory's chain, and the polecat / refinery / architect flow you already have keeps working. After a reload, the three Leads (`design-lead`, `test-lead`, `doc-lead`) are registered. You sling the next letter from `letters-a-m` at each Lead in turn, watch the three spec files land under `docs/design/`, `docs/testing/`, `docs/outlines/`, and the matching metadata stamps appear on the bead. Then you hand the bead to the polecat and watch it carry the specs through the run.
 
 Two other options pair well with this one, and neither is required. The [domain reviewers](./02-specialize-reviewers-per-domain.md) option splits the architect into four parallel reviewers, each citing the doc family the matching Lead wrote. The [bead gate](./06-bead-gate-checks.md) option adds a project-manager in front of the polecat, which is the natural place to start requiring the specs rather than merely welcoming them.
 
@@ -70,7 +70,9 @@ This ships as a single rig-scoped pack, **`bead-builders-rig`**, that adds three
 
 Each Lead is independent. Run them in any order. They do not depend on each other; they each take the same inputs (the bead and the relevant doc tree) and produce one focused spec.
 
-The new pack declares one import: `architect-rig` (which transitively brings `pr-gate-rig` and `setup`), so it sits directly on the base factory. It adds three agents and three formulas and patches nothing, which is what lets you install it on its own.
+The new pack declares one import: `architect-rig` (which transitively brings `pr-gate-rig` and `setup`), so it sits directly on the base factory. It adds three agents and three formulas of its own and patches nothing, which is what lets you install it on its own.
+
+That import brings its own copy of the base chain. After the install, `gc agent list --rig ascii-art` shows `bead-builders-rig.architect`, `bead-builders-rig.polecat` and `bead-builders-rig.refinery` beside the three Leads and the base factory's `base-factory.architect`, `base-factory.polecat` and `base-factory.refinery`. That is why the polecat slings on this page name `ascii-art/bead-builders-rig.polecat`: with two polecats on the rig, the short `gc sling --rig ascii-art polecat` form stops resolving (`agent "polecat" not found in city.toml`).
 
 Inspect the pack before installing.
 
@@ -91,36 +93,6 @@ What to notice in the pack:
 - **Light-side, not gates.** The Leads do not block beads or stamp verdicts. A missing spec makes the work thinner, not invalid, and nothing in the base factory turns it into an error.
 - **Specs live in the rig repo.** `docs/design/<bead>.md`, `docs/testing/<bead>.md`, `docs/outlines/<bead>.md` — committed alongside source code, so anything that opens them reads them out of the working tree rather than out of the bead.
 
-Copy the pack into the city's `packs/` directory.
-
-**Copy and paste**
-
-```bash
-mkdir -p "$SFI_PATH/factory1/packs"
-
-# Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
-rm -rf "$SFI_PATH/factory1/packs/bead-builders-rig"
-
-cp -r "$SFI_PATH/sf-tutorial/artifacts/packs/bead-builders-rig" \
-      "$SFI_PATH/factory1/packs/bead-builders-rig"
-```
-
-Confirm the pack landed flat, with a single `pack.toml` at its top level:
-
-**Copy and paste**
-
-```bash
-find "$SFI_PATH/factory1/packs/bead-builders-rig" -name pack.toml
-```
-
-**Expected output**
-
-```text
-$SFI_PATH/factory1/packs/bead-builders-rig/pack.toml
-```
-
-One line is the whole check. A second line ending in `bead-builders-rig/bead-builders-rig/pack.toml` is a nested copy left by an earlier run, and the fix is to delete `$SFI_PATH/factory1/packs/bead-builders-rig` and repeat the copy above. The `gc import list` check below cannot see it, because it reports the path recorded in `pack.toml` rather than what sits inside the directory.
-
 Register the new import at rig scope. Run from the city directory.
 
 **Copy and paste**
@@ -131,8 +103,7 @@ cd "$SFI_PATH/factory1"
 gc import add --rig ascii-art "$SFI_PATH/sf-tutorial/artifacts/packs/bead-builders-rig"
 
 # Nothing is removed. This option sits alongside the base factory,
-# which keeps its orders and resolves the shared packs once.
-
+# which keeps its orders and its own polecat, refinery and architect.
 ```
 
 Verify the imports.
@@ -145,11 +116,14 @@ The rig should now import `bead-builders-rig` alongside `base-factory`.
 gc import list --rig ascii-art
 ```
 
-**Expected output**
+**Expected output** (on a cloud box)
 
 ```text
-TBD: capture actual terminal output during smoke test
+base-factory	file:///home/ubuntu/software-factory-intensive/sf-tutorial//artifacts/packs/base-factory	sha:<commit>	sha:<commit>
+bead-builders-rig	file:///home/ubuntu/software-factory-intensive/sf-tutorial//artifacts/packs/bead-builders-rig	sha:<commit>	sha:<commit>
 ```
+
+On your own machine the paths start from your own `$SFI_PATH`. Each `sha:` is the commit of your clone that the import is pinned to.
 
 The city's imports are unchanged — `pr-gate-city` should still be there.
 
@@ -162,16 +136,24 @@ gc import list
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+three rows: bd, core and pr-gate-city
 ```
 
-Restart.
+Reload the city so the three Leads and their formulas take effect.
 
 **Copy and paste**
 
 ```bash
-gc restart
+gc reload
 ```
+
+**Expected output**
+
+```text
+Config reloaded: <n> agents (+<m>), <r> rigs (rev …)
+```
+
+If the supervisor's own tick got there first, it prints `No config changes detected.` instead, which means the pack is already loaded.
 
 Confirm the three formulas loaded.
 
@@ -180,6 +162,7 @@ Three rows should be listed.
 **Copy and paste**
 
 ```bash
+cd "$SFI_PATH/ascii-art"
 gc formula list \
   | grep -E "mol-(design|test|doc)-spec"
 ```
@@ -187,7 +170,9 @@ gc formula list \
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+mol-design-spec
+mol-doc-spec
+mol-test-spec
 ```
 
 ### 2. Pick the next bead
@@ -206,15 +191,20 @@ You should see the bead's title, description, `target_file`, and no `design_doc`
 
 ### 3. Sling the three Leads
 
-The Leads are independent and can be slung in any order. Run them sequentially for now (you can fan them out in parallel once you trust the flow).
+The Leads are independent and can go in any order, but sling them one at a time and let each finish before the next. Each `--on` attaches a Lead's formula to the bead, and `gc sling` closes a formula still attached from an earlier sling before it attaches the new one, so three slings back to back leave only the last Lead with any work. The `wait_for` helper below polls the bead until a Lead has stamped its field. Each Lead takes a few minutes.
 
 **Copy and paste**
 
 ```bash
 cd "$SFI_PATH/factory1"
+wait_for() { until (cd "$SFI_PATH/ascii-art" && bd show "$1" --json | jq -e --arg k "$2" ".[0].metadata // {} | has(\$k)" >/dev/null); do sleep 10; done; echo "$2 stamped on $1"; }
+
 gc sling ascii-art/bead-builders-rig.design-lead $BEAD_ID --on mol-design-spec
+wait_for "$BEAD_ID" design_doc
 gc sling ascii-art/bead-builders-rig.test-lead   $BEAD_ID --on mol-test-spec
+wait_for "$BEAD_ID" test_plan
 gc sling ascii-art/bead-builders-rig.doc-lead    $BEAD_ID --on mol-doc-spec
+wait_for "$BEAD_ID" docs_outline
 ```
 
 Each sling spawns a Lead session that reads the bead and the relevant doc tree, drafts a spec, writes it to disk, and stamps the matching metadata field.
@@ -245,7 +235,7 @@ ls docs/design/ docs/testing/ docs/outlines/
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+each of the three directories listed with one file in it, <bead-id>.md
 ```
 
 **Copy and paste**
@@ -266,14 +256,14 @@ The bead now carries three new metadata fields.
 gc bd show $BEAD_ID
 ```
 
-**Expected output**
+**Expected output** (trimmed)
 
 ```text
 METADATA
-  design_doc:    docs/design/<bead-id>.md
-  docs_outline:  docs/outlines/<bead-id>.md
-  target_file:   ascii/j.md
-  test_plan:     docs/testing/<bead-id>.md
+  design_doc: docs/design/<bead-id>.md
+  docs_outline: docs/outlines/<bead-id>.md
+  target_file: ascii/j.md
+  test_plan: docs/testing/<bead-id>.md
 ```
 
 ### 5. Commit the new spec files
@@ -324,10 +314,8 @@ gc bd show $BEAD_ID
 **Expected output**
 
 ```text
-status=in_progress, design_doc=docs/design/<bead-id>.md,
-test_plan=docs/testing/<bead-id>.md,
-docs_outline=docs/outlines/<bead-id>.md,
-branch set once the polecat pushes.
+design_doc, test_plan and docs_outline still set on the bead
+branch set once the polecat has created its feature branch
 ```
 
 From here, the polecat / refinery / architect chain runs as in the base factory. Wait for the PR and merge.
@@ -335,11 +323,12 @@ From here, the polecat / refinery / architect chain runs as in the base factory.
 **Copy and paste**
 
 ```bash
+# Poll until pr_number is populated, then Ctrl-C. On a Mac, watch needs `brew install watch` first.
 watch -n 5 'gc bd show $BEAD_ID'
 
 cd "$SFI_PATH/ascii-art"
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
-gh pr view "$PR" --web
+gh pr view "$PR" --json url -q .url   # prints the PR's URL: open it in your browser
 gh pr merge "$PR" --merge
 ```
 
@@ -354,8 +343,12 @@ cd "$SFI_PATH/ascii-art"
 export PARTIAL_BEAD=$(bd list --type=task --status=open --limit 0 | grep -E "Implement k\.md$" | awk '{print $2}')
 
 cd "$SFI_PATH/factory1"
+wait_for() { until (cd "$SFI_PATH/ascii-art" && bd show "$1" --json | jq -e --arg k "$2" ".[0].metadata // {} | has(\$k)" >/dev/null); do sleep 10; done; echo "$2 stamped on $1"; }
+
 gc sling ascii-art/bead-builders-rig.design-lead $PARTIAL_BEAD --on mol-design-spec
+wait_for "$PARTIAL_BEAD" design_doc
 gc sling ascii-art/bead-builders-rig.test-lead   $PARTIAL_BEAD --on mol-test-spec
+wait_for "$PARTIAL_BEAD" test_plan
 # Skip doc-lead deliberately.
 
 gc sling ascii-art/bead-builders-rig.polecat $PARTIAL_BEAD --on mol-polecat-pr
@@ -391,14 +384,35 @@ git add docs/outlines && git commit -m "docs(specs): outline for $PARTIAL_BEAD" 
 
 Turning "better" into "required" needs a gate in front of the polecat, and that is a different option. Install the [bead gate](./06-bead-gate-checks.md) alongside this one and you get a project-manager that refuses malformed beads before a polecat may claim them.
 
+Send the project-manager `p.md`, a letter no other option uses, since `$BEAD_ID` has already been through the factory. A bead the gate passes goes to the polecat pool by route alone, with no formula attached, so stamp it with `merge_strategy=pr` first: the stamp is what makes the refinery open a pull request for it instead of merging it into `main`.
+
 **Copy and paste**
 
 ```bash
+cd "$SFI_PATH/ascii-art"
+export GATE_BEAD=$(bd list --type=task --status=open --limit 0 | grep -E "Implement p\.md$" | awk '{print $2}')
+bd update $GATE_BEAD --set-metadata merge_strategy=pr
+
 cd "$SFI_PATH/factory1"
-gc sling ascii-art/bead-gate-rig.project-manager $BEAD_ID --on mol-bead-review
+gc sling ascii-art/bead-gate-rig.project-manager $GATE_BEAD --on mol-bead-review
 ```
 
 Note the address: the project-manager belongs to `bead-gate-rig`, so you name that pack even though you installed this one too. Out of the box its checklist covers title, description, `target_file` and parent epic; it does not yet look for the three spec fields. Extending it to require `design_doc`, `test_plan` and `docs_outline` is a genuinely good exercise once you have both options installed, and it is the shortest path from this tutorial to a gate you actually want.
+
+Make that edit in a live copy of the packs. An import from the `sf-tutorial` clone is pinned to the commit the clone was on, so an edit inside the clone does not reach the running factory. Copy the whole `artifacts/packs` directory out once, because every option imports `../architect-rig` from beside it, then point the `bead-gate-rig` import at the copy.
+
+**Copy and paste**
+
+```bash
+[ -d "$SFI_PATH/packs" ] || cp -r "$SFI_PATH/sf-tutorial/artifacts/packs" "$SFI_PATH/packs"
+
+cd "$SFI_PATH/factory1"
+gc import remove --rig ascii-art bead-gate-rig
+gc import add --rig ascii-art "$SFI_PATH/packs/bead-gate-rig"
+gc reload
+```
+
+From then on, edit the checklist in `$SFI_PATH/packs/bead-gate-rig/agents/project-manager/prompt.template.md` (with `nano` on a cloud box) and run `gc reload`, and the project-manager works from the new version.
 
 ### 9. Reflect
 
@@ -419,13 +433,16 @@ Three rows should be listed.
 **Copy and paste**
 
 ```bash
+cd "$SFI_PATH/ascii-art"
 gc formula list | grep -E "mol-(design|test|doc)-spec"
 ```
 
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+mol-design-spec
+mol-doc-spec
+mol-test-spec
 ```
 
 After running the three Leads on `$BEAD_ID`, the spec files exist and the bead carries the matching metadata.
@@ -442,33 +459,32 @@ gc bd show $BEAD_ID | grep -E "design_doc|test_plan|docs_outline"
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+the three file paths, then three metadata lines, design_doc, docs_outline and test_plan, each naming its file
 ```
 
-Project-manager passes the bead with all three specs in place.
+If you took step 8, the project-manager passed the bead you sent it.
 
 `bead_review_passed=true` should be set on the bead.
 
 **Copy and paste**
 
 ```bash
-gc bd show $BEAD_ID | grep bead_review_passed
+gc bd show $GATE_BEAD | grep bead_review_passed
 ```
 
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+one metadata line: bead_review_passed: true
 ```
 
-Project-manager blocks a bead missing one spec (step 7).
+The step 7 bead carries two specs and no docs outline.
 
 **Copy and paste**
 
 ```bash
-gc bd show $PARTIAL_BEAD | grep -E "status|bead_review"
-# Initially: status=blocked, bead_review_passed=false. After fixing,
-# status=open, bead_review_passed=true.
+gc bd show $PARTIAL_BEAD | grep -E "design_doc|test_plan|docs_outline"
+# Two lines, design_doc and test_plan, until you run the Doc Lead on it.
 ```
 
 Letter on `origin/main`.
@@ -482,7 +498,7 @@ ls ascii/j.md
 
 ## Troubleshooting
 
-- **`gc formula list` doesn't show `mol-design-spec` etc.** The `bead-builders-rig` pack didn't load. Run `gc import list --rig ascii-art` and confirm `bead-builders-rig` is present. If missing, re-run `gc import add --rig ascii-art packs/bead-builders-rig` and restart.
+- **`gc formula list` doesn't show `mol-design-spec` etc.** The `bead-builders-rig` pack didn't load. Run `gc import list --rig ascii-art` and confirm `bead-builders-rig` is present. If missing, re-run `gc import add --rig ascii-art "$SFI_PATH/sf-tutorial/artifacts/packs/bead-builders-rig"` from `$SFI_PATH/factory1` and run `gc reload`.
 - **Lead writes the spec file but doesn't stamp metadata.** Most often the agent finished writing the file but the `gc bd update --set-metadata` call errored (e.g., the bead doesn't exist with that ID). Inspect the session log and re-run the metadata stamp by hand if needed.
 - **A downstream agent can't find the spec the metadata names.** The stamp records a path; it does not commit the file. If `metadata.design_doc=docs/design/foo.md` but the reader works from `main` and the spec is still uncommitted, it sees nothing. Commit the spec files before handing the bead on, which is what step 5 is for.
 - **Lead writes a spec and nothing downstream mentions it.** Expected on the base factory, which does not read the three fields by name. Install the [domain reviewers](./02-specialize-reviewers-per-domain.md) option to get agents that cite them, or teach your own polecat prompt to open `metadata.design_doc` in a custom pack.

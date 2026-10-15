@@ -19,7 +19,7 @@
 
 ## Objective
 
-Install the `domain-reviewers-rig` pack into the `ascii-art` rig, replacing the single page-04 architect with four parallel domain reviewers (ADR, design, testing, docs) and watching the refinery fan out, aggregate verdicts, and route the bead.
+Install the `domain-reviewers-rig` pack into the `ascii-art` rig, where four parallel domain reviewers (ADR, design, testing, docs) take the place of the single architect for every bead you sling at the option's own polecat, and watch the refinery fan out, aggregate verdicts, and route the bead.
 
 ## Prereqs
 
@@ -45,18 +45,10 @@ from all four lanes before letting a bead reach the inherited
 
 Agent workflow with the four reviewers in place:
 
-1. The **operator** drafts the bead and slings the polecat, exactly
-   as on the base factory. (With the [bead builders](./01-bead-creation-formula-extensions.md)
-   option installed, the three Leads write their specs first and each
-   lane below cites one.)
+1. The **operator** drafts the bead and slings the option's own polecat, `ascii-art/domain-reviewers-rig.polecat`, with `--on mol-polecat-pr`. (With the [bead builders](./01-bead-creation-formula-extensions.md) option installed, the three Leads write their specs first and each lane below cites one.)
 1. The **polecat** writes the file and reassigns to the refinery.
    (Unchanged from the base factory.)
-1. The **refinery's** first step on the patrol — `verify-reviewers`
-   — reads four lane-verdict metadata fields:
-   `adr_approved`, `design_approved`, `testing_approved`,
-   `docs_approved`. On a fresh bead all four are unset, so the
-   refinery uses `gc sling` to dispatch all four reviewers in
-   parallel and drains.
+1. The **refinery's** new step on the patrol, `verify-reviewers`, which runs after the inherited `handle-failures` step, reads four lane-verdict metadata fields: `adr_approved`, `design_approved`, `testing_approved`, `docs_approved`. On a fresh bead all four are unset, so the refinery uses `gc sling` to dispatch all four reviewers in parallel and drains.
 1. The **four domain reviewers** run independently:
    - **`adr-reviewer`** reads `docs/decision-records/` and stamps
      `adr_approved` + `adr_feedback`.
@@ -86,23 +78,13 @@ Agent workflow with the four reviewers in place:
      and falls through to the inherited gates. The four
      `*_feedback` fields stay on the bead as the durable record of
      open concerns.
-1. The **merger** (human, plus branch protection from branch protection)
-   reads the four review trails (and `review_cap_reached` /
-   `*_feedback` if the cap fired) and clicks **Merge**.
+1. The **merger** (human, plus branch protection) reads the four review trails (and `review_cap_reached` / `*_feedback` if the cap fired) and clicks **Merge**.
 
 The reviewers do **not** push code, count cycles, force-approve, or
 close the bead. Each writes only its own lane's verdict. The
 refinery owns flow-control and the cap.
 
-You'll install the **domain-reviewers-rig** pack into the `ascii-art` rig.
-It imports the base factory directly, so the polecat, refinery and
-architect you already have keep working. Restart so the four new
-reviewer agents and the new refinery patrol take effect. Sling the
-next letter from `letters-a-m` at the polecat as before. Watch the refinery
-fan out to all four reviewers, see four independent verdicts land
-on the bead, then watch the refinery aggregate and proceed (or
-bounce). Optionally craft a deliberate violation in one lane to
-watch only that lane reject.
+You'll install the **domain-reviewers-rig** pack into the `ascii-art` rig. It imports `architect-rig`, the top of the base factory's chain, so the polecat, refinery and architect you already have keep working, and it brings its own copy of that chain, whose refinery runs the four-lane patrol. Reload so the four new reviewer agents and the new refinery patrol take effect. Sling the next letter from `letters-a-m` at the option's polecat. Watch the refinery fan out to all four reviewers, see four independent verdicts land on the bead, then watch the refinery aggregate and proceed (or bounce). Optionally craft a deliberate violation in one lane to watch only that lane reject.
 
 The next page (Hardening 3) adds review **depth** along the ADR
 lane: per-principle scoring against 23 canonical architecture
@@ -112,18 +94,9 @@ principles with an append-only audit trail.
 
 ### 1. Install the domain-reviewers-rig pack into factory1
 
-The base factory's architect is a single reviewer with a single corpus
-(ADRs + `docs/current/`), so every kind of problem comes back in one
-undifferentiated verdict. This option splits it into four parallel
-lanes, each citing the doc family it owns. ADR rule violations cite
-the ADR. Design violations cite the `*DESIGN*` ADRs, and the design
-spec too if the bead carries one. Testing and docs violations work
-the same way against their own families.
+The base factory's architect is a single reviewer with a single corpus (ADRs + `docs/current/`), so every kind of problem comes back in one undifferentiated verdict. This option splits it into four parallel lanes, each citing the doc family it owns. ADR rule violations cite the ADR. Design violations cite the design spec and any `*DESIGN*` ADRs. Testing and docs violations work the same way against their own families.
 
-Each lane falls back to the corpus already in the repo when the bead
-has no matching spec, which is what lets this option stand alone. Add
-the [bead builders](./01-bead-creation-formula-extensions.md) option
-and each lane gains a per-bead spec to cite instead.
+The design, testing and docs lanes each defer when the bead has no matching spec, stamping the lane approved with a note, and the ADR lane reviews every bead against the ADRs already in the repo. That is what lets this option stand alone. Add the [bead builders](./01-bead-creation-formula-extensions.md) option and each of those three lanes gains a per-bead spec to review against.
 
 This ships as a single rig-scoped pack, **`domain-reviewers-rig`**,
 that supersedes `architect-rig`'s single architect:
@@ -144,13 +117,9 @@ that supersedes `architect-rig`'s single architect:
   template to point at `mol-refinery-domain-patrol` instead of
   `mol-refinery-architect-patrol`.
 
-The new pack declares one import: `bead-builders-rig` (which
-transitively brings bead-gate-rig → architect-rig → pr-gate-rig →
-setup). The single architect agent from architect-rig is no
-longer wired into the refinery's flow — the refinery routes to the
-four new reviewers instead. The architect agent itself is harmless
-to leave loaded (it sits idle), but you can remove it from the rig
-import chain if you want a leaner agent set.
+The new pack declares one import: `architect-rig` (which transitively brings `pr-gate-rig` and `setup`), so it sits directly on the base factory and needs no other option.
+
+That import brings its own copy of the base chain. After the install, `gc agent list --rig ascii-art` shows `domain-reviewers-rig.architect`, `domain-reviewers-rig.polecat` and `domain-reviewers-rig.refinery` beside the four reviewers and the base factory's `base-factory.architect`, `base-factory.polecat` and `base-factory.refinery`. The refinery patch applies to the option's copy, so `domain-reviewers-rig.refinery` routes to the four reviewers and `domain-reviewers-rig.architect` sits idle, while the base factory's polecat, refinery and architect carry on unchanged. That is why every polecat sling on this page names `ascii-art/domain-reviewers-rig.polecat`: a bead slung at the base factory's polecat goes to the base factory's architect and never meets the reviewers. With two polecats on the rig, the short `gc sling --rig ascii-art polecat` form stops resolving (`agent "polecat" not found in city.toml`).
 
 The review-cycle cap is **2 rejections**, same as the base factory's architect.
 
@@ -182,36 +151,7 @@ What to notice:
   Reviewers can stamp in any order; the refinery's next patrol
   reads whichever subset has finished.
 
-Copy the pack into the city's `packs/` directory.
-
-**Copy and paste**
-
-```bash
-mkdir -p "$SFI_PATH/factory1/packs"
-
-# Delete first: cp -r copies the source *into* the destination when the destination already exists, so a second run would nest the pack.
-rm -rf "$SFI_PATH/factory1/packs/domain-reviewers-rig"
-
-cp -r "$SFI_PATH/sf-tutorial/artifacts/packs/domain-reviewers-rig" \
-      "$SFI_PATH/factory1/packs/domain-reviewers-rig"
-```
-
-Confirm the pack landed flat, with a single `pack.toml` at its top level:
-
-**Copy and paste**
-
-```bash
-find "$SFI_PATH/factory1/packs/domain-reviewers-rig" -name pack.toml
-```
-
-**Expected output**
-
-```text
-$SFI_PATH/factory1/packs/domain-reviewers-rig/pack.toml
-```
-
-Register the new import at rig scope and remove the now-redundant
-direct `bead-builders-rig` import.
+Register the new import at rig scope. Run from the city directory.
 
 **Copy and paste**
 
@@ -221,13 +161,12 @@ cd "$SFI_PATH/factory1"
 gc import add --rig ascii-art "$SFI_PATH/sf-tutorial/artifacts/packs/domain-reviewers-rig"
 
 # Nothing is removed. This option sits alongside the base factory,
-# which keeps its orders and resolves the shared packs once.
-
+# which keeps its orders and its own polecat, refinery and architect.
 ```
 
 Verify.
 
-The rig should now import `domain-reviewers-rig` and no longer import `bead-builders-rig`.
+The rig should now import `domain-reviewers-rig` alongside `base-factory`.
 
 **Copy and paste**
 
@@ -235,11 +174,14 @@ The rig should now import `domain-reviewers-rig` and no longer import `bead-buil
 gc import list --rig ascii-art
 ```
 
-**Expected output**
+**Expected output** (on a cloud box)
 
 ```text
-TBD: capture actual terminal output during smoke test
+base-factory	file:///home/ubuntu/software-factory-intensive/sf-tutorial//artifacts/packs/base-factory	sha:<commit>	sha:<commit>
+domain-reviewers-rig	file:///home/ubuntu/software-factory-intensive/sf-tutorial//artifacts/packs/domain-reviewers-rig	sha:<commit>	sha:<commit>
 ```
+
+On your own machine the paths start from your own `$SFI_PATH`. Each `sha:` is the commit of your clone that the import is pinned to.
 
 The city's imports are unchanged — `pr-gate-city` should still be there.
 
@@ -252,16 +194,24 @@ gc import list
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+three rows: bd, core and pr-gate-city
 ```
 
-Restart.
+Reload the city so the four reviewers and the new refinery patrol take effect.
 
 **Copy and paste**
 
 ```bash
-gc restart
+gc reload
 ```
+
+**Expected output**
+
+```text
+Config reloaded: <n> agents (+<m>), <r> rigs (rev …)
+```
+
+If the supervisor's own tick got there first, it prints `No config changes detected.` instead, which means the pack is already loaded.
 
 Confirm the formulas and the new refinery patrol.
 
@@ -270,6 +220,7 @@ Five rows should be listed.
 **Copy and paste**
 
 ```bash
+cd "$SFI_PATH/ascii-art"
 gc formula list \
   | grep -E "mol-(adr|design|testing|docs)-review|mol-refinery-domain-patrol"
 ```
@@ -277,7 +228,11 @@ gc formula list \
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+mol-adr-review
+mol-design-review
+mol-docs-review
+mol-refinery-domain-patrol
+mol-testing-review
 ```
 
 ### 2. Pick the next bead and hand it to the polecat
@@ -298,11 +253,7 @@ gc sling ascii-art/domain-reviewers-rig.polecat $BEAD_ID --on mol-polecat-pr
 The polecat picks the bead up and starts work. The four reviewers
 you just installed are what changes downstream of it.
 
-If you also installed the [bead builders](./01-bead-creation-formula-extensions.md)
-option, run the three Leads first and commit their specs, and each
-reviewer will cite the matching spec instead of falling back to the
-ADR corpus. Without them the lanes still run; see the Prereqs note
-above on how each one defers.
+If you also installed the [bead builders](./01-bead-creation-formula-extensions.md) option, run the three Leads first and commit their specs, and the design, testing and docs reviewers each review against the matching spec. Without the specs those three lanes defer; see the Prereqs note above.
 
 ### 3. Watch the polecat work and hand the bead to the refinery
 
@@ -327,7 +278,7 @@ gc session list
 **Expected output**
 
 ```text
-TBD: capture actual terminal output during smoke test
+a row for each of the four reviewers (adr-reviewer, design-reviewer, testing-reviewer, docs-reviewer under domain-reviewers-rig), plus domain-reviewers-rig.refinery while its patrol is still running
 ```
 
 Attach to any of the reviewer sessions to follow it.
@@ -338,7 +289,7 @@ Attach to any of the reviewer sessions to follow it.
 gc session attach <design-reviewer-session>
 ```
 
-Watch the bead's metadata flip as each lane stamps a verdict.
+Watch the bead's metadata flip as each lane stamps a verdict. (On a Mac, `watch` needs `brew install watch` first.)
 
 **Copy and paste**
 
@@ -379,16 +330,13 @@ Once the PR is up, merge as before.
 ```bash
 cd "$SFI_PATH/ascii-art"
 export PR=$(BD_JSON_ENVELOPE=1 gc bd show $BEAD_ID --json | jq -r '.data[0].metadata.pr_number')
-gh pr view "$PR" --web
+gh pr view "$PR" --json url -q .url   # prints the PR's URL: open it in your browser
 gh pr merge "$PR" --merge
 ```
 
 ### 6. (Optional) Demonstrate single-lane rejection
 
-To exercise the bounce path on just one lane, briefly add a strict
-clause to one doc family that the polecat is likely to violate. The
-design lane treats any `*DESIGN*` ADR as a binding rule, so writing
-one is enough to arm the lane.
+To exercise the bounce path on just one lane, briefly add a strict clause to one doc family that the polecat is likely to violate. The ADR lane holds every diff to every file under `docs/decision-records/`, so one new ADR is enough to arm it. Its file name leaves out `DESIGN` and `TEST`, the words the design and testing lanes look for, so only the ADR lane reads it.
 
 **Copy and paste**
 
@@ -396,8 +344,8 @@ one is enough to arm the lane.
 cd "$SFI_PATH/ascii-art"
 export NEXT_BEAD_ID=$(bd list --type=task --status=open --limit 0 | grep -E "Implement l\.md$" | awk '{print $2}')
 
-# Add a DESIGN ADR carrying a rule the polecat has no way to know about.
-cat > "$SFI_PATH/ascii-art/docs/decision-records/0002.ADR.DESIGN.md" <<'EOF'
+# Add an ADR carrying a rule the polecat has no way to know about.
+cat > "$SFI_PATH/ascii-art/docs/decision-records/0002.ADR.ATTRIBUTION.md" <<'EOF'
 # 0002. Letter files carry a rendering attribution
 
 ## Status
@@ -412,21 +360,9 @@ cd "$SFI_PATH/factory1"
 gc sling ascii-art/domain-reviewers-rig.polecat $NEXT_BEAD_ID --on mol-polecat-pr
 ```
 
-The polecat won't include the "Rendered by" line. It never reads the
-decision records, which is exactly why this makes a clean probe: the
-rule is binding on the design lane and invisible to the implementer.
-Watch the design-reviewer post `design_approved=false` with
-`design_feedback` citing the clause; meanwhile the other three lanes
-approve. The refinery's
-`verify-reviewers` sees one rejection, increments `review_loops`,
-and bounces the bead to the polecat pool with the combined feedback
-(in this case, only the design lane's feedback is non-empty). The
-polecat picks the bead up, addresses the feedback, hands back to
-refinery; the cycle repeats up to 2 rejection rounds.
+The polecat won't include the "Rendered by" line. Nothing points it at the new ADR (its bead names only `0001.ADR.ASCII.md`), which is exactly why this makes a clean probe: the rule is binding on the ADR lane and invisible to the implementer. Watch the adr-reviewer post `adr_approved=false` with `adr_feedback` citing the clause; meanwhile the other three lanes approve. The refinery's `verify-reviewers` sees one rejection, increments `review_loops`, and bounces the bead to the polecat pool with the combined feedback (in this case, only the ADR lane's feedback is non-empty). The polecat picks the bead up, addresses the feedback, hands back to refinery; the cycle repeats up to 2 rejection rounds.
 
-Delete `docs/decision-records/0002.ADR.DESIGN.md` and commit when
-you're done, so future letters aren't blocked by a rule you only
-wanted for the demonstration.
+Delete `docs/decision-records/0002.ADR.ATTRIBUTION.md` and commit when you're done, so future letters aren't blocked by a rule you only wanted for the demonstration.
 
 ### 7. Reflect
 
@@ -466,10 +402,7 @@ gc bd show $BEAD_ID | grep -E "_approved|_feedback"
 **Expected output**
 
 ```text
-adr_approved=true
-design_approved=true
-testing_approved=true
-docs_approved=true
+four lane verdicts, adr_approved, design_approved, docs_approved and testing_approved, each true, plus refinery_approved: true from the refinery's own approval step
 ```
 
 `*_feedback` may be unset on a clean bead.
@@ -485,27 +418,10 @@ ls ascii/k.md
 
 ## Troubleshooting
 
-- **`gc formula list` doesn't show the four review formulas.**
-  Pack didn't load. `gc import list --rig ascii-art` should show
-  `domain-reviewers-rig`. If missing, re-run
-  `gc import add --rig ascii-art packs/domain-reviewers-rig`
-  and restart.
-- **Refinery still says `Formula: mol-refinery-architect-patrol`.**
-  The refinery prompt patch didn't apply. Confirm
-  `domain-reviewers-rig` is imported at rig scope and that
-  `architect-rig` is **not** also imported directly (two patches on
-  the refinery's `prompt_template` will fight). Re-run
-  `gc rig restart ascii-art` (or `gc restart`).
-- **A reviewer rejects despite the spec being clean.** Read the
-  reviewer's session log for which specific section it cited. Most
-  often a too-strict reading of the spec — adjust the spec or
-  refine the reviewer prompt to be more lenient on edge cases.
-- **`design_approved=true` despite no design spec on the bead.** The
-  design-reviewer's defer branch fired — `metadata.design_doc` was
-  unset or pointed at a missing file. That is the expected reading on
-  the base factory. Add a `*DESIGN*` ADR to give the lane binding
-  rules, or install the [bead builders](./01-bead-creation-formula-extensions.md)
-  option so each bead arrives with a spec.
+- **`gc formula list` doesn't show the four review formulas.** Pack didn't load. `gc import list --rig ascii-art` should show `domain-reviewers-rig`. If missing, re-run `gc import add --rig ascii-art "$SFI_PATH/sf-tutorial/artifacts/packs/domain-reviewers-rig"` from `$SFI_PATH/factory1` and run `gc reload`.
+- **Refinery still says `Formula: mol-refinery-architect-patrol`.** That is the base factory's refinery, `base-factory.refinery`, which keeps the architect patrol by design. The four-lane patrol runs on the option's own refinery, `domain-reviewers-rig.refinery`, and only a bead slung at `ascii-art/domain-reviewers-rig.polecat` reaches it. If `domain-reviewers-rig.refinery` itself shows the architect patrol, confirm `domain-reviewers-rig` is listed by `gc import list --rig ascii-art` and run `gc reload`.
+- **A reviewer rejects despite the spec being clean.** Read the reviewer's session log for which specific section it cited. Most often a too-strict reading of the spec — adjust the spec or refine the reviewer prompt to be more lenient on edge cases. A prompt edit reaches the reviewer only from a live copy of the packs, because an import from the `sf-tutorial` clone is pinned to the clone's commit: copy the whole directory once with `cp -r "$SFI_PATH/sf-tutorial/artifacts/packs" "$SFI_PATH/packs"`, swap the import with `gc import remove --rig ascii-art domain-reviewers-rig` and `gc import add --rig ascii-art "$SFI_PATH/packs/domain-reviewers-rig"`, then edit under `$SFI_PATH/packs/domain-reviewers-rig/` and run `gc reload`.
+- **`design_approved=true` despite no design spec on the bead.** The design-reviewer's defer branch fired — `metadata.design_doc` was unset or pointed at a missing file. That is the expected reading on the base factory. Install the [bead builders](./01-bead-creation-formula-extensions.md) option so each bead arrives with a spec; the lane reviews only a bead that carries one, against that spec and any `*DESIGN*` ADRs.
 - **Refinery loops three or more times in a single bead.** The cap
   should bound at 2 rejections. Check `metadata.review_loops` after
   each bounce; if it's not incrementing, the refinery's

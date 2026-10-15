@@ -112,13 +112,19 @@ This is the step that makes the loop safe, and it is the one people skip.
 
 The gate that always applies is a named person. A config change gets one whatever else you have installed, and the mechanism you already have for that is branch protection from [the branch-protection appendix](../appendix/03-branch-protection.md): your factory's configuration lives in files, those files live in a repo, and a change to them is a pull request somebody approves.
 
-If you also installed the [bead gate](./06-bead-gate-checks.md) option, run the proposal through its project-manager first and the bead has to clear your own front gate before it reaches that person:
+If you also installed the [bead gate](./06-bead-gate-checks.md) option on your own rig (`gc import add --rig <your-rig-name> "$SFI_PATH/sf-tutorial/artifacts/packs/bead-gate-rig"`), run the proposal through its project-manager first and the bead has to clear your own front gate before it reaches that person.
+
+A bead the gate passes goes to the polecat pool by route alone, with no formula attached, so stamp the proposal `merge_strategy=pr` before the sling: that stamp is what makes the refinery open a pull request for it instead of merging it into `main`.
 
 **Copy and paste**
 
 ```bash
+cd "$MY_RIG_PATH"
+bd update <the-proposal-bead-id> --set-metadata merge_strategy=pr
 cd "$SFI_PATH/factory1"
-gc sling ascii-art/bead-gate-rig.project-manager <the-proposal-bead-id> --on mol-bead-review
+gc sling <your-rig-name>/bead-gate-rig.project-manager <the-proposal-bead-id> --on mol-bead-review
+cd "$MY_RIG_PATH"
+# Once the project-manager has finished:
 bd show <the-proposal-bead-id> --json | jq -r '.[0] | .status, (.metadata.bead_review_feedback // "passed")'
 ```
 
