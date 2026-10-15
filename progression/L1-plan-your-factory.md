@@ -54,6 +54,8 @@ Forty-five minutes, participant-led, instructor circulating. Steps 1 and 2 are q
 
 Register the rig as a **sibling** of the city, the same shape [W3](./W3-run-your-factory.md) used for `ascii-art`.
 
+Clone with the HTTPS URL, `https://github.com/<owner>/<repo>.git`. On a cloud box, `gh auth login` set `git` up to sign in over HTTPS, and the box has no SSH key for GitHub, so an SSH URL (`git@github.com:…`) fails there.
+
 **Copy and paste**
 
 ```bash
@@ -161,8 +163,10 @@ The third one is deliberate. Sling it and watch what your factory does with an u
 
 ```bash
 cd "$SFI_PATH/factory1"
-gc sling --rig <your-rig-name> polecat <the-third-bead-id>
+gc sling <your-rig-name>/base-factory.polecat <the-third-bead-id> --on mol-polecat-pr
 ```
+
+`--on mol-polecat-pr` is what makes the factory hand the work back as a pull request on your repo. Without it the refinery merges the polecat's branch straight into your `main`. Name the polecat in full, `<your-rig-name>/base-factory.polecat`: with the base factory on two rigs, the short `--rig <your-rig-name> polecat` form no longer resolves.
 
 Then watch it, from your own rig:
 
@@ -171,7 +175,7 @@ cd "$MY_RIG_PATH"
 bd show <the-third-bead-id> --json | jq '.[0] | {status, assignee, metadata}'
 ```
 
-**What to notice.** Your base factory has no gate in front of the polecat, so the vague bead goes straight to an implementer that has to guess. Read what it guessed. Whatever went wrong there is a capability-map row, and one of the Day 2 options exists precisely to put a gate in that position.
+**What to notice.** Nothing turns the vague bead away. Your base factory has no gate in front of the polecat: its checks come after the work, with the architect reading the diff against your decision records and the refinery approving the diff before it publishes. So the vague bead goes straight to an implementer that has to guess. Read what it guessed. Whatever went wrong there is a capability-map row. A gate that sends an under-specified bead back before any work starts is a Day 2 option, [bead gate checks](../hardening/06-bead-gate-checks.md), so don't expect a rejection yet.
 
 ### 5. Reflect
 
@@ -193,7 +197,7 @@ cd "$MY_RIG_PATH" && bd list --status open
 
 ## Ceiling
 
-Sling your *well-specified* bead (the second one) all the way through to a pull request and read the diff properly. Not to merge it, but to answer one question: would you have written it that way?
+Sling your *well-specified* bead (the second one) the same way, with `--on mol-polecat-pr`, let it run all the way through to a pull request, and read the diff properly. Not to merge it, but to answer one question: would you have written it that way?
 
 Whatever the answer is, it becomes a capability-map row in the next lab. "The implementer does not know we use X" is an agent-layer change. "Nobody checked the tests ran" is a formula-layer change. That single read produces better rows than any amount of thinking about the factory in the abstract.
 

@@ -22,7 +22,7 @@ This is a multi-step software factory intensive to give participants tools and p
 
 The curriculum runs over two days. Day 1 stands up a working factory and takes it apart to see how it is made: packs, agents, formulas, orders, and the five ways agents coordinate. Day 2 points that machinery at a project of your own and extends it, from a menu of options you choose between rather than a fixed sequence.
 
-You start from a base factory that already works, built on the out-of-the-box examples that ship with Gas City and two reference agents from Gas Town, `mol-polecat-work` and `mol-refinery-patrol`. What you layer on top is your choice: GitHub pull requests and quality gates are already in the base, and the options add specialized reviewer agents, an architecture-best-practices loop, a multi-model review, a gate at the front of the queue, and a loop that lets the factory propose changes to itself.
+You start from a base factory that already works, built on the out-of-the-box examples that ship with Gas City and two reference agents from Gas Town, `mol-polecat-work` and `mol-refinery-patrol`. What you layer on top is your choice: GitHub pull requests and quality gates are already in the base, and the options add specialized reviewer agents, an architecture-best-practices loop, a multi-model review, a gate at the front of the queue, and a loop that lets the factory propose changes to itself. The pull requests come from slinging work with `--on mol-polecat-pr`, which every sling in this curriculum does. A sling without it merges straight into `main`.
 
 ## About Gas City
 

@@ -111,7 +111,7 @@ your-org/factory-packs/
     onboarding-rig/
 ```
 
-Two things make it work better than scattered repos. Access control is per-repository, so one grant covers every pack your org ships. And a `template-fragments/` pack imported by everything is how a rule stays identical across teams — change the fragment, and the next reload changes every agent that includes it.
+Two things make it work better than scattered repos. Access control is per-repository, so one grant covers every pack your org ships. And a `template-fragments/` pack imported by everything is how a rule stays identical across teams — change the fragment, and the next `gc import upgrade` and reload change every agent that includes it.
 
 Private sources need credentials, which `gc import credential` manages so the token is not in your `pack.toml`.
 

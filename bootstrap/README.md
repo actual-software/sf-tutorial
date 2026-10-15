@@ -2,6 +2,8 @@
 
 This folder contains the bootstrap scripts for the Software Factory Intensive tutorial.
 
+> **These scripts are for the own-machine path. Don't run them on a cloud box.** The box image ships its own `gc`, `bd` and `dolt`, newer than the pins in `deps.sh`. `deps.sh` would install the older pinned copies into `~/.local/bin`, and any shell that puts that directory first on its `PATH` then runs them instead of the image's, under a factory that's already running on the image's. `bootstrap.sh` also checks for the exact pinned `bd` and stops at that check on a box. To get a box back to the end of W3, follow [W3](../progression/W3-run-your-factory.md) by hand.
+
 
 > **Two tracks, two vocabularies.** `W3-run-your-factory` is the taught path, and it installs the `base-factory` pack in one import the way [W3](../progression/W3-run-your-factory.md) has you do it by hand. The `00.1` through `05.2` names are the [appendix pages](../appendix/README.md), which assemble the same factory one pack at a time. Pick the track you are working through; they are different sequences rather than two halves of one.
 

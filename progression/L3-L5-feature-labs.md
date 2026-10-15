@@ -133,7 +133,13 @@ cd "$SFI_PATH/factory1"
 gc import add --rig <your-rig-name> "$SFI_PATH/sf-tutorial/artifacts/packs/<the-option-pack>"
 gc reload
 gc import list --rig <your-rig-name>
+gc agent list --rig <your-rig-name>
 ```
+
+Two things about what that import does, and both change how you sling from here on:
+
+- **The option brings its own copy of the base factory's agents.** `gc agent list` now shows a polecat, a refinery and an architect under the option's name, such as `<your-rig-name>/bead-builders-rig.polecat`, beside the `base-factory` ones. The option's behaviour is wired into its own copy, so a bead only goes through it when you sling it at `<your-rig-name>/<the-option-pack>.polecat`. The short `--rig <your-rig-name> polecat` form stops working, because two agents now answer to `polecat`, and `gc sling` says `agent "polecat" not found in city.toml`.
+- **The import is pinned to the commit your copy of this repo is on.** `gc import list` prints that commit as `sha:<commit>` next to the option. Editing the pack's files afterwards, or pulling a newer copy, changes nothing in the running factory. [Building your own](#2-build-it) below says where to put a pack you want to edit.
 
 #### Option B: Import from remote GitHub URL
 
@@ -160,11 +166,22 @@ your new import, its URL, and the same commit sha twice
 Swap the last path segment for the pack named in [the six options](#the-six-options). Four things about that command are worth carrying home:
 
 - **The URL is the one GitHub's address bar shows you.** Browse to the pack's directory in any repo and copy what you see: `https://github.com/<org>/<repo>/tree/<ref>/<path-to-the-pack>`. The `<ref>` is a branch, a tag or a commit.
-- **`gc import install` is the extra step.** A directory import is read where it sits; a remote one has to be fetched first. Skipping it is the single most common way this path fails.
+- **`gc import install` is the extra step.** A remote import has to be fetched before `gc reload` has anything to read. Skipping it is the single most common way this path fails.
 - **The import is pinned the moment you add it.** `gc import list` prints the resolved commit, and the pack stays on that commit until you move it, so a change upstream cannot rewrite your factory overnight. Pass `--version sha:<commit>` to pick a different one, or a constraint like `--version '^1.2.0'` on a repo that tags releases.
 - **The binding name comes from the last path segment.** That is `domain-reviewers-rig` above, and it is the name `gc import list` and `gc import remove` want. Use `--name <name>` when two packs would otherwise collide.
 
 **If you are building your own**, where you work depends on the layer, and each has a worked example in the repo to copy the shape from.
+
+**Work on a copy outside any git clone.** A pack directory inside a git clone, this repo's `artifacts/packs/` or your own rig, is pinned to the commit it was on when you imported it, so later edits never reach the factory. A directory outside any git clone is read where it sits, and `gc reload` picks up every edit. Copy the whole `packs` directory once, because each pack imports its neighbours through relative paths such as `../architect-rig`, then put your own pack beside them and import it from there:
+
+**Copy and paste**
+
+```bash
+cp -r "$SFI_PATH/sf-tutorial/artifacts/packs" "$SFI_PATH/packs"
+mkdir -p "$SFI_PATH/packs/<your-pack>"
+```
+
+Give your pack a `pack.toml` (copy one from a neighbour, say `principles-loop-rig/pack.toml`, keep its `[imports.architect-rig]` stanza, and change the name), add your files, and install it with `gc import add --rig <your-rig-name> "$SFI_PATH/packs/<your-pack>"`. `gc import list --rig <your-rig-name>` shows it as `(path)` with no `sha:`, which is how you know edits will take effect.
 
 **Agent layer.** You are changing what an agent knows or how it judges. The files are a prompt template and an `agent.toml` under a pack's `agents/<name>/`. Most agent-layer changes are prompt edits, and the highest-value edit is almost always giving a reviewer a real document to cite rather than more adjectives.
 
@@ -184,15 +201,20 @@ gc doctor
 
 Run the verification you wrote in the map's own column, not a different one that is easier to satisfy.
 
+Sling at the polecat that carries your change: `<your-rig-name>/<the-option-pack>.polecat` for an option, or `<your-rig-name>/<your-pack>.polecat` for a pack of your own. `gc agent list --rig <your-rig-name>` shows every polecat your rig has, one per import. Keep `--on mol-polecat-pr` on every sling, so the work comes back as a pull request on your repo instead of a merge into its `main`. A gate that sits in front of the polecat, such as the [bead gate](../hardening/06-bead-gate-checks.md), takes the bead first instead, and its page shows that sling.
+
 **Copy and paste**
 
 ```bash
 cd "$MY_RIG_PATH"
 bd create --title "<a bead that exercises the change>" --type task --priority 2
 cd "$SFI_PATH/factory1"
-gc sling --rig <your-rig-name> polecat <the-new-bead-id>
+gc agent list --rig <your-rig-name>
+gc sling <your-rig-name>/<binding>.polecat <the-new-bead-id> --on mol-polecat-pr
 watch -n 5 'cd '"$MY_RIG_PATH"' && bd show <the-new-bead-id> --json | jq -r ".[0] | \"\(.status)  \(.assignee)\""'
 ```
+
+Expect the status to go `open`, `in_progress` and back several times as the bead changes hands. [W3's note on statuses](./W3-run-your-factory.md#what-the-statuses-mean) says what each stop means.
 
 The important part is the negative case. **A gate you have only seen pass is a gate you have not tested.** Construct the input that *should* be rejected and confirm it is:
 
@@ -200,10 +222,12 @@ The important part is the negative case. **A gate you have only seen pass is a g
 cd "$MY_RIG_PATH"
 bd create --title "<a bead your change should reject or catch>" --type task --priority 3
 cd "$SFI_PATH/factory1"
-gc sling --rig <your-rig-name> polecat <that-bead-id>
+gc sling <your-rig-name>/<binding>.polecat <that-bead-id> --on mol-polecat-pr
 cd "$MY_RIG_PATH"
-bd show <that-bead-id> --json | jq -r '.[0] | .status, (.metadata.blocker_reason // "no blocker recorded")'
+bd show <that-bead-id> --json | jq -r '.[0] | .status, ((.metadata // {}) | with_entries(select(.key | test("reason|feedback"))))'
 ```
+
+Each gate writes its reason under its own key, such as `bead_review_feedback` from the bead gate or `architect_feedback` from the architect, so the filter prints every key with `reason` or `feedback` in its name. An empty `{}` on a bead that should have been stopped means no gate recorded anything.
 
 If both cases behave, the row is done. Mark it in the map and move on.
 
@@ -255,17 +279,19 @@ graph TB
 
 **Without it**, there are no step beads. The whole formula lands as a single bead carrying `gc.formula_name` and your variables, and one agent works all of it in one session.
 
-**Almost every formula in this repo is that second shape.** Check it in your own checkout rather than taking it from this page:
+**The declaration is inherited through `extends`**, so the file in front of you doesn't always show it. Check your own checkout:
 
 ```bash
-cd "$SFI_PATH/sf-tutorial" && grep -rl formula_compiler artifacts/packs/*/formulas/
+cd "$SFI_PATH/sf-tutorial" && grep -rl formula_compiler artifacts/packs/*/formulas/ && grep -l '^extends' artifacts/packs/*/formulas/*.toml
 ```
 
-One file comes back: `artifacts/packs/self-improvement/formulas/daily-introspect.toml`, which ships with the [self-improvement loop](../hardening/05-self-improvement-loop.md). Everything else you install is the one-bead shape, and that is what runs when you sling one. It matters before you go hunting, because anyone who reads about per-step routing first will go looking for step beads that were never created, find nothing, and reasonably conclude their factory is broken rather than differently shaped.
+The first grep returns two files: `artifacts/packs/self-improvement/formulas/daily-introspect.toml`, which ships with the [self-improvement loop](../hardening/05-self-improvement-loop.md), and `artifacts/packs/setup/formulas/mol-refinery-patrol.toml`. The second lists the formulas that extend another one, and those take whatever shape their base has:
 
-**Grep for `formula_compiler`, never for the string `v2`.** One file here would fool you. `artifacts/packs/setup/formulas/mol-refinery-patrol.toml` declares `contract = "graph.v2"` and requires no compiler version at all, and its own header says its steps are not materialised as child beads, which is the one-bead shape. Those are two different axes wearing similar names, so the `[requires]` line is the one that answers this question.
+- **`mol-polecat-pr`, the formula on every polecat sling, is the root-plus-steps shape.** It extends `mol-polecat-work`, which extends `mol-polecat-base` from Gas City's own `core` pack, and that one declares the v2 compiler. A sling with `--on mol-polecat-pr` creates a bead titled `mol-polecat-pr`, one bead per step (`load-context`, `workspace-setup`, `preflight-tests`, `implement`, `self-review`, `submit-and-exit`) and the `workflow-finalize` step, and the polecat works through those.
+- **The refinery patrols** (`mol-refinery-patrol` and every patrol that extends it) declare it too, but the refinery pours each patrol with `--root-only`, which keeps its steps from becoming beads. That is what the patrol's own header means when it says its steps are not materialised as child beads.
+- **The formulas the options add for their own agents**, the Leads', the reviewers', the project-manager's and the architect's, neither declare it nor extend anything, so each runs as one bead worked by one agent.
 
-If you install that option, its formula is also the one to cook when you want to watch the five-bead shape appear, since it has exactly the three steps described above.
+The [self-improvement loop](../hardening/05-self-improvement-loop.md)'s formula is the one to cook when you want to watch the five-bead shape appear, since it has exactly the three steps described above.
 
 `gc formula show <name>` won't settle it either, because it prints the compiled recipe rather than the beads. The `[requires]` line answers the question. A cook proves it.
 

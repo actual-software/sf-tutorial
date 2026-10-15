@@ -83,6 +83,8 @@ Right after a pass it will tell you the pass is not due, which is the cadence re
 | `orders/daily-introspect.toml` | `pool` | `mayor` | The agent the workflow is dispatched to. |
 | `orders/daily-introspect.toml` | check argument | `24` | Hours between passes. A condition order has no `interval` field, so the cadence lives on the check line. |
 
+The two `orders/daily-introspect.toml` settings only reach a running factory when the pack is imported from a directory `gc` reads where it sits. Installed from inside this repo's clone, as W6 does, the import is pinned to the clone's commit, so edit a copy outside the clone instead; [L3-L5](../../../progression/L3-L5-feature-labs.md#2-build-it) shows how.
+
 The environment gate is a script rather than an inline shell test for a reason worth knowing before you write your own. The controller runs a check line with its own environment, and your city's `.env` is never loaded into it, so `test "$DAILY_INTROSPECT" != false` reads an unset variable on every tick and the on-by-default branch always wins. The knob appears to work in the one direction that needs no knob, and the failure surfaces the first time somebody tries to turn it off.
 
 ## Turning it off
