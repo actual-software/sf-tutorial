@@ -1,0 +1,36 @@
+# bead-closed-slack — the base factory's event order, pointed at Slack.
+#
+# Read it beside base-factory's orders/bead-closed-log.toml. The trigger is the
+# same, `trigger = "event"` with `on = "bead.closed"`, and so is the shape of the
+# action: an exec that asks bd what is closed and skips what it has already
+# handled. Only the destination differs. That one writes a line to a file in the
+# rig, and this one sends a message to a channel your team reads.
+#
+# A DIFFERENT DESTINATION CHANGES WHAT THE SCRIPT OWES. A duplicate log line
+# costs nothing, and a duplicate post is noise in front of people. So
+# bead_closed_slack.sh adds a filter (formula steps close too, and only work
+# items post), a baseline (the first run posts none of the beads already
+# closed), and a burst cap (more than five closes in one firing post as one
+# summary). The comment at the top of the script says why each is there.
+#
+# THE WEBHOOK URL IS A SECRET, and it lives in the city's .env as
+# SLACK_WEBHOOK_URL. An exec order does not load .env, so the script reads the
+# file itself. No URL means installed but switched off: the order still fires,
+# and the script exits 0 without doing anything.
+#
+# `timeout` bounds the whole firing. The script caps each Slack call at a few
+# seconds, so an outage makes one slow firing that fails, and the beads it could
+# not post wait for the next.
+#
+# WATCHING IT. `gc order run bead-closed-slack` fires it by hand and prints the
+# script's one-line account, which is also how you record the baseline right
+# after installing. `gc order history` lists each firing, and
+# `gc events --type order.failed` carries the script's message when a firing
+# fails. None of the three ever shows the URL.
+
+[order]
+description = "Post each work item the rig closes to Slack, with its PR link (needs SLACK_WEBHOOK_URL in the city's .env)"
+trigger = "event"
+on = "bead.closed"
+exec = "$PACK_DIR/assets/scripts/bead_closed_slack.sh"
+timeout = "60s"
