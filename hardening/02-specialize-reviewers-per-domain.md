@@ -352,7 +352,7 @@ cat > "$SFI_PATH/ascii-art/docs/decision-records/0002.ADR.ATTRIBUTION.md" <<'EOF
 Accepted
 
 ## Decision
-Every letter file MUST include a 'Rendered by: <author>' line directly under the heading.
+The last line of the ASCII art in every letter file MUST read 'Rendered by: <author>'.
 EOF
 git -C "$SFI_PATH/ascii-art" add docs/decision-records && git -C "$SFI_PATH/ascii-art" commit -m "docs(adr): require a rendering attribution line" && git -C "$SFI_PATH/ascii-art" push
 
