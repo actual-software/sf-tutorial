@@ -26,7 +26,7 @@ By the end of this lab your factory posts to a Slack channel each time it closes
 
 ## Prereqs
 
-- [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on the `ascii-art` rig, with a bead already through the PR path (`--on mol-polecat-pr`).
+- [W3](../progression/W3-run-your-factory.md) complete: the base factory installed on the `ascii-art` rig, which publishes its work as pull requests to your GitHub repository.
 - `$SFI_PATH` set in your shell. [W2](../progression/W2-cloud-box-and-preflight.md) appends it to a shell rc, so it survives a new terminal.
 - A Slack workspace where you're allowed to install apps. A free workspace you create yourself takes two minutes. The SFI community workspace may not allow app installs, so use your own.
 - A browser on your laptop, signed in to that workspace, for the Slack app settings.

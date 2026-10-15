@@ -66,7 +66,7 @@ gc reload
 gc order run bead-closed-slack
 ```
 
-Rig scope, like base-factory's orders, so it posts the rig's work and none of the city's own housekeeping. Import it on a second rig and that rig gets its own sent list.
+Rig scope, like base-factory's orders, so it posts the rig's work and none of the city's own housekeeping. Import it on a second rig and that rig gets its own sent list; from then on, name the rig when you fire it by hand, as in `gc order run bead-closed-slack --rig ascii-art`.
 
 ## Settings
 
