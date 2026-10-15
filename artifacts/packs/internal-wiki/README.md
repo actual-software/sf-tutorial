@@ -71,7 +71,7 @@ The first line is the only one that spells out the pack path. `setup` leaves the
 
 That last line prints the balance and appends it to `WIKI_LOG.md` in the city root. `gc order check` says when it's next due, and it fires by itself hourly.
 
-The half you can't see in a minute is the agents doing it unprompted. Sling any bead after installing this and read the polecat's prompt with `gc prime`: the fragment is on the end of it, and `wiki-access.jsonl` starts filling with lines whose agent isn't you.
+The half you can't see in a minute is the agents doing it unprompted. This pack brings its own copy of the base factory's polecat, refinery and architect, and the patches land on that copy, so sling a bead at `<rig-name>/internal-wiki.polecat` with `--on mol-polecat-pr` and read that polecat's prompt with `gc prime <rig-name>/internal-wiki.polecat`: the fragment is on the end of it, and `wiki-access.jsonl` starts filling with lines whose agent isn't you. If `gc prime` shows the prompt with its `{{ … }}` placeholders unfilled, the prompt didn't render on your `gc` and the fragment can't reach the agent; the by-hand half still works.
 
 ## The helper
 

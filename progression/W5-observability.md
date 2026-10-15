@@ -75,7 +75,7 @@ Find the beads list in the dashboard, then pick the bead you watched move in W3.
 
 A bead is not just a title and a status. Every field on it is either something a human set or something an agent recorded, and the second kind is what makes a factory traceable.
 
-**Copy and paste**, with that bead's id in place of `<bead-id>`. It's the id `gc sling` printed after `Slung` in W3, such as `aa-gf8.1`.
+**Copy and paste**, with that bead's id in place of `<bead-id>`. It's the id you passed to `gc sling` in W3, such as `aa-gf8.1`. The id `gc sling` printed back belongs to the workflow it started, the bead titled `mol-polecat-pr`.
 
 ```bash
 cd "$SFI_PATH/ascii-art"
@@ -87,7 +87,7 @@ bd show "$BEAD" --json | jq '.[0]'
 | --- | --- | --- |
 | `id` | rig-prefixed identity, stable forever | `bd` |
 | `title`, `description` | the ask, in prose | whoever created it |
-| `status` | `open`, `in_progress`, `blocked`, `closed` | agents, as work moves |
+| `status` | `open`, `in_progress`, `blocked`, `closed`, flipping between the first two at every hand-off ([what each means](./W3-run-your-factory.md#what-the-statuses-mean)) | agents, as work moves |
 | `assignee` | the session holding it now, empty when queued | claimed by the session itself |
 | `issue_type`, `priority` | epic or task, and how urgent | whoever created it |
 | `metadata` | arbitrary key/value the agents write verdicts into | agents |

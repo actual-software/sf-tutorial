@@ -59,8 +59,8 @@ The script picks the build for your computer, checks it against the release's ch
 **Expected output**
 
 ```text
-==> Downloading sfbox v2.4.0 for darwin/arm64
-==> Installed sfbox v2.4.0 at /Users/you/.local/bin/sfbox
+==> Downloading sfbox v2.5.0 for darwin/arm64
+==> Installed sfbox v2.5.0 at /Users/you/.local/bin/sfbox
 ==> Next, sign in: sfbox login
 ```
 

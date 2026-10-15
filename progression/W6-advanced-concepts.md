@@ -86,7 +86,7 @@ So the loop has four parts and the fourth is not optional: read a signal, find a
 
 ```bash
 cd "$MY_RIG_PATH"
-bd list --status blocked --json | jq -r '.[] | "\(.id)  \(.metadata.blocker_reason // "")"'
+bd list --status blocked --json | jq -r '.[] | "\(.id)  \((.metadata // {}) | to_entries | map(select(.key | test("reason|feedback")) | "\(.key)=\(.value)") | join("; "))"'
 cd "$SFI_PATH/factory1"
 gc order history
 gc costs 2>/dev/null | head -20
@@ -187,7 +187,7 @@ git add docs/current/findings.md
 git commit -m "Record first factory findings"
 ```
 
-In a real team this lives in a shared repository rather than inside one rig, so that every agent on every machine reads the same copy. A page committed only to your laptop is private note-taking; the point is the shared read.
+In a real team this lives in a shared repository rather than inside one rig, so that every agent on every machine reads the same copy. A page committed only on your box or your laptop is private note-taking; the point is the shared read.
 
 ### Install the wiki as a pack
 
@@ -201,7 +201,7 @@ gc import add --rig <your-rig-name> "$SFI_PATH/sf-tutorial/artifacts/packs/inter
 gc reload
 ```
 
-Rig scope this time, because the pack patches the rig's own agents rather than adding one of its own. The wiki itself lives at `team-wiki` inside the city and is created on first use.
+Rig scope this time, because the pack works on a rig's agents: it brings its own copy of the base factory's polecat, refinery and architect, and patches that polecat and refinery with the reading habit. The wiki itself lives at `team-wiki` inside the city and is created on first use.
 
 Then play both agents yourself, one writing a finding down and the other checking before it researches. Nothing gets exported first. The helper works out which city to hang the wiki off from the directory you run it in, which is why the block changes directory before it calls the pack path.
 
@@ -231,7 +231,7 @@ the search finding it
 a read-to-write balance, also appended to WIKI_LOG.md in the city root
 ```
 
-`setup` leaves a symlink at `<city>/wiki.sh`, which is why every line after the first one reaches the helper as `./wiki.sh`. The half you cannot watch inside a minute is the agents doing this unprompted: sling any bead after installing, and `wiki-access.jsonl` starts filling with lines whose agent is not you. [The README](../artifacts/packs/internal-wiki/README.md) covers pointing the wiki at a real shared repository, which is what the whole idea is for once the pack has earned its place.
+`setup` leaves a symlink at `<city>/wiki.sh`, which is why every line after the first one reaches the helper as `./wiki.sh`. The half you cannot watch inside a minute is the agents doing this unprompted. The pack arrives with its own polecat and refinery, and those are the two it gives the reading habit, so sling a bead at them, `gc sling <your-rig-name>/internal-wiki.polecat <bead-id> --on mol-polecat-pr`, and `wiki-access.jsonl` starts filling with lines whose agent is not you. The `base-factory` polecat keeps working without the habit. Check the habit landed with `gc prime <your-rig-name>/internal-wiki.polecat | tail`: if the prompt comes back with its `{{ … }}` placeholders unfilled, it didn't render on your `gc`, the habit can't reach the agent, and the by-hand half above is the part that works today. [The README](../artifacts/packs/internal-wiki/README.md) covers pointing the wiki at a real shared repository, which is what the whole idea is for once the pack has earned its place.
 
 ## Part 3: Security audit matrices
 
@@ -288,9 +288,12 @@ Rig scope, and it sits directly on the base factory. Now write a bead that descr
 cd "$MY_RIG_PATH"
 bd create --title "Add row-level security to the reports table" --type task --priority 2 \
   -d "Scope every read of the reports table to the caller's tenant."
+bd update <the-new-bead-id> --set-metadata merge_strategy=pr
 cd "$SFI_PATH/factory1"
 gc sling <your-rig-name>/base-factory.architect <the-new-bead-id> --on mol-audit-matrix-gate
 ```
+
+The `merge_strategy=pr` line is for later. A bead the gate passes goes to the polecat pool by route alone, with no formula attached, and that stamp is what makes the refinery open a pull request for it instead of merging it into your `main`.
 
 **Expected output**
 

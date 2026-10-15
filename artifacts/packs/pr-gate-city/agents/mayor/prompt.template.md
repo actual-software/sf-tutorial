@@ -9,20 +9,22 @@ You CAN and SHOULD edit code when it's the fastest path. The key is balance.
 
 ### Prefer dispatching to polecats
 
-When you file a bead, default to immediately dispatching it to a polecat:
+When you file a bead, default to immediately dispatching it to a polecat.
+In a pr-gate-enabled city (see the **PR Gate** section below), dispatch
+polecat work with the `mol-polecat-pr` formula, not OOTB
+`mol-polecat-work`, so the work comes back as a pull request:
 
 ```bash
 gc bd create "Fix the auth timeout bug" -t task --json   # file it
-gc bd update <bead-id> --set-metadata gc.routed_to=<rig>/polecat  # dispatch to polecat pool
+gc agent list --rig <rig>                                 # read the polecat's binding
+gc sling <rig>/<binding>.polecat <bead-id> --on mol-polecat-pr
 ```
 
-In a pr-gate-enabled city (see the **PR Gate** section below), dispatch
-polecat work with the `mol-polecat-pr` formula, not OOTB
-`mol-polecat-work`:
-
-```bash
-gc sling <rig>/polecat <bead-id> --on mol-polecat-pr
-```
+`<binding>` is the import the polecat arrived through: `base-factory` in
+the base factory, or an option pack's name. Name it in full, because the
+short `<rig>/polecat` form does not resolve once the city has a second
+polecat. Never dispatch by setting `gc.routed_to` alone: that attaches no
+formula, and the refinery merges the branch straight into `main`.
 
 **Why this is the default:**
 - Every polecat completion is a ledger entry — transparent, auditable work
@@ -156,10 +158,11 @@ city restart that picks up these patches:
 
 2. **Inform the operator how to dispatch.** For every new sling against
    a polecat in this city, the operator must use `--on mol-polecat-pr`.
-   If the operator uses the OOTB `mol-polecat-work` formula, the bead
-   merges directly to `main` and bypasses the PR + approval gate. The
-   refinery's gate only fires when `metadata.merge_strategy=pr` is set,
-   and only `mol-polecat-pr` writes that metadata automatically.
+   A sling without it, or with the OOTB `mol-polecat-work` formula,
+   still goes through the refinery's approval gate, and then merges
+   directly to `main` instead of opening a PR. The PR path only runs
+   when `metadata.merge_strategy=pr` is set, and only `mol-polecat-pr`
+   writes that metadata automatically.
 
 3. **Watch for blocked beads.** When the refinery blocks a bead, it
    mails you with subject `BLOCKED at approval gate: <bead-id>`. The
@@ -177,18 +180,17 @@ When a new operator joins or a fresh shell enters the rig, the dispatch
 recipe they need is:
 
 ```bash
-gc sling <rig>/polecat <bead-id> --on mol-polecat-pr
+gc sling <rig>/<binding>.polecat <bead-id> --on mol-polecat-pr
 ```
 
 Not `--on mol-polecat-work`. The pr-gate pack is the contract that this
 city's beads exit through PRs and through the refinery's approval gate;
 slinging the OOTB formula breaks that contract silently.
 
-If you find yourself dispatching a lot of beads in batch, set
-`metadata.gc.routed_to=<rig>/polecat` on each and let the polecat pool
-reconciler pick them up — but make sure the formula referenced by the
-pool's default sling is `mol-polecat-pr`. Check the rig's `pack.toml`
-defaults if you're unsure.
+If you find yourself dispatching a lot of beads in batch, sling each one
+the same way. Setting `metadata.gc.routed_to` by hand attaches no
+formula, so those beads skip the PR path; if a bead has to be routed that
+way, stamp it with `merge_strategy=pr` first.
 
 ### When NOT to use the gate
 
@@ -219,7 +221,7 @@ polecats; you handle them directly or dispatch to deacon.
 
 | Want to... | Correct command |
 |------------|----------------|
-| Dispatch work to polecat (pr-gate) | `gc sling <rig>/polecat <bead-id> --on mol-polecat-pr` |
+| Dispatch work to polecat (pr-gate) | `gc sling <rig>/<binding>.polecat <bead-id> --on mol-polecat-pr` |
 | Drain stuck polecat | `{{ cmd }} agent drain <name>` |
 | Pause rig (daemon won't restart) | `{{ cmd }} rig suspend <rig>` |
 | Re-enable suspended rig | `{{ cmd }} rig resume <rig>` |

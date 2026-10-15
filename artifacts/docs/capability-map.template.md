@@ -32,7 +32,8 @@ The "how I will know it worked" column is not optional. A change you cannot veri
 
 Note the evidence behind each row, so a future you can tell a real finding from a good idea.
 
-- **The gate bounced a bead of mine, and its feedback said:**
+- **My vague bead from L1 went straight through, and the polecat guessed:**
+- **The architect or the refinery sent a bead of mine back, and its feedback said:**
 - **A reviewer produced an opinion rather than a verdict, because it had nothing to cite:**
 - **I read a diff the factory wrote and would have written it differently, because:**
 - **Something ran that should not have, or did not run that should have:**

@@ -43,7 +43,10 @@ Make a bead that describes security work and leaves the table out:
 ```bash
 bd create "Add row-level security to the reports table" \
   -d "Scope every read of the reports table to the caller's tenant."
+bd update <bead-id> --set-metadata merge_strategy=pr
 ```
+
+The second line matters once the bead passes. The gate hands a passing bead to the polecat pool by route alone, with no formula attached, and `merge_strategy=pr` is what makes the refinery open a pull request for it instead of merging it into `main`.
 
 Pour the gate on it. The architect is the agent that pours it, because this pack ships no agent of its own and the architect is the base factory's reader-and-judge:
 

@@ -116,7 +116,7 @@ packs/<pack>/
   template-fragments/safety-rules.template.md
 ```
 
-`template-fragments/` sits alongside `agents/`, `formulas/` and `orders/` and is discovered the same way, so a fragment needs no declaration. Edit the fragment and every agent including it changes on the next reload. The base factory's packs are small enough not to need one yet; the moment you have two agents that must not contradict each other on some rule, that rule wants to be a fragment. `gc lint` checks that every `{{ template ... }}` resolves, which is the failure you would otherwise find at wake time.
+`template-fragments/` sits alongside `agents/`, `formulas/` and `orders/` and is discovered the same way, so a fragment needs no declaration. Edit the fragment and every agent including it changes on the next reload, for a pack `gc` reads where it sits. The packs you imported from this repo in W3 don't work that way: an import from inside a git clone is pinned to the commit the clone was on, and [L3-L5](./L3-L5-feature-labs.md#2-build-it) says where to keep a pack you want to edit. The base factory's packs are small enough not to need one yet; the moment you have two agents that must not contradict each other on some rule, that rule wants to be a fragment. `gc lint` checks that every `{{ template ... }}` resolves, which is the failure you would otherwise find at wake time.
 
 ### 4. Formulas: the method
 
