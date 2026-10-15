@@ -225,7 +225,7 @@ The gallery is the sample's last child, and it waits on the five numbers. Read i
 
 ```bash
 bd dep list "$EPIC.6"
-bd ready
+bd ready --parent "$EPIC"
 ```
 
 **Expected output**
@@ -237,9 +237,14 @@ bd ready
   aa-vx0.3: Implement ascii/3.md [P2] (open) via blocks
   aa-vx0.4: Implement ascii/4.md [P2] (open) via blocks
   aa-vx0.5: Implement ascii/5.md [P2] (open) via blocks
+
+○ aa-vx0.1 P2 Implement ascii/1.md ← ASCII numbers 1 to 5 and their gallery
+...
+○ aa-vx0.5 P2 Implement ascii/5.md ← ASCII numbers 1 to 5 and their gallery
+Ready: 5 issues with no active blockers
 ```
 
-`bd ready` lists the epic and the five numbers, and leaves the gallery out.
+The ready list has the five numbers and leaves the gallery out.
 
 **What to notice.** The edges are already doing work. No polecat can claim the gallery until all five numbers close, and nobody had to remember the order.
 
