@@ -19,7 +19,7 @@ fails the workflow.
 | 2 | File location               | Sits directly in `ascii/` at repo root; no subdirectories                         | `find ascii -mindepth 2 -type f`                                                |
 | 3 | H1 with character title     | Exactly one H1; letters match `^# [A-Z]$`, numbers match `^# [1-9][0-9]?$\|^# 100$` | `grep -c '^# ' ascii/a.md` then `grep -E '^# ([A-Z]\|[1-9][0-9]?\|100)$' ascii/a.md` |
 | 4 | Single fenced `text` block  | Exactly one fenced code block opened with ```` ```text ```` and closed with ```` ``` ```` | `grep -c '^```' ascii/a.md` (must print `2`)                                    |
-| 5 | ASCII art bounds            | Inside the fence: at most 40 lines, at most 40 columns, printable ASCII only, no tabs, no trailing whitespace | `awk '/^```text$/{f=1;next} /^```$/{f=0} f' ascii/a.md \| awk 'length>40 \|\| /\t/ \|\| / +$/'` |
+| 5 | ASCII art bounds            | Inside the fence: at most 40 lines, at most 40 columns, printable ASCII only, no tabs, no trailing whitespace | `awk '/^```text$/{f=1;next} /^```$/{f=0} f' ascii/a.md \| LC_ALL=C awk 'length>40 \|\| /[^ -~]/ \|\| / +$/; END{if(NR>40)print NR" lines"}'` |
 | 6 | Two-line rhyme couplet      | Below the closing fence: exactly two non-empty lines and nothing else             | `awk '/^```$/{f=1;next} f && NF' ascii/a.md \| wc -l` (must print `2`)          |
 
 The order matches ADR 0002 exactly. Do not reorder when triaging.
