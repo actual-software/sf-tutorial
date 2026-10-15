@@ -23,7 +23,7 @@ There's no test suite. Each rule in the ASCII decision record is a one-line shel
 ````bash
 grep -c '^# ' ascii/<file>.md                                                        # prints 1
 awk '/^```text$/{f=1;next} /^```$/{f=0} f' ascii/<file>.md | awk 'length>20 || NR>8'  # prints nothing
-awk '/^```$/{f=1;next} f && NF' ascii/<file>.md | wc -l                              # prints 2
+awk '/^```$/{f=1;next} f && NF' ascii/<file>.md | grep -c .                          # prints 2
 ````
 
 ## What must never break
@@ -41,7 +41,7 @@ awk '/^```$/{f=1;next} f && NF' ascii/<file>.md | wc -l                         
 | Branch naming | Not written down. The polecat names its branches. |
 | Architecture decisions | `docs/decision-records/` |
 
-The two rows that say *not written down* are capability-map rows: a reviewer with nothing to cite produces opinions rather than verdicts.
+The two rows that say *not written down* are capability-map rows: a reviewer with nothing to cite gives opinions, not verdicts.
 
 ## What a change normally touches
 

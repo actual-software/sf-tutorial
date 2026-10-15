@@ -25,9 +25,9 @@
 # It contributes no agents, formulas or orders. The skill runs on an agent you
 # already have.
 #
-# NO IMPORTS, deliberately. The pack composes on top of whatever you already
-# have rather than pulling a chain in behind it, so it can be installed and
-# removed without touching the base factory. See README.md for the install.
+# NO IMPORTS, deliberately. The pack sits on top of whatever you already have
+# and pulls no chain in behind it, so it can be installed and removed without
+# touching the base factory. See README.md for the install.
 
 [pack]
 name = "shred-scope"

@@ -5,24 +5,24 @@ description: Turn a project scope document, such as the docs/PROJECT_MANIFEST.md
 
 # Shred a scope into beads
 
-You turn one scope document into work a factory can pick up: an epic for the scope, child tasks under it, and dependency edges between the children. The beads you write have to pass the bead gate from the tutorial's `hardening/06` lab (the project-manager's checklist) with no edits, and every rule below comes from that checklist.
+You turn one scope document into work a factory can pick up: an epic for the scope, child tasks under it, and dependency edges between the children. The beads you write have to pass the bead gate from the tutorial's `hardening/06` lab (the project-manager's checklist) with no edits, so every rule below comes from that checklist.
 
-You propose before you write. Nothing touches the bead store until the person has read your plan and said yes. You never sling a bead and you never write code.
+You propose before you write: nothing touches the bead store until the person's read your plan and said yes. You don't sling beads, and you don't write code.
 
 ## Inputs
 
 - **The scope doc.** A path. Read all of it.
-- **The rig.** The registered rig the beads belong to. Use the one the person names. Otherwise run `gc rig list` and take the rig whose path holds the scope doc. If neither settles it, ask.
+- **The rig.** The registered rig the beads belong to. Use the one the person names. Otherwise run `gc rig list` and take the rig whose path holds the scope doc. If neither settles it, ask. Don't guess.
 
-Every `bd` command here goes through `gc bd --rig <rig>`, which runs bd in that rig's directory, so the beads land in the rig's store wherever you happen to be standing. A bead written to the city's store never reaches the rig's polecat.
+Every `bd` command here goes through `gc bd --rig <rig>`, which runs bd in that rig's directory, so the beads land in the rig's store wherever you're standing. A bead written to the city's store won't ever reach the rig's polecat.
 
 ## 1. Find the work
 
-Look for the section that says what to build: a heading such as Scope, Goals, Milestone, Roadmap, Features, Deliverables or Backlog. A manifest written by the manifest generator keeps its features under Success Criteria, in Per-Feature Success. Read the rest of the document as context: the stack, how the tests run, what must never break, the conventions, and which paths a change touches.
+Look for the section that says what to build. It's usually a heading such as Scope, Goals, Milestone, Roadmap, Features, Deliverables or Backlog, and a manifest from the manifest generator keeps its features under Success Criteria, in Per-Feature Success. The rest is context: the stack, how the tests run, what must never break, the conventions, and which paths a change touches.
 
-If no section names work to do, stop. Say which sections you read, and ask for a short Scope section listing what should be built. A document that only describes a project has nothing to shred, and inventing scope is the failure this skill exists to avoid.
+If no section names work to do, stop. Say which sections you read, and ask for a short Scope section listing what should be built. A document that only describes a project has nothing to shred, and inventing scope is exactly the failure this skill's here to prevent.
 
-When the work comes from a list of criteria rather than an explicit scope, some items may already exist. Look in the repository for the files they imply, and ask which items are still to build before you go on.
+When the work comes from a list of criteria instead of an explicit scope, some items may already exist. Look in the repository for the files they imply, and ask which items are still to build before you go on.
 
 ## 2. Cut it into children
 
@@ -62,13 +62,13 @@ Then ask **Create these beads? (yes / change something / no)** and stop. Run no 
 
 ## 5. Create them
 
-First make sure you aren't writing a duplicate. If an open epic with the same title is already in the rig, show it and ask rather than creating another:
+First make sure you aren't writing a duplicate. If an open epic with the same title is already in the rig, show it and ask before you create another:
 
 ```bash
 gc bd --rig <rig> list --type=epic --json | jq -r '.[] | "\(.id)\t\(.status)\t\(.title)"'
 ```
 
-Write each description to a file with a quoted heredoc. A backtick inside a double-quoted shell string runs as a command, and these descriptions are full of backticks.
+Write each description to a file with a quoted heredoc, because a backtick inside a double-quoted shell string runs as a command and these descriptions are full of backticks.
 
 ```bash
 D=$(mktemp -d)
@@ -83,7 +83,7 @@ EPIC=$(gc bd --rig <rig> create --type=epic --priority=2 \
 echo "epic: $EPIC"
 ```
 
-Check that `$EPIC` starts with the rig's prefix before you create any child. Any other prefix means the write reached a different store: stop and say so.
+Before you create any child, check that `$EPIC` starts with the rig's prefix. If it doesn't, the write reached a different store, so stop and say so.
 
 Then each child, keeping every id you get back:
 
@@ -107,7 +107,7 @@ Then one edge per dependency. `dep add A B` means A needs B:
 gc bd --rig <rig> dep add "$C6" "$C1"
 ```
 
-If a command fails, stop and report what exists so far. Don't re-run a create, because a retry makes a duplicate.
+If a command fails, stop and report what exists so far. Don't re-run a create: a retry makes a duplicate.
 
 ## 6. Check it and hand back
 
@@ -118,9 +118,9 @@ gc bd --rig <rig> list --parent "$EPIC" --json \
 gc bd --rig <rig> dep list "$C6"
 ```
 
-Every child shows a `target_file`, and every edge you proposed is there. Report the epic id, each child's id and `target_file`, the edges, and which children are ready now and which wait on another.
+Every child should show a `target_file`, and every edge you proposed should be there. Then report the epic id, each child's id and `target_file`, the edges, and which children are ready now versus waiting on another.
 
-End with the next step and leave it to the person. They can send one child through the bead gate from `hardening/06`, or sling it to the polecat on the PR path:
+End with the next step, and leave it to the person: they can send one child through the bead gate from `hardening/06`, or sling it to the polecat on the PR path.
 
 ```bash
 gc sling --rig <rig> polecat <child-id> --on mol-polecat-pr
