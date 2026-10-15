@@ -233,7 +233,7 @@ NAME               KIND          SERVICE    LOCAL      PUBLISH      URL
 slack-mini         proxy_process ready      ready      private      -
 ```
 
-Until the build finishes the row can read `starting` or `degraded`, while gc keeps restarting the adapter, so run it again after a minute. `ready` means the adapter registered with gc and holds a Socket Mode connection; its log says `socket mode: connected`. If it stays `degraded`, [Troubleshooting](#troubleshooting) starts with that case.
+Until the build finishes the row can read `starting` or `degraded`, while gc keeps restarting the adapter, so run it again after a minute. `ready` means the adapter is running and registered with gc. The row can't see the Socket Mode connection, which the adapter dials and redials on its own, so check that in its log: `grep 'socket mode' .gc/services/slack-mini/logs/service.log` should show `socket mode: connected`. If the row stays `degraded`, or the log shows only `connect failed` lines, [Troubleshooting](#troubleshooting) starts with those two cases.
 
 Now send the first post with slack-mini's verb. The block asks for the channel ID from step 1 and also saves it to the city's `.env`, where step 8's order looks for it:
 
@@ -289,7 +289,7 @@ In Slack, in your factory channel:
 
 Within a minute or so the mayor answers in the channel, as `gc-mayor`. Its words are its own, so they won't match anyone else's.
 
-Here's the trip that message made. Slack sent it down the adapter's Socket Mode connection, the adapter handed it to gc, and the default route bound the channel to the mayor and delivered the message to its session, wrapped in an instruction that ends like this:
+Here's the trip that message made. Slack sent it down the adapter's Socket Mode connection, the adapter handed it to gc, and the default route bound the channel to the mayor and delivered the message to its session, wrapped in an instruction that includes these lines:
 
 ```text
 To reply in Slack, write your response to a file and run:
@@ -439,13 +439,14 @@ Your channel holds the hello from step 5, the mayor's answer from step 7, the te
 - **`gc service list` shows `slack-mini` as `degraded` / `config_error` and stays that way.** The adapter keeps exiting, and it says why at the end of `.gc/services/slack-mini/logs/service.log` in the city. Each message below is one it can print:
   - `missing required env vars: ...` means the supervisor hasn't got the keys. `grep -c '^SLACK_' ~/.gc/secrets.env` should print `3`, and `echo $GC_SUPERVISOR_ENV` should list five names. Fix whichever is wrong, then run `gc supervisor install` again.
   - `register adapter: 404 ... city not found or not running` right after the supervisor restarted means the adapter came up before your city did. gc restarts it, and it registers within a minute.
-  - `apps.connections.open: invalid_auth` means the app-level token is wrong or lacks `connections:write`. `SLACK_APP_TOKEN must be an app-level token` means the bot token went in its place. Run step 4's first block again with the right tokens, then `gc supervisor install`.
+  - `SLACK_APP_TOKEN must be an app-level token` means the bot token went in its place. Run step 4's first block again with the right tokens, then `gc supervisor install`.
   - `no Go toolchain found` or `go build failed` is the first-start build. Install Go, or a newer one, on that machine; slack-mini's `adapter/go.mod` names the version it needs.
-- **`gc slack-mini post-message` prints `request to adapter failed`, then `000`.** The verb couldn't reach gc. Either `GC_API_BASE_URL` isn't set in this terminal (`source` your shell rc), or the service isn't `ready` yet.
+- **`gc service list` shows `ready`, but the log keeps printing `socket mode: connect failed`.** The adapter is up but can't open its connection to Slack, and the row can't show that. `apps.connections.open: invalid_auth` on those lines means the app-level token is wrong or lacks `connections:write`: run step 4's first block again with the right tokens, then `gc supervisor install`. Any other reason there, such as a `dial tcp` error, means the box can't reach Slack.
+- **`gc slack-mini post-message` prints `request to adapter failed`, then `000`.** The verb couldn't reach gc. Either `GC_API_BASE_URL` isn't set in this terminal (`source` your shell rc), or the supervisor isn't running, as for a moment after `gc supervisor install`. `adapter returned HTTP 503` instead means gc answered and the service isn't `ready` yet: check `gc service list`.
 - **A post fails with `slack: not_in_channel`.** The channel is private, and `chat:write.public` only covers public ones. `/invite @gc-mayor` in it. `slack: channel_not_found` means the ID is wrong: copy it again from the channel's **About** tab.
 - **A mention gets no answer.** Work along the trip from step 7:
   1. The bot has to be in the channel. `/invite @gc-mayor`.
-  2. The adapter log should show an `inbound: chan=...` line for your message. If it doesn't, Slack isn't sending the mention: check the app has Socket Mode on and the `app_mention` event, and that you created it from `app-socket.json`. A `dropping event from unexpected team` line instead means `SLACK_WORKSPACE_ID` names a different workspace.
+  2. The adapter log should show an `inbound: chan=...` line for your message. If it doesn't and the log ends in `socket mode: connect failed` lines, the adapter has no connection to hear on: see the `ready` case above. Otherwise Slack isn't sending the mention: check the app has Socket Mode on and the `app_mention` event, and that you created it from `app-socket.json`. A `dropping event from unexpected team` line instead means `SLACK_WORKSPACE_ID` names a different workspace.
   3. `grep -A2 'extmsg.default_route' city.toml` should show the route from step 6. Without it the message stops at gc.
   4. `gc session peek mayor` shows whether the message reached the mayor and what it did with it.
 - **`gc slack reply-current` isn't a command.** The `slack-reply` import is missing or went in under another name or at rig scope. `gc import list` should show `slack` among the city's imports.
