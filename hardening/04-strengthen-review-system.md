@@ -319,7 +319,7 @@ Expected on a 2-of-3 approve case:
 ```text
 architect_approved:           true
 synthesizer_summary:    Codex and Claude approve. Gemini rejected
-                        citing ADR-0001 rule 3 (line width). Codex
+                        citing ADR-0001 rule 2 (line width). Codex
                         and Claude explicitly read line width as
                         compliant; the rejecting reviewer cited the
                         same rule with a stricter interpretation.

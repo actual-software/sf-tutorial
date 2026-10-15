@@ -567,10 +567,9 @@ ls ascii/g.md
 To exercise the rejection path, briefly add a strict ADR clause that
 the polecat is likely to violate, then sling another letter. For
 example, edit `docs/decision-records/0001.ADR.ASCII.md` on `main` to
-add a rule like:
+add a fourth item under its "ASCII art constraints" heading:
 
-> ASCII art rule 4: every letter file must include a `> Rendered by:
-> <author>` line directly under the heading.
+> 4. The last line of the art reads `Rendered by: <author>`.
 
 Commit and push to `main`. Then sling `h.md`:
 
