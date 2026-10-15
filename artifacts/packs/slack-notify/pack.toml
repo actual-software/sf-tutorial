@@ -1,0 +1,36 @@
+# slack-notify — an optional Day 2 pack: the factory posts to a Slack channel
+# each time it closes a piece of work, with the pull request link when there is
+# one.
+#
+# One way only. The factory talks to Slack and Slack never talks back, so the
+# whole pack is one order, one script and an incoming webhook. A two-way bridge,
+# where a message in Slack becomes a bead, needs a long-running listener and an
+# agent to read what it hears. It's a different size of project, and the lab
+# page points at it rather than installing it.
+#
+# WHAT IT ADDS, on top of a base-factory installation:
+#
+#   orders/bead-closed-slack.toml   An event order on `bead.closed`, the same
+#                                   trigger as base-factory's bead-closed-log,
+#                                   with a channel in place of a file.
+#   assets/scripts/                 The script the order runs. bash, curl, jq
+#                                   and bd, nothing else to install.
+#   assets/slack-app-manifest.json  A Slack app with incoming webhooks and
+#                                   nothing more. Paste it into "Create New App,
+#                                   From a manifest" at api.slack.com/apps.
+#
+# It contributes no agents and no formulas, and nothing in it runs a model.
+#
+# NO IMPORTS, deliberately. The pack composes on top of whatever you already
+# have rather than pulling a chain in behind it, so it can be installed and
+# removed without touching the base factory. Rig scope, like base-factory's
+# orders, so it posts the rig's work and not the city's housekeeping:
+#
+#   gc import add --rig <rig-name> artifacts/packs/slack-notify
+#
+# See README.md for the Slack setup and hardening/08-slack-notifications.md for
+# the lab.
+
+[pack]
+name = "slack-notify"
+schema = 1
