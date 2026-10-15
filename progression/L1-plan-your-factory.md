@@ -54,6 +54,8 @@ Forty-five minutes, participant-led, instructor circulating. Steps 1 and 2 are q
 
 Register the rig as a **sibling** of the city, the same shape [W3](./W3-run-your-factory.md) used for `ascii-art`.
 
+Clone with the HTTPS URL, `https://github.com/<owner>/<repo>.git`. On a cloud box, `gh auth login` set `git` up to sign in over HTTPS, and the box has no SSH key for GitHub, so an SSH URL (`git@github.com:…`) fails there.
+
 **Copy and paste**
 
 ```bash
@@ -70,8 +72,6 @@ gc rig list
 ```text
 your rig listed alongside ascii-art, with a path and a prefix
 ```
-
-Clone with the HTTPS URL, `https://github.com/<owner>/<repo>.git`. On a cloud box, `gh auth login` set `git` up to sign in over HTTPS, and the box has no SSH key for GitHub, so an SSH URL (`git@github.com:…`) fails there.
 
 That `export` is the last time you write your rig's path out by hand. Every page from here reaches it through `$MY_RIG_PATH` instead. Commands taking `--rig` still want the rig's *name*, which is a different thing and stays literal.
 

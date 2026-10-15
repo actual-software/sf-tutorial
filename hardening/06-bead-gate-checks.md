@@ -81,6 +81,8 @@ This lesson has two paths, and they end in different factories. Pick one.
 
 ### Bootstrap Factory1 with Script
 
+On a cloud box, skip this path. The script stops at its `bd` version check before it changes anything, and installing the `bd` it asks for would put an older build in front of the one your factory runs on, as the [bootstrap README](../bootstrap/README.md) explains. Use [Build Factory1 by Hand](#build-factory1-by-hand) there.
+
 If this is your first run, complete the one-time setup in the [bootstrap README](../bootstrap/README.md) (`.env`, `deps.sh`) before invoking the script.
 
 **Copy and paste**

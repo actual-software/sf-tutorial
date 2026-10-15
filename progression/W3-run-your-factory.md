@@ -636,6 +636,8 @@ The bead you slung changes hands several times on its way through: polecat to re
 | `blocked` | An agent stopped it and wrote the reason on the bead. The base factory doesn't do this; the gates you can add on Day 2 do |
 | `closed` | Done. The refinery opened the pull request, and the bead's `pr_url` links to it |
 
+The work can also be sent back. When the architect or the refinery's approval step rejects it, the bead returns to the polecat, `open` again, with a `rejection_reason` that starts `architect:` or `approval-review:`. The architect's rejections are capped at two, after which the refinery lets the bead through. The approval step has no cap. Its checklist asks for a one-file diff, the bead's `target_file` when it has one, and the refinery applies it with judgment: in testing it approved a two-file change on a bead with no `target_file`. If a bead keeps coming back with the same `approval-review:` reason, read the reason and narrow or split the bead, so it doesn't loop.
+
 A bead also drops back to `open` when the session holding it ends early. The runtime returns it to the queue and the next session picks it up, so no work is lost. To follow one bead through all of this, read its assignee and metadata with `bd show <bead-id> --json | jq '.[0] | {status, assignee, metadata}'`, or open its run on the dashboard.
 
 [W5](./W5-observability.md) is where you read the factory properly. For now, confirm your beads are there and that one of them is moving.

@@ -384,13 +384,13 @@ git add docs/outlines && git commit -m "docs(specs): outline for $PARTIAL_BEAD" 
 
 Turning "better" into "required" needs a gate in front of the polecat, and that is a different option. Install the [bead gate](./06-bead-gate-checks.md) alongside this one and you get a project-manager that refuses malformed beads before a polecat may claim them.
 
-Send the project-manager the next letter, `l.md`, since `$BEAD_ID` has already been through the factory. A bead the gate passes goes to the polecat pool by route alone, with no formula attached, so stamp it with `merge_strategy=pr` first: the stamp is what makes the refinery open a pull request for it instead of merging it into `main`.
+Send the project-manager `p.md`, a letter no other option uses, since `$BEAD_ID` has already been through the factory. A bead the gate passes goes to the polecat pool by route alone, with no formula attached, so stamp it with `merge_strategy=pr` first: the stamp is what makes the refinery open a pull request for it instead of merging it into `main`.
 
 **Copy and paste**
 
 ```bash
 cd "$SFI_PATH/ascii-art"
-export GATE_BEAD=$(bd list --type=task --status=open --limit 0 | grep -E "Implement l\.md$" | awk '{print $2}')
+export GATE_BEAD=$(bd list --type=task --status=open --limit 0 | grep -E "Implement p\.md$" | awk '{print $2}')
 bd update $GATE_BEAD --set-metadata merge_strategy=pr
 
 cd "$SFI_PATH/factory1"
