@@ -1,7 +1,7 @@
 description = """
 Refinery patrol loop. Poured as a root-only wisp on startup:
 
-  gc bd mol wisp mol-refinery-patrol --root-only --var target_branch={{target_branch}} --var rig_name={{rig_name}} --var binding_prefix={{binding_prefix}}
+  gc bd mol wisp {{patrol_formula}} --root-only --var target_branch={{target_branch}} --var rig_name={{rig_name}} --var binding_prefix={{binding_prefix}}
   gc bd update $WISP --assignee=$GC_AGENT
 
 Each wisp is ONE iteration: check for work, merge one branch, pour
@@ -13,6 +13,9 @@ descriptions below and work through them in order.
 
 The loop mechanism: every exit path (happy or early) pours the next
 wisp before burning this one. The prompt only bootstraps the first wisp.
+Every pour names `{{patrol_formula}}`, the formula this wisp was poured
+from. A patrol that extends this one sets that var to its own name, so
+its next iteration keeps the steps it added, gates included.
 
 Work beads flow directly: pool → polecat → refinery → closed.
 No separate MR beads. The polecat sets metadata (branch, target) on
@@ -74,6 +77,10 @@ default = "false"
 [vars.event_timeout]
 description = "Seconds to wait for events before re-checking (exponential backoff)"
 default = "30"
+
+[vars.patrol_formula]
+description = "Formula every exit path pours as the next patrol: the formula this wisp was poured from. Each patrol that extends another sets the default to its own name, so when you read a step from a parent formula, use your own formula's value."
+default = "mol-refinery-patrol"
 
 [[steps]]
 id = "check-inbox"
@@ -177,7 +184,7 @@ gc bd update $WORK \
 5. Clean up temp branch: `git checkout {{target_branch}} && git branch -D temp`
 6. Pour next patrol iteration before burning:
 ```bash
-NEXT=$(gc bd mol wisp mol-refinery-patrol --root-only --var target_branch={{target_branch}} --var rig_name={{rig_name}} --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
+NEXT=$(gc bd mol wisp {{patrol_formula}} --root-only --var target_branch={{target_branch}} --var rig_name={{rig_name}} --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
 gc bd update "$NEXT" --assignee=$GC_AGENT
 ```
 7. Burn this wisp: `gc bd mol burn <wisp-id> --force`
@@ -249,7 +256,7 @@ TARGET=$(gc bd show $WORK --json | jq -r '.[0].metadata.target // "{{target_bran
    - Clean up: `git checkout "$TARGET" && git branch -D temp`
    - Pour next patrol iteration before burning:
      ```bash
-     NEXT=$(gc bd mol wisp mol-refinery-patrol --root-only --var target_branch={{target_branch}} --var rig_name={{rig_name}} --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
+     NEXT=$(gc bd mol wisp {{patrol_formula}} --root-only --var target_branch={{target_branch}} --var rig_name={{rig_name}} --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
      gc bd update "$NEXT" --assignee=$GC_AGENT
      ```
    - Burn this wisp: `gc bd mol burn <wisp-id> --force`
@@ -304,7 +311,7 @@ Work bead: $WORK
 Existing PR: $EXISTING_PR
 Branch: $BRANCH
 Target: $TARGET"
-  NEXT=$(gc bd mol wisp mol-refinery-patrol --root-only --var target_branch={{target_branch}} --var rig_name={{rig_name}} --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
+  NEXT=$(gc bd mol wisp {{patrol_formula}} --root-only --var target_branch={{target_branch}} --var rig_name={{rig_name}} --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
   gc bd update "$NEXT" --assignee=$GC_AGENT
   CURRENT_WISP=${GC_BEAD_ID:-}
   if [ -n "$CURRENT_WISP" ]; then
@@ -607,7 +614,7 @@ If auto_land = "false": skip this entirely.
 
 **2. Pour next iteration:**
 ```bash
-NEXT=$(gc bd mol wisp mol-refinery-patrol --root-only --var target_branch={{target_branch}} --var rig_name={{rig_name}} --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
+NEXT=$(gc bd mol wisp {{patrol_formula}} --root-only --var target_branch={{target_branch}} --var rig_name={{rig_name}} --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
 gc bd update "$NEXT" --assignee=$GC_AGENT
 ```
 

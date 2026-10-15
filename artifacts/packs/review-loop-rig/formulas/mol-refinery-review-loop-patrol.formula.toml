@@ -27,13 +27,22 @@ that selects this formula instead of `mol-refinery-pr-patrol`.
 
 `approval-review` and `merge-push` are re-declared with `feedback-loop`
 added to their `needs` list so the engine cannot run them concurrently
-with the loop. The step bodies are inherited unchanged from
-`mol-refinery-pr-patrol`.
+with the loop. A re-declared step replaces the inherited one whole, so
+each override's description says where its body lives.
+
+Every exit path, including the ones inherited from
+`mol-refinery-pr-patrol` and `mol-refinery-patrol`, pours
+`{{patrol_formula}}` as the next patrol. This formula sets it to its
+own name, so the loop and the approval gate stay on every later patrol.
 """
 
 formula = "mol-refinery-review-loop-patrol"
 extends = ["mol-refinery-pr-patrol"]
 version = 1
+
+[vars.patrol_formula]
+description = "Formula every exit path pours as the next patrol: the formula this wisp was poured from. Each patrol that extends another sets the default to its own name, so when you read a step from a parent formula, use your own formula's value."
+default = "mol-refinery-review-loop-patrol"
 
 [[steps]]
 id = "feedback-loop"
@@ -121,7 +130,7 @@ bead will reach the approval gate."
 
 # Pour the next patrol iteration before burning, then drain & exit so
 # approval-review does NOT run for this bead on this patrol:
-NEXT=$(gc bd mol wisp mol-refinery-review-loop-patrol --root-only \\
+NEXT=$(gc bd mol wisp {{patrol_formula}} --root-only \\
   --var target_branch={{target_branch}} --var rig_name={{rig_name}} \\
   --var binding_prefix={{binding_prefix}} --json | jq -r '.new_epic_id')
 gc bd update "$NEXT" --assignee=$GC_AGENT
@@ -138,29 +147,43 @@ with `metadata.review_loops=1`, `metadata.review_feedback`, and a
 
 # Override approval-review's `needs` so it runs only after the loop has
 # either fired (and burnt this wisp) or no-op'd through on a later
-# patrol. Body is otherwise inherited from `mol-refinery-pr-patrol`.
+# patrol. A re-declared step replaces the inherited one whole,
+# description included, so the description below says where the
+# approval body lives instead of carrying a copy.
 
 [[steps]]
 id = "approval-review"
 title = "Refinery acts as approver (after feedback loop)"
 needs = ["handle-failures", "feedback-loop"]
 description = """
-Inherited from `mol-refinery-pr-patrol`. The only change in this
-override is the added `feedback-loop` dependency: this step cannot run
-until the feedback loop has either delivered its required round of
+Run the `approval-review` step of `mol-refinery-pr-patrol` exactly as
+written there; read it with
+`gc formula show mol-refinery-pr-patrol --json`. The only change in
+this override is the added `feedback-loop` dependency: this step cannot
+run until the feedback loop has either delivered its required round of
 feedback (and burnt this wisp before reaching here) or no-op'd through
 on a subsequent patrol.
 
-Refer to the inherited step body for the full approval logic."""
+That body pours the next patrol when it blocks the bead. Pour
+`{{patrol_formula}}` there, the value set by the formula this wisp was
+poured from, not the `mol-refinery-pr-patrol` default that
+`gc formula show mol-refinery-pr-patrol` lists."""
 
 # Same dependency widening for merge-push so the engine schedules it
-# strictly after both gates.
+# strictly after both gates. Its body is the setup pack's step, so the
+# description points there directly.
 
 [[steps]]
 id = "merge-push"
 title = "Merge or publish PR (gated on feedback-loop and approval-review)"
 needs = ["handle-failures", "feedback-loop", "approval-review"]
 description = """
-Inherited from `mol-refinery-pr-patrol`. The only change is the added
-`feedback-loop` dependency for safe scheduling — the body is otherwise
-unchanged from the inherited step."""
+Run the `merge-push` step of `mol-refinery-patrol` exactly as written
+there; read it with `gc formula show mol-refinery-patrol --json`. The
+only change in this override is its `needs`: this step cannot start
+until both `feedback-loop` and `approval-review` have cleared the bead.
+
+That body pours the next patrol when it blocks an invalid
+`existing_pr`. Pour `{{patrol_formula}}` there, the value set by the
+formula this wisp was poured from, not the `mol-refinery-patrol`
+default that `gc formula show mol-refinery-patrol` lists."""
