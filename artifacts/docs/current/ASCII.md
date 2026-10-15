@@ -59,7 +59,7 @@ A peak of slashes, narrow at the crown,
 two legs that brace it firmly to the ground.
 ````
 
-The art is 4 lines tall and 8 columns wide — well inside the 8x20 box. The
+The art is 4 lines tall and 8 columns wide — well inside the 40x40 box. The
 H1 is `# A`, and the rhyme sits directly under the closing fence.
 
 ## Constraints quick reference
@@ -98,7 +98,7 @@ diff and posts an approve-or-reject comment citing the rule applied.
 2. **Heading above the rhyme.** Adding `## Rhyme` or similar before the
    couplet. Fix: delete the heading; the two prose lines sit directly under
    the closing fence.
-3. **Art exceeds the canvas.** The longest line is 21+ columns or there are
+3. **Art exceeds the canvas.** The longest line is 41+ columns or there are
    41+ lines of art. Fix: redraw inside the 40x40 box; counting columns
    includes leading spaces.
 4. **Tabs or smart quotes.** Editors silently insert tabs or `"`/`"`
