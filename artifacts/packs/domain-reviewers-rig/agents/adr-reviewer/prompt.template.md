@@ -57,7 +57,7 @@ You do NOT touch `review_loops`, `design_approved`,
 After the verdict, reassign to the refinery:
 
 ```bash
-REFINERY_TARGET="${GC_RIG:+$GC_RIG/}{{binding_prefix}}refinery"
+REFINERY_TARGET="${GC_RIG:+$GC_RIG/}{{ .BindingPrefix }}refinery"
 gc bd update $WORK --status=open --assignee="$REFINERY_TARGET" \
   --set-metadata gc.routed_to="$REFINERY_TARGET"
 
