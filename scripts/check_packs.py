@@ -25,10 +25,22 @@ A target defined by no pack in this repo comes from the base gastown install
 defined by some pack here but unreachable from the pack that names it is the
 regression, and it fails the run.
 
+Prompt templates get a check of their own. gc renders each one as a Go template,
+and on any parse or execute error it logs to stderr and hands the agent the raw
+text, so nothing fails where anyone would see it. Two mistakes cause that:
+
+* a ``{{ template "name" }}`` call, or an ``inject_fragments`` entry, naming a
+  fragment no pack in the chain defines. Fragment names get no external pass: a
+  name that no pack here defines fails the run too.
+* a bare word in an action that gc has no function for. A formula variable
+  written into a prompt, ``{{binding_prefix}}``, is the usual one; a prompt
+  reads the field instead, ``{{ .BindingPrefix }}``.
+
     scripts/check_packs.py                 # check artifacts/packs and the pages
     scripts/check_packs.py --self-test     # prove the checker actually catches one
 
-Exit status is 0 when every reference resolves and 1 when any does not.
+Exit status is 0 when every reference resolves and no prompt template calls an
+undefined function, and 1 when anything fails.
 """
 
 from __future__ import annotations
@@ -46,6 +58,27 @@ SLING_RE = re.compile(r"gc sling\s+\\?\"?([^\s\"\\]+)")
 # the participant's rig name and carries no information here; the pack segment is
 # the one that decides which chain the agent has to resolve through.
 PAGE_SLING_RE = re.compile(r"gc sling\s+([A-Za-z0-9_.-]+)/([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)")
+
+TEMPLATE_SUFFIXES = (".template.md", ".md.tmpl")
+
+# The bare words an action may hold: Go's keywords and constants, its builtin
+# functions, and the four functions gc adds (promptFuncMap in gascity's
+# cmd/gc/prompt.go, the same four in v1.4.0 and v1.5.0). Go rejects any other
+# bare word as an undefined function.
+TEMPLATE_WORDS = frozenset(
+    "block break continue define else end if nil range template with true false "
+    "and call html index slice js len not or print printf println urlquery eq ge gt le lt ne "
+    "cmd session basename templateFirst".split()
+)
+
+LITERAL_RE = re.compile(r'"(?:\\.|[^"\\\n])*"|`[^`]*`|\'(?:\\.|[^\'\\\n])*\'')
+WORD_RE = re.compile(r"(?<![\w.$])[A-Za-z_]\w*")
+DEFINE_RE = re.compile(r'-?\s*(?:define|block)\s+(?:"([^"]+)"|`([^`]+)`)')
+CALL_RE = re.compile(r'-?\s*template\s+(?:"([^"]+)"|`([^`]+)`)')
+COMMENT_RE = re.compile(r"\{\{(?:-\s+)?/\*")
+
+# Fragments gc appends to a prompt by name, with no `{{ template }}` call.
+FRAGMENT_LIST_RE = re.compile(r"^\s*(?:inject_fragments(?:_append)?|append_fragments)\s*=\s*\[([^\]]*)\]", re.M)
 
 
 def read(path: Path) -> str:
@@ -121,6 +154,90 @@ def sling_targets(pack: Path) -> list[tuple[str, str]]:
     return out
 
 
+def template_actions(text: str) -> list[tuple[int, str | None]]:
+    """Every ``{{ }}`` action in a template, with the line it opens on.
+
+    Comments are dropped. An action that never closes comes back as None,
+    because Go refuses the whole file over it.
+    """
+    out: list[tuple[int, str | None]] = []
+    i = 0
+    while (start := text.find("{{", i)) != -1:
+        line = text.count("\n", 0, start) + 1
+        if m := COMMENT_RE.match(text, start):
+            end = text.find("*/", m.end())
+            close = text.find("}}", end) if end != -1 else -1
+            if close == -1:
+                out.append((line, None))
+                break
+            i = close + 2
+            continue
+        j = start + 2
+        while j < len(text) and not text.startswith("}}", j):
+            lit = LITERAL_RE.match(text, j) if text[j] in "\"'`" else None
+            j = lit.end() if lit else j + 1
+        if j >= len(text):
+            out.append((line, None))
+            break
+        out.append((line, text[start + 2 : j]))
+        i = j + 2
+    return out
+
+
+def template_names(text: str) -> tuple[set[str], list[tuple[int, str]]]:
+    """The names a template defines, and each name it renders with the line."""
+    defined: set[str] = set()
+    calls: list[tuple[int, str]] = []
+    for line, body in template_actions(text):
+        if body is None:
+            continue
+        if m := DEFINE_RE.match(body):
+            defined.add(m.group(1) or m.group(2))
+        elif m := CALL_RE.match(body):
+            calls.append((line, m.group(1) or m.group(2)))
+    return defined, calls
+
+
+def undefined_words(text: str) -> list[tuple[int, str | None]]:
+    """Each bare word gc's prompt renderer has no function for; None marks an unclosed action."""
+    out: list[tuple[int, str | None]] = []
+    for line, body in template_actions(text):
+        if body is None:
+            out.append((line, None))
+            continue
+        out.extend((line, w) for w in WORD_RE.findall(LITERAL_RE.sub('""', body)) if w not in TEMPLATE_WORDS)
+    return out
+
+
+def fragments_in(dirs: list[Path]) -> set[str]:
+    names: set[str] = set()
+    for d in dirs:
+        if d.is_dir():
+            for f in sorted(d.iterdir()):
+                if f.is_file() and f.name.endswith(TEMPLATE_SUFFIXES):
+                    names |= template_names(read(f))[0]
+    return names
+
+
+def fragments_of(pack: Path) -> set[str]:
+    """Names defined in the two directories gc loads a pack's fragments from."""
+    return fragments_in([pack / "template-fragments", pack / "prompts" / "shared"])
+
+
+def template_files(pack: Path) -> list[Path]:
+    """Every file gc would render as a template, the same set ``gc lint`` parses."""
+    return sorted(f for f in pack.rglob("*") if f.is_file() and f.name.endswith(TEMPLATE_SUFFIXES))
+
+
+def injected_fragments(pack: Path) -> list[tuple[Path, str]]:
+    out = []
+    for f in [pack / "pack.toml", *sorted(pack.glob("agents/*/agent.toml"))]:
+        if f.is_file():
+            for m in FRAGMENT_LIST_RE.finditer(read(f)):
+                out.extend((f, name) for name in re.findall(r'"([^"]+)"', m.group(1)))
+    return out
+
+
 def page_sling_targets(docs_root: Path, packs_dir: Path) -> list[tuple[Path, int, str, str]]:
     """Every ``gc sling <rig>/<pack>.<agent>`` written in a page, with its line.
 
@@ -170,6 +287,7 @@ def check(packs_dir: Path, quiet: bool = False, docs_root: Path | None = None) -
 
     all_agents: set[str] = set().union(*(agents_of(p) for p in packs))
     all_formulas: set[str] = set().union(*(formulas_of(p) for p in packs))
+    all_fragments: set[str] = set().union(*(fragments_of(p) for p in packs))
 
     def emit(msg: str) -> None:
         if not quiet:
@@ -207,6 +325,42 @@ def check(packs_dir: Path, quiet: bool = False, docs_root: Path | None = None) -
         for fname, target in sling_targets(pack):
             v = verdict(target, reachable_agents, all_agents, f"{fname} slings")
             emit(f"  {fname} slings {target!r}: {v}")
+
+        reachable_fragments: set[str] = set().union(*(fragments_of(p) for p in chain))
+
+        def fragment_verdict(target: str, available: set[str], label: str) -> str:
+            nonlocal checked
+            checked += 1
+            if target in available:
+                return "resolves"
+            where = "defined here but not reachable" if target in all_fragments else "defined by no pack here"
+            failures.append(f"{pack.name}: {label} {target!r}, which is {where}")
+            return "UNRESOLVABLE"
+
+        files = template_files(pack)
+        for f in files:
+            rel = f.relative_to(pack).as_posix()
+            text = read(f)
+            own, calls = template_names(text)
+            available = reachable_fragments | own | fragments_in([f.parent / "shared", f.parent / "template-fragments"])
+            for lineno, target in calls:
+                v = fragment_verdict(target, available, f"{rel}:{lineno} renders")
+                emit(f"  {rel} renders {target!r}: {v}")
+            checked += 1
+            for lineno, word in undefined_words(text):
+                if word is None:
+                    failures.append(f"{pack.name}: {rel}:{lineno} opens an action and never closes it")
+                else:
+                    failures.append(f"{pack.name}: {rel}:{lineno} calls undefined function {word!r} "
+                                    "(formula syntax? a prompt reads fields such as .BindingPrefix)")
+
+        for toml, target in injected_fragments(pack):
+            available = reachable_fragments | fragments_in([toml.parent / "template-fragments"])
+            label = f"{toml.relative_to(pack).as_posix()} injects"
+            emit(f"  {label} {target!r}: {fragment_verdict(target, available, label)}")
+
+        if files:
+            emit(f"  template syntax: {len(files)} file(s) checked for undefined functions")
 
         if orders_of(pack):
             emit(f"  orders: {', '.join(sorted(orders_of(pack)))}")
@@ -247,9 +401,16 @@ def self_test(packs_dir: Path) -> int:
     A checker that scans nothing passes every clean tree, so the only evidence
     that this one reads the files is that it fails when the files are wrong.
     """
+    # A probe can only prove a catch against a tree that passes untouched.
+    if check(packs_dir, quiet=True) != 0:
+        print("self-test SETUP FAILED: the unmodified packs already fail, so no probe could prove a catch")
+        return 1
+    print("self-test: unmodified packs pass")
+
     # Each probe has to name something this repo defines but the mutated pack
     # cannot reach. Pointing a reference at a target the pack already reaches
-    # breaks nothing, and a probe that breaks nothing proves nothing.
+    # breaks nothing, and a probe that breaks nothing proves nothing. Fragment
+    # names are the exception, since one that no pack defines fails outright.
     cases = [
         ("extends", "domain-reviewers-rig/formulas/mol-refinery-domain-patrol.formula.toml",
          'extends = ["mol-refinery-pr-patrol"]', 'extends = ["mol-bead-review"]'),
@@ -257,6 +418,12 @@ def self_test(packs_dir: Path) -> int:
          "{{binding_prefix}}architect", "{{binding_prefix}}adr-reviewer"),
         ("patches.agent", "domain-reviewers-rig/pack.toml",
          'name = "refinery"', 'name = "project-manager"'),
+        ("template", "setup/template-fragments/following-mol.template.md",
+         '{{ define "following-mol" }}', '{{ define "following-mol-renamed" }}'),
+        ("formula syntax", "bead-gate-rig/agents/project-manager/prompt.template.md",
+         "{{ .BindingPrefix }}", "{{binding_prefix}}"),
+        ("inject_fragments", "internal-wiki/pack.toml",
+         'inject_fragments_append = ["wiki-habits"]', 'inject_fragments_append = ["wiki-habit"]'),
     ]
 
     caught = 0
