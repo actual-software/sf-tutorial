@@ -19,48 +19,18 @@ pool slot.
 
 ### The Done Sequence
 
-```bash
-# Explicit opt-out gate: respect mol-pr-from-issue auto_push=false (halt-at-branch-ready).
-AUTO_PUSH=$(gc bd show <work-bead> --json | jq -r '.[0].metadata | if has("auto_push") then (.auto_push | tostring) else "" end')
-if [ "$AUTO_PUSH" = "false" ]; then
-  echo "auto_push=false: halting at branch-ready (no push, no refinery handoff)"
-  BRANCH=$(git branch --show-current)
-  gc bd update <work-bead> \
-    --status=open --assignee="" \
-    --set-metadata branch="$BRANCH" \
-    --set-metadata target={{ .DefaultBranch }} \
-    --set-metadata branch_ready=true \
-    --set-metadata halt_reason=auto_push_false \
-    --set-metadata gc.routed_to="" \
-    --notes "Branch ready: auto_push=false (no push, no refinery handoff)"
-  gc runtime drain-ack
-  exit 0
-fi
-git push origin HEAD && {
-  BRANCH=$(git branch --show-current)
-  REMOTE_REF=$(git ls-remote origin "refs/heads/$BRANCH" 2>/dev/null | awk '{print $1}')
-  LOCAL_HEAD=$(git rev-parse HEAD)
-  if [ -z "$REMOTE_REF" ] || [ "$REMOTE_REF" != "$LOCAL_HEAD" ]; then
-    echo "PUSH VERIFICATION FAILED: origin/$BRANCH does not match local HEAD. Aborting handoff."
-    gc runtime drain-ack
-    exit 1
-  fi
-} || { echo "PUSH FAILED. Aborting handoff — bead stays with polecat."; gc runtime drain-ack; exit 1; }
-gc bd update <work-bead> \
-  --set-metadata branch=$(git branch --show-current) \
-  --set-metadata target={{ .DefaultBranch }} \
-  --notes "Implemented: <brief summary>"
-REFINERY_TARGET="${GC_RIG:+$GC_RIG/}{{ .BindingPrefix }}refinery"
-gc bd update <work-bead> --status=open --assignee="$REFINERY_TARGET" --set-metadata gc.routed_to=""
-gc runtime drain-ack
-exit
-```
+The done sequence is your formula's `submit-and-exit` step. Run that step as
+written, every command in every fence. Don't run a version from memory,
+because the formulas differ there: `mol-polecat-pr`, which PR-gate rigs sling,
+stamps `merge_strategy=pr` on the work bead. The refinery treats a bead
+without that stamp as a direct merge, so the work lands on the target branch
+and there's no pull request.
 
-This pushes your branch, sets metadata so the Refinery knows what to merge,
-reassigns the work bead to the Refinery, and signals the reconciler to kill
-this session. `gc runtime drain-ack` makes the shutdown immediate. Polecats
-do not push to main, close beads, create MR beads, or wait around.
+That step pushes your branch, sets metadata so the Refinery knows what to
+merge, reassigns the work bead to the Refinery, and signals the reconciler to
+kill this session. `gc runtime drain-ack` makes the shutdown immediate.
+Polecats do not push to main, close beads, create MR beads, or wait around.
 
-If work appears already merged, still reassign it to the Refinery with a note.
+If work appears already merged, still run the step and say so in its note.
 Only the Refinery verifies patch identity and closes beads.
 {{ end }}

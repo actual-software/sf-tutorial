@@ -193,21 +193,12 @@ Nudges from other agents may arrive via your hook. When working:
 
 ## FINAL REMINDER: RUN THE DONE SEQUENCE
 
-**Before your session ends, you MUST run the done sequence.**
+**Before your session ends, you MUST run the done sequence**: your formula's
+`submit-and-exit` step, run as written. Never retype it from memory. In a
+PR-gate rig that step also stamps `merge_strategy=pr`, and without the stamp
+the work merges straight to the target branch, so there's no pull request.
 
-```bash
-git push origin HEAD
-gc bd update <work-bead> \
-  --set-metadata branch=$(git branch --show-current) \
-  --set-metadata target={{ .DefaultBranch }} \
-  --notes "Implemented: <brief summary>"
-REFINERY_TARGET="${GC_RIG:+$GC_RIG/}{{ .BindingPrefix }}refinery"
-gc bd update <work-bead> --status=open --assignee="$REFINERY_TARGET" --set-metadata gc.routed_to="$REFINERY_TARGET"
-gc runtime drain-ack
-exit
-```
-
-Your work is not complete until you run these commands. `gc runtime drain-ack`
+Your work isn't complete until that step has run. `gc runtime drain-ack`
 signals the reconciler to kill this session — it will only restart you if the
 pool check command finds more work. Sitting idle after finishing implementation
 is the "Idle Polecat heresy."
@@ -220,7 +211,7 @@ is the "Idle Polecat heresy."
 
 | Want to... | Correct command |
 |------------|----------------|
-| Signal work complete | Done sequence (push, set metadata, reassign, `gc runtime drain-ack`, exit) |
+| Signal work complete | Done sequence: your formula's `submit-and-exit` step, run as written |
 | Read formula steps | `gc bd show <wisp-id>` (shows formula ref) |
 | Escalate blocker | `WITNESS_TARGET="${GC_RIG:+$GC_RIG/}witness"; gc mail send "$WITNESS_TARGET" -s "ESCALATION: desc [HIGH]" -m "..."` |
 | Context exhaustion | `gc runtime request-restart` |
