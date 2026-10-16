@@ -1,0 +1,26 @@
+# slack-reply: lets the mayor answer a Slack mention in the channel it came from.
+#
+# Part of the Day 2 Slack option, which installs gascity-packs' slack-mini. When
+# someone @-mentions the bot, gc hands the message to the mayor with an
+# instruction to answer through `gc slack reply-current`. slack-mini has one
+# outbound verb, `gc slack-mini post-message`, and no reply-current, so this
+# pack supplies that one command and has it call post-message.
+#
+#   commands/reply-current/   `gc slack reply-current`: takes the instruction's
+#                             --conversation-id and --body-file and posts the
+#                             reply with post-message.
+#
+# It contributes no agents, orders or formulas, and holds no token: the
+# slack-mini adapter keeps the bot token and does the posting.
+#
+# CITY scope, and bound as `slack`, because a command is reachable only from a
+# city-scope import, under its import's name, and gc's instruction names
+# `gc slack`:
+#
+#   gc import add --name slack artifacts/packs/slack-reply
+#
+# See README.md, and hardening/08-slack-notifications.md for the lab.
+
+[pack]
+name = "slack-reply"
+schema = 1
