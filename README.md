@@ -106,7 +106,7 @@ These three haven't been certified like the six above. Their pages and packs are
 | Option | Solves |
 |---|---|
 | [Shred a scope into beads](./hardening/07-shred-a-scope-into-beads.md) | A real backlog is too big to cut into beads by hand |
-| [Slack notifications](./hardening/08-slack-notifications.md) | Nobody hears that work finished unless they are watching the factory |
+| [Slack notifications and the mayor](./hardening/08-slack-notifications.md) | Nobody hears that work finished, or can ask the factory anything, unless they are watching it |
 | [Architecture Agent with the Actual CLI](./hardening/09-architecture-agent-cli.md) | The architect paraphrases your ADRs instead of naming the rule a diff breaks |
 
 ### The Base Factory

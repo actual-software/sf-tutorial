@@ -70,7 +70,7 @@ The `git switch main` is for anyone who checked one of these out from its pull r
 | Option | Solves | Pack |
 | --- | --- | --- |
 | [Shred a scope into beads](../hardening/07-shred-a-scope-into-beads.md) | A real backlog is too big to cut into beads by hand | `shred-scope`, at city scope with no `--rig` |
-| [Slack notifications](../hardening/08-slack-notifications.md) | Nobody hears that work finished unless they are watching the factory | `slack-notify` |
+| [Slack notifications and the mayor](../hardening/08-slack-notifications.md) | Nobody hears that work finished, or can ask the factory anything, unless they are watching it | `slack-mini` from gascity-packs and `slack-reply`, both at city scope with no `--rig`, plus `slack-notify` on the rig |
 | [Architecture Agent with the Actual CLI](../hardening/09-architecture-agent-cli.md) | The architect paraphrases your ADRs instead of naming the rule a diff breaks | none: the `actual` CLI and its Claude Code plugin |
 
 ## How each lab runs
