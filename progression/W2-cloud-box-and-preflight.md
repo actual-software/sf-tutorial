@@ -191,6 +191,20 @@ gemini -p 'Reply with exactly: FACTORY_OK'
 
 Claude and Gemini each answer `FACTORY_OK`. Codex prints `Logged in using ChatGPT`.
 
+If you signed in to Claude Code, trust your workspace too. Every agent the factory starts opens Claude Code in a folder under `$SFI_PATH`, and a folder it hasn't seen before brings up a `Quick safety check` prompt. Current Claude Code pre-selects `No, exit` there, and the `gc` that `deps.sh` installs answers it with Enter, so each agent quits as it starts. Trusting `$SFI_PATH` once covers every folder under it, so the prompt never appears:
+
+**Copy and paste**
+
+```bash
+cp ~/.claude.json ~/.claude.json.bak
+jq --arg d "$SFI_PATH" \
+  '.projects[$d] = ((.projects[$d] // {}) + {hasTrustDialogAccepted: true})' \
+  ~/.claude.json > ~/.claude.json.tmp && mv ~/.claude.json.tmp ~/.claude.json
+jq --arg d "$SFI_PATH" '.projects[$d].hasTrustDialogAccepted' ~/.claude.json
+```
+
+The last line prints `true`. The first line keeps a copy of the file as it was, in `~/.claude.json.bak`.
+
 ### 5. Sign in to GitHub
 
 Your factory pushes to GitHub, so `gh` needs your account. `gh auth login`, picking HTTPS, is the shortest route: it opens a browser and authorizes the GitHub CLI against your whole account.
