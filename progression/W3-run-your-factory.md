@@ -776,6 +776,17 @@ Check the scope you asked about: `base-factory` is a rig import (`gc import list
 
 You ran the script outside the rig, so the beads went into a different database. Run `pwd`; if you are not at `$SFI_PATH/ascii-art`, `cd` there and re-run it.
 
+### The mayor shows `quarantine`, or the inbox fills with `JSONL spike detected`
+
+`gc session list` shows the mayor `asleep` with reason `quarantine`, and `gc mail inbox` collects `ESCALATION: JSONL spike detected [HIGH]` messages. Every agent is quitting at Claude Code's folder-trust prompt, and each failed start leaves a session bead behind, which is what the spike counts. Check the mayor's last start:
+
+```bash
+cd "$SFI_PATH/factory1"
+tail -25 .gc/sessions/mayor/start-stderr.log
+```
+
+If it ends at `Quick safety check` with `❯ No, exit` selected and `Pane is dead (status 1, …)`, run the trust step in [W2's "Sign in to your coding agent"](./W2-cloud-box-and-preflight.md#4-sign-in-to-your-coding-agent). The mayor tries again once its quarantine lapses, within a few minutes, and `gc session list` then shows it `active`.
+
 ### Recurring breakage after reinstalling `gc` or `bd`
 
 Reinstalling the binaries does not kill running Dolt processes. Check for orphans with `ps aux | grep "dolt sql-server"` before retrying. Anything pointing at a project you are not using is safe to kill. Leave alone the Dolt servers of cities you are using, whether the supervisor or `bd` runs them, and any standalone `~/.dolt-server` you set up deliberately.
