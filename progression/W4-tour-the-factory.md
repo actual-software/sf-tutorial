@@ -253,17 +253,32 @@ nano "$SFI_PATH/ascii-art/docs/current/coordination-channels.md"
 
 `nano` ships with the box and is not modal: `Ctrl-O` then `Enter` saves, `Ctrl-X` exits. Use a different editor if you prefer one.
 
-Fill in the handoff table. Every handoff gets a primary channel and a fallback:
+Fill in the **Preferences by handoff** table. A handoff is any point where work passes from one party to another. For each one, the **Primary** is the channel from steps 1–8 (Tasks, Mail, Orders, Nudges, Attach) that normally carries it, the **Fallback** is what you reach for when the primary has clearly not fired, and **Why** is one line on the choice. Nothing reads this file; it is the note you check first when the factory goes quiet.
+
+The template names roles rather than agents, so that it fits any factory. In this one they are:
+
+| Template role | Agent in `ascii-art` |
+| --- | --- |
+| Front gate | `mayor`, or you, slinging a bead directly |
+| Implementer | `polecat` |
+| Reviewer | `refinery` |
+| Architecture review | `architect` |
+
+The refinery is the hub: the polecat hands to the refinery, and the refinery's `verify-architect` step sends the bead to the architect and gets it back before the PR opens. A starting point for the table:
 
 | Handoff | Primary | Fallback |
 | --- | --- | --- |
-| Human → polecat | Tasks | — |
-| polecat → architect | Tasks | Nudge |
-| architect → refinery | Tasks | Nudge |
-| refinery → polecat (bounce) | Tasks | Mail |
-| refinery → human (merge) | Tasks | Mail |
+| Human → front gate | Tasks | Mail |
+| Front gate → implementer | Tasks | Nudge |
+| Implementer → reviewer | Tasks | Mail |
+| Reviewer → implementer (bounce) | Tasks | Mail |
+| Reviewer → architecture review | Tasks | Nudge |
+| Architecture review → reviewer | Tasks | Mail |
+| Reviewer → human (merge) | Tasks | Mail |
 | Any agent → human (blocked) | Mail | Attach |
-| Nothing → factory (sweeps) | Orders | — |
+| Nothing → factory (scheduled sweeps) | Orders | — |
+
+[`artifacts/reference-project-docs/current/coordination-channels.md`](../artifacts/reference-project-docs/current/coordination-channels.md) is a filled-in example for a similar factory, Why column included. It also fills in the owner column and the protocols, which this step doesn't require.
 
 Those are defaults rather than answers. Change at least one and be able to say why. Then commit it:
 
