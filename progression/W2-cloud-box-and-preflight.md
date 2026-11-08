@@ -102,15 +102,15 @@ This path installs by hand what the box image already carries, and every command
 
 ### 1. Install the tools
 
-You'll need git, tmux, curl and jq, which preflight checks for; the GitHub CLI, `gh`; Go, because `deps.sh` builds `gc` from source; and the CLI for at least one coding agent.
+You'll need git, tmux, curl and jq, plus lsof, pgrep, flock and timeout, which `gc` itself refuses to start a city without; preflight checks for all of them. You'll also need the GitHub CLI, `gh`; Go, because `deps.sh` builds `gc` from source; and the CLI for at least one coding agent.
 
 **Copy and paste** (macOS, with [Homebrew](https://brew.sh))
 
 ```bash
-brew install git tmux jq gh go
+brew install git tmux jq flock gh go
 ```
 
-On Linux, install git, tmux, curl and jq from your package manager (`sudo apt-get install -y git tmux curl jq` on Ubuntu or Debian). Then install `gh` from [GitHub's Linux instructions](https://github.com/cli/cli/blob/trunk/docs/install_linux.md), and Go from [go.dev/dl](https://go.dev/dl/), since your distribution's own Go package is often older than the build wants.
+macOS already ships lsof and pgrep, and `gc` accepts the system `python3` in place of `timeout`. On Linux, install them all from your package manager (`sudo apt-get install -y git tmux curl jq lsof procps util-linux coreutils` on Ubuntu or Debian). Most desktop installs already have `procps`, `util-linux` and `coreutils`, but minimal and container images often lack `lsof`. Then install `gh` from [GitHub's Linux instructions](https://github.com/cli/cli/blob/trunk/docs/install_linux.md), and Go from [go.dev/dl](https://go.dev/dl/), since your distribution's own Go package is often older than the build wants.
 
 Install your coding agent from its own instructions: [Claude Code](https://docs.claude.com/en/docs/claude-code/setup), [Codex](https://github.com/openai/codex) or [Gemini CLI](https://github.com/google-gemini/gemini-cli).
 
@@ -237,6 +237,10 @@ Required tools
   [ ok ] tmux: /opt/homebrew/bin/tmux
   [ ok ] curl: /usr/bin/curl
   [ ok ] jq: /usr/bin/jq
+  [ ok ] lsof: /usr/sbin/lsof
+  [ ok ] pgrep: /usr/bin/pgrep
+  [ ok ] flock: /opt/homebrew/bin/flock
+  [ ok ] timeout: /usr/bin/python3
   [ ok ] gh: gh version 2.97.0 (2026-07-31)
   [ ok ] gh auth: authenticated
 

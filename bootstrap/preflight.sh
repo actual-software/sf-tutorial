@@ -87,13 +87,36 @@ esac
 # --------------------------------------------------------------------------
 head2 "Required tools"
 
-for tool in git tmux curl jq; do
+# git, tmux and jq are also hard dependencies of gc itself, along with lsof,
+# pgrep, flock and one of timeout/gtimeout/python3. `gc init` and `gc start`
+# refuse to start a city without them (checkHardDependencies in gascity's
+# cmd/gc/init_provider_readiness.go), so check the whole list here rather than
+# let preflight pass and the first city fail.
+check_tool() {
+  local tool="$1" hint="$2"
   if command -v "$tool" >/dev/null 2>&1; then
     ok "$tool: $(command -v "$tool")"
   else
-    fail "$tool: not found on PATH"
+    fail "$tool: not found on PATH${hint:+ — $hint}"
   fi
+}
+check_tool git   ""
+check_tool tmux  ""
+check_tool curl  ""
+check_tool jq    "brew install jq (macOS) or apt install jq (Linux)"
+check_tool lsof  "brew install lsof (macOS) or apt install lsof (Linux)"
+check_tool pgrep "brew install proctools (macOS) or apt install procps (Linux)"
+check_tool flock "brew install flock (macOS) or apt install util-linux (Linux)"
+
+timeout_tool=""
+for candidate in timeout gtimeout python3; do
+  if command -v "$candidate" >/dev/null 2>&1; then timeout_tool="$candidate"; break; fi
 done
+if [ -n "$timeout_tool" ]; then
+  ok "timeout: $(command -v "$timeout_tool")"
+else
+  fail "timeout: none of timeout, gtimeout or python3 found on PATH — brew install coreutils (macOS) or apt install coreutils (Linux)"
+fi
 
 if command -v gh >/dev/null 2>&1; then
   ok "gh: $(gh --version 2>/dev/null | head -1)"
@@ -179,7 +202,7 @@ if command -v dolt >/dev/null 2>&1; then
     missing=""
     [ -z "$dolt_name" ] && missing="user.name"
     [ -z "$dolt_email" ] && missing="${missing:+$missing and }user.email"
-    warn "dolt identity: $missing unset — gc start needs both; bootstrap.sh sets them from GITHUB_USERNAME"
+    warn "dolt identity: $missing unset — gc start needs both; W3 step 1 sets them (bootstrap.sh sets them from GITHUB_USERNAME)"
   fi
 else
   warn "dolt identity: not checked, dolt is not installed"
