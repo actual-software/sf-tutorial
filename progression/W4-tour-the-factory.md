@@ -257,7 +257,7 @@ Fill in the **Preferences by handoff** table. A handoff is any point where work 
 
 The template names roles rather than agents, so that it fits any factory. In this one they are:
 
-| Template role | Agent in `ascii-art` |
+| Template role | Agent in this factory |
 | --- | --- |
 | Front gate | `mayor`, or you, slinging a bead directly |
 | Implementer | `polecat` |
