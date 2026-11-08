@@ -776,16 +776,16 @@ Check the scope you asked about: `base-factory` is a rig import (`gc import list
 
 You ran the script outside the rig, so the beads went into a different database. Run `pwd`; if you are not at `$SFI_PATH/ascii-art`, `cd` there and re-run it.
 
-### The mayor shows `quarantine`, or the inbox fills with `JSONL spike detected`
+### Agents quit as they start: the mayor shows `quarantine`, or a slung bead never moves
 
-`gc session list` shows the mayor `asleep` with reason `quarantine`, and `gc mail inbox` collects `ESCALATION: JSONL spike detected [HIGH]` messages. Every agent is quitting at Claude Code's folder-trust prompt, and each failed start leaves a session bead behind, which is what the spike counts. Check the mayor's last start:
+`gc session list` shows the mayor `asleep` with reason `quarantine`. Or a polecat session keeps reappearing as `creating` while the bead you slung never moves. `gc mail inbox` may also collect `ESCALATION: JSONL spike detected [HIGH]` messages, because each failed start leaves a session bead behind, and that is what the spike counts. Check the newest start log:
 
 ```bash
 cd "$SFI_PATH/factory1"
-tail -25 .gc/sessions/mayor/start-stderr.log
+tail -25 "$(ls -t .gc/sessions/*/start-stderr.log | head -1)"
 ```
 
-If it ends at `Quick safety check` with `❯ No, exit` selected and `Pane is dead (status 1, …)`, run the trust step in [W2's "Sign in to your coding agent"](./W2-cloud-box-and-preflight.md#4-sign-in-to-your-coding-agent). The mayor tries again once its quarantine lapses, within a few minutes, and `gc session list` then shows it `active`.
+If it ends at `Quick safety check` with `❯ No, exit` selected and `Pane is dead (status 1, …)`, Claude Code doesn't trust that agent's folder. Run the trust step in [W2's "Sign in to your coding agent"](./W2-cloud-box-and-preflight.md#4-sign-in-to-your-coding-agent). If the `Accessing workspace:` path in the log is a polecat worktree, the missing entry is the rig's: `$SFI_PATH/ascii-art`, or `$MY_RIG_PATH` after [L1](./L1-plan-your-factory.md). An agent whose start failed tries again within a few minutes, once any quarantine lapses, and the bead you slung waits for it.
 
 ### Recurring breakage after reinstalling `gc` or `bd`
 
