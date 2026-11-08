@@ -191,19 +191,23 @@ gemini -p 'Reply with exactly: FACTORY_OK'
 
 Claude and Gemini each answer `FACTORY_OK`. Codex prints `Logged in using ChatGPT`.
 
-If you signed in to Claude Code, trust your workspace too. Every agent the factory starts opens Claude Code in a folder under `$SFI_PATH`, and a folder it hasn't seen before brings up a `Quick safety check` prompt. Current Claude Code pre-selects `No, exit` there, and the `gc` that `deps.sh` installs answers it with Enter, so each agent quits as it starts. Trusting `$SFI_PATH` once covers every folder under it, so the prompt never appears:
+If you signed in to Claude Code, trust your workspace too. Every agent the factory starts opens Claude Code in a folder under `$SFI_PATH`, and a folder it hasn't seen before brings up a `Quick safety check` prompt. Current Claude Code pre-selects `No, exit` there, and the `gc` that `deps.sh` installs answers it with Enter, so each agent quits as it starts.
+
+Trust is inherited only so far. Trusting `$SFI_PATH` covers the plain folders under it, where the mayor and the city's helpers run. It stops at a git repository, though, so the rig that W3 creates at `$SFI_PATH/ascii-art` needs an entry of its own. That entry covers every worktree the polecats make from the rig, wherever the worktrees live. Neither folder needs to exist yet:
 
 **Copy and paste**
 
 ```bash
 cp ~/.claude.json ~/.claude.json.bak
-jq --arg d "$SFI_PATH" \
-  '.projects[$d] = ((.projects[$d] // {}) + {hasTrustDialogAccepted: true})' \
-  ~/.claude.json > ~/.claude.json.tmp && mv ~/.claude.json.tmp ~/.claude.json
-jq --arg d "$SFI_PATH" '.projects[$d].hasTrustDialogAccepted' ~/.claude.json
+for d in "$SFI_PATH" "$SFI_PATH/ascii-art"; do
+  jq --arg d "$d" \
+    '.projects[$d] = ((.projects[$d] // {}) + {hasTrustDialogAccepted: true})' \
+    ~/.claude.json > ~/.claude.json.tmp && mv ~/.claude.json.tmp ~/.claude.json
+done
+jq -c --arg a "$SFI_PATH" --arg b "$SFI_PATH/ascii-art" '[.projects[$a, $b].hasTrustDialogAccepted]' ~/.claude.json
 ```
 
-The last line prints `true`. The first line keeps a copy of the file as it was, in `~/.claude.json.bak`.
+The last command prints `[true,true]`. The first line keeps a copy of the file as it was, in `~/.claude.json.bak`. [L1](./L1-plan-your-factory.md) adds your own project as a second rig, and repeats this for it.
 
 ### 5. Sign in to GitHub
 

@@ -93,6 +93,16 @@ export MY_RIG_PATH="$MY_RIG_PATH"
 EOF
 ```
 
+On your own machine, trust the new rig for Claude Code the same way [W2](./W2-cloud-box-and-preflight.md#4-sign-in-to-your-coding-agent) trusted `ascii-art`. A git repository doesn't inherit `$SFI_PATH`'s trust, and without an entry of its own every polecat on this rig quits at Claude Code's `Quick safety check` prompt:
+
+**Copy and paste** (your own machine)
+
+```bash
+jq --arg d "$MY_RIG_PATH" \
+  '.projects[$d] = ((.projects[$d] // {}) + {hasTrustDialogAccepted: true})' \
+  ~/.claude.json > ~/.claude.json.tmp && mv ~/.claude.json.tmp ~/.claude.json
+```
+
 Then install the base factory into it, so your own rig has the same machinery `ascii-art` does:
 
 **Copy and paste**
